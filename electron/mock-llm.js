@@ -37,6 +37,7 @@ async function respond(req) {
 
   if (req.category === 'boss') {
     const sys = req.messages[0]?.content || '';
+    if (/UNPROMPTED/.test(sys)) return JSON.stringify({ reply: 'Hey, just checking in. How is your week going?' });
     const can = (a) => sys.includes(`- "${a}"`);
     const pickAct = () => {
       if (/rush|more customers|busy/i.test(text) && can('rush')) return { action: 'rush' };

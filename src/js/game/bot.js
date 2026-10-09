@@ -166,7 +166,7 @@ const handlers = {
     const recs = await window.api.usage();
     if (!recs.length) return botSay('No API calls recorded yet.');
     const cats = ['customer', 'grading', 'mentor', 'concept', 'boss', 'other'];
-    const label = { customer: 'Customers (Haiku)', grading: 'Grading (Sonnet)', mentor: 'Mentor (Sonnet)', concept: 'Concept lessons (Sonnet)', boss: 'Manager (Sonnet)', other: 'Other' };
+    const label = { customer: 'Customers (Haiku)', grading: 'Grading (Sonnet)', mentor: 'Mentor (Sonnet)', concept: 'Concept lessons (Sonnet)', boss: 'Manager (Diane)', other: 'Other' };
     const tot = {};
     for (const c of cats) tot[c] = { cost: 0, in: 0, out: 0, calls: 0 };
     for (const r of recs) {

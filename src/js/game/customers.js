@@ -137,6 +137,7 @@ export function spawnCustomer(opts = {}) {
       onlineUntil: 0,
       lastSeen: at,
       typing: false,
+      thinking: false,
       lastCustomerAt: null,
       awaitingReply: false,
       latencies: [],
@@ -191,7 +192,7 @@ export function onPlayerMessage(chat, text) {
   cs.leaveAt = null;
   cs.nudged = false;
   chat.emojiPacksUsed = [...new Set([...(chat.emojiPacksUsed || []), ...shop.packsUsedIn(text)])];
-  if (cs.readAt == null && !cs.typing && !cs.openingPending) cs.readAt = scheduleRead(chat, t);
+  if (cs.readAt == null && !cs.typing && !cs.thinking && !cs.openingPending) cs.readAt = scheduleRead(chat, t);
   touchChat(chat);
 }
 
@@ -263,37 +264,80 @@ function customerLeaves(chat, t) {
   finishConversation(chat, 'timeout', t);
 }
 
-// The customer reads the agent's messages at time `at` and answers. Returns false to stop processing.
+// How long the customer spends reading and thinking about `msgs` before they start typing:
+// longer, number-heavy answers take longer; slow readers take longer still.
+export function thinkMs(chat, msgs) {
+  const T = cfg().customer.think;
+  const text = msgs.map((m) => m.text || '').join(' ');
+  const words = (text.match(/\S+/g) || []).length;
+  const numbers = Math.min(T.maxNumbers, (text.match(/\d[\d,.]*%?/g) || []).length);
+  const ms = rand(T.baseMs[0], T.baseMs[1]) + words * T.perWordMs + numbers * T.perNumberMs;
+  return clamp(ms * (T.readSpeed[chat.customer.read] || 1) * rand(0.85, 1.2), T.minMs, T.maxMs);
+}
+
+function markRead(chat, at) {
+  const fresh = chat.messages.filter((m) => m.from === 'me' && !m.read && !m.after);
+  for (const m of fresh) { m.read = true; m.readAt = at; }
+  return fresh;
+}
+
+// The customer reads the agent's messages at time `at`, thinks, types and answers.
+// Returns false to stop processing. If the moment is (nearly) now, it plays out live:
+// ✓✓ read, a pause to think (more of your messages are read and taken into account),
+// then "typing…", then the reply.
 async function customerReads(chat, at) {
   const cs = chat.cs;
   const C = cfg().customer;
   cs.readAt = null;
-  for (const m of chat.messages) if (m.from === 'me' && !m.read) { m.read = true; m.readAt = at; }
+  const read = markRead(chat, at);
   comeOnline(chat, at);
-  const live = clock.now() - at < LIVE_WINDOW;
-  if (live) cs.typing = true;
-  touchChat(chat);
-  const started = performance.now();
+  let thinkEnd = at + thinkMs(chat, read.length ? read : chat.messages.filter((m) => m.from === 'me').slice(-1));
+  const gone = () => chat.status !== 'active' || chat.deleted;
+  let call = withRetry(() => customerReply(chat), 3, 1500);
+  call.catch(() => {});
   let out;
   try {
-    out = await withRetry(() => customerReply(chat), 3, 1500);
+    if (thinkEnd > clock.now() - 2000) {
+      // live: think in real time, picking up anything else the agent sends meanwhile
+      cs.thinking = true;
+      touchChat(chat);
+      while (clock.now() < thinkEnd) {
+        await sleep(Math.min(1000, Math.max(50, thinkEnd - clock.now())));
+        if (gone()) return false;
+        const more = markRead(chat, clock.now());
+        if (more.length) {
+          thinkEnd = Math.max(thinkEnd, clock.now() + thinkMs(chat, more) * 0.6);
+          call = withRetry(() => customerReply(chat), 3, 1500);
+          call.catch(() => {});
+          touchChat(chat);
+        }
+      }
+      cs.thinking = false;
+      cs.typing = true;
+      touchChat(chat);
+      const started = performance.now();
+      out = await call;
+      if (gone()) return false;
+      const typingMs = clamp(out.reply.length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
+      const remaining = typingMs - (performance.now() - started);
+      if (remaining > 0) await sleep(remaining);
+      if (gone()) return false;
+      out.t = clock.now();
+    } else {
+      out = await call;
+      if (gone()) return false;
+      out.t = thinkEnd + clamp(out.reply.length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
+      if (out.t > clock.now()) out.t = clock.now();
+    }
   } catch (e) {
     cs.typing = false;
-    if (chat.status === 'active' && !chat.deleted) sysMessage(chat, '⚠ Couldn\'t get the customer\'s reply: ' + e.message, { kind: 'error', retry: 'customer' });
+    cs.thinking = false;
+    if (!gone()) sysMessage(chat, '⚠ Couldn\'t get the customer\'s reply: ' + e.message, { kind: 'error', retry: 'customer' });
     return false;
   }
-  if (chat.status !== 'active' || chat.deleted) return false;
-  const typingMs = clamp(out.reply.length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
-  let t;
-  if (live) {
-    const remaining = typingMs - (performance.now() - started);
-    if (remaining > 0) await sleep(remaining);
-    if (chat.status !== 'active' || chat.deleted) return false;
-    t = clock.now();
-  } else {
-    t = at + typingMs;
-  }
+  const t = out.t;
   cs.typing = false;
+  cs.thinking = false;
   cs.turns += 1;
   cs.mood = out.mood;
   if (out.followUp) cs.followUps += 1;
@@ -481,8 +525,9 @@ export function resumeAfterLoad() {
     if (chat.status === 'active') {
       const cs = chat.cs;
       if (cs.openingPending) postOpeningQuestion(chat);
-      if (cs.typing) { // a reply was being written when the app closed
+      if (cs.typing || cs.thinking) { // a reply was being written when the app closed
         cs.typing = false;
+        cs.thinking = false;
         if (cs.readAt == null) cs.readAt = clock.now();
       }
       touchChat(chat);

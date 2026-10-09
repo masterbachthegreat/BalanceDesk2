@@ -5,6 +5,7 @@ import { botSay } from './bot.js';
 import { triggerMemo } from './manager.js';
 import { toast } from '../ui/toast.js';
 import * as clock from './clock.js';
+import { noteEvent } from './boss.js';
 
 export function rankInfo(r) {
   const ranks = S.data.ranks;
@@ -50,10 +51,10 @@ export function recordChat(chat) {
   p.streak ||= { low: 0, high: 0 };
   p.streak.low = r.stars <= 2 ? p.streak.low + 1 : 0;
   p.streak.high = r.stars >= 4.5 ? p.streak.high + 1 : 0;
-  if (p.streak.low === 3) triggerMemo('lowStreak');
-  if (p.streak.high === 5) triggerMemo('highStreak');
+  if (p.streak.low === 3) { triggerMemo('lowStreak'); noteEvent('lowStreak'); }
+  if (p.streak.high === 5) { triggerMemo('highStreak'); noteEvent('highStreak'); }
   if ([1, 10, 25, 50, 100, 250, 500].includes(st.completed)) triggerMemo('milestone', { count: st.completed });
-  if (chat.customer.vip && st.vipServed === 1) triggerMemo('firstVip');
+  if (chat.customer.vip && st.vipServed === 1) { triggerMemo('firstVip'); noteEvent('firstVip'); }
   touchProfile();
 }
 
@@ -66,6 +67,7 @@ export function promote() {
   const nr = rankInfo(p.rank);
   botSay('🎉 **Promotion!** You are now **' + nr.title + '** (rank ' + p.rank + ').\nNew topics unlocked: ' + nr.topics + '.\nBase pay per chat: $' + nr.basePay + ' (was $' + old.basePay + ').');
   triggerMemo('promotion');
+  noteEvent('promotion', { title: nr.title });
   toast('Promoted to ' + nr.title + '!', 'New topics: ' + nr.topics, 'good');
   touchProfile();
   emit('profile');

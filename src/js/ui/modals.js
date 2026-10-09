@@ -85,7 +85,8 @@ export function settingsModal() {
         ${s.keyPreview ? '<button class="btn small" id="stClear">Remove</button>' : ''}</div>
         <div class="hint">Get a key at <a href="#" id="stLink" style="color:var(--link)">openrouter.ai/keys</a>. Stored only on this computer.</div></div>
       <div class="field"><label>Customer model (writes customer replies)</label><input type="text" id="stCust" value="${escapeHtml(s.customerModel)}"></div>
-      <div class="field"><label>Smart model (grading, mentor)</label><input type="text" id="stSmart" value="${escapeHtml(s.smartModel)}">
+      <div class="field"><label>Smart model (grading, mentor, concept lessons)</label><input type="text" id="stSmart" value="${escapeHtml(s.smartModel)}"></div>
+      <div class="field"><label>Manager model (Diane)</label><input type="text" id="stBoss" value="${escapeHtml(s.bossModel || s.smartModel)}">
         <div class="hint">OpenRouter model ids, e.g. anthropic/claude-haiku-5.5 and anthropic/claude-sonnet-5.5.</div></div>
       <label class="check"><input type="checkbox" id="stSound" ${s.sound ? 'checked' : ''}> Sound when a message arrives</label>
       <label class="check"><input type="checkbox" id="stFlash" ${s.notifications ? 'checked' : ''}> Flash the taskbar when a customer writes</label>
@@ -103,6 +104,7 @@ export function settingsModal() {
       apiKey: $('#stKey').value.trim(),
       customerModel: $('#stCust').value.trim() || s.customerModel,
       smartModel: $('#stSmart').value.trim() || s.smartModel,
+      bossModel: $('#stBoss').value.trim() || s.bossModel || s.smartModel,
       sound: $('#stSound').checked,
       notifications: $('#stFlash').checked,
     });

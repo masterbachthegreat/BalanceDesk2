@@ -2,9 +2,13 @@
 // during office hours (your local time) and can change things: a rush shift, a lighter or
 // heavier day, time off, taking a chat off your hands, or a raise. The LLM only picks from
 // the actions this code says are allowed right now; the code applies them.
+// She also writes to you unprompted now and then: about things that happened (a promotion,
+// a bad streak, a backlog) or just to chat, depending on how well you get on (`rapport`,
+// hidden, 0-100, in profile.boss).
 import { S, cfg, rand, touchChat, touchProfile } from '../core/state.js';
 import { waitWords, num, plural } from '../core/format.js';
-import { addMessage, getChat, sysMessage, findChatByHandle, activeCustomerChats, handle } from './chats.js';
+import { addMessage, getChat, sysMessage, findChatByHandle, activeCustomerChats, customerChats, handle } from './chats.js';
+import { reasonText } from './transcript.js';
 import * as clock from './clock.js';
 import * as world from './world.js';
 import { transferChat, openCount } from './customers.js';
@@ -16,21 +20,80 @@ export const BOSS = { name: 'Diane Whitfield', role: 'Head of Client Services' }
 
 function chat() { return getChat('boss'); }
 
+export function bossState() {
+  const p = S.profile;
+  p.boss ||= {};
+  const b = p.boss;
+  b.rapport ??= 55;
+  b.events ||= [];
+  return b;
+}
+
+function bump(delta) {
+  const b = bossState();
+  b.rapport = Math.max(0, Math.min(100, b.rapport + delta));
+}
+
+function relationship() {
+  const r = bossState().rapport;
+  if (r >= 75) return 'close: you genuinely like working with them. Relaxed, first-name, light banter; you may share a small personal remark now and then. You give them the benefit of the doubt.';
+  if (r >= 55) return 'good: friendly and supportive; you trust them.';
+  if (r >= 35) return 'neutral: professional and polite, not much small talk.';
+  if (r >= 20) return 'strained: cooler and more formal; you are keeping an eye on their performance and are less inclined to do favours.';
+  return 'poor: curt and businesslike; you are worried about their performance.';
+}
+
+// Things that happen elsewhere in the game (results.js, progress.js) and how Diane takes them.
+export function noteEvent(kind, data = {}) {
+  if (!S.profile) return;
+  const t = data.t ?? clock.now();
+  const b = bossState();
+  const tell = (k, extra) => {
+    if (b.events.some((e) => e.kind === k)) return;
+    const [a, z] = cfg().boss.ping.eventDelayMs;
+    b.events.push({ kind: k, at: t + rand(a, z), ...extra });
+  };
+  switch (kind) {
+    case 'chat': {
+      const r = data.chat.result;
+      if (r.aiScore >= 85 && r.stars >= 4) bump(1.5);
+      else if (r.aiScore >= 70) bump(0.5);
+      else if (r.aiScore < 50) bump(-2);
+      if (data.chat.endReason === 'closed') bump(-1);
+      break;
+    }
+    case 'missed':
+      bump(-3);
+      if (clock.today(t).missed >= 3 && !b.missedTold?.startsWith?.(new Date(t).toDateString())) { b.missedTold = new Date(t).toDateString(); tell('missedMany'); }
+      break;
+    case 'promotion': bump(5); tell('promotion', { detail: data.title }); break;
+    case 'highStreak': bump(3); tell('highStreak'); break;
+    case 'lowStreak': bump(-2); tell('lowStreak'); break;
+    case 'firstVip': tell('firstVip'); break;
+    default: break;
+  }
+  touchProfile();
+}
+
 function inOffice(t) {
   const h = new Date(t).getHours();
   const [a, b] = cfg().boss.workHours;
   return h >= a && h < b;
 }
 
-// When Diane will get to a message sent at t.
-function replyTime(t) {
-  const [a, b] = cfg().boss.replyDelayMs;
-  const at = t + rand(a, b);
-  if (inOffice(at)) return at;
-  const d = new Date(at);
+// t if Diane is in the office then, else shortly after she next gets in.
+function officeTime(t) {
+  if (inOffice(t)) return t;
+  const d = new Date(t);
   if (d.getHours() >= cfg().boss.workHours[1]) d.setDate(d.getDate() + 1);
   d.setHours(cfg().boss.workHours[0], 0, 0, 0);
   return d.getTime() + rand(5, 40) * 60000;
+}
+
+// When Diane will get to a message sent at t.
+function replyTime(t) {
+  const [a, b] = cfg().boss.replyDelayMs;
+  return officeTime(t + rand(a, b));
 }
 
 export function presenceText(t = clock.now()) {
@@ -127,17 +190,36 @@ function contextText(t) {
     `Agent: ${p.name}, rank ${p.rank} (${r.title}). Chats finished: ${p.stats.completed}; recent average answer score ${n ? num(avg, 0) + '/100 over ' + plural(n, 'chat') : 'n/a'}; customers who gave up waiting: ${p.stats.missed || 0}; current pay raise +${Math.round((p.payRaise || 0) * 100)}%.`,
     `Today: ${d.arrivals || 0} customers wrote in (normal day: about ${W.dailyTarget}), ${d.chats} chats finished. Open chats: ${open.length}/${W.openCap}${od.length ? `; ${od.length} have waited over 12 hours (${od.slice(0, 6).map(handle).join(', ')})` : ''}.`,
     open.length ? 'Open chats: ' + open.slice(0, 15).map((c) => `${handle(c)} ${c.customer.name}${c.customer.vip ? ' (VIP)' : ''}, ${c.question.topic}${c.cs.waitingSince != null ? ', waiting ' + waitWords(t - c.cs.waitingSince) : ''}`).join('; ') : '',
+    recentlyEnded(t),
     w.load && t < w.load.until ? `Today is set to a ${w.load.label} day.` : '',
     vac ? `The agent is on time off until ${new Date(vac.end).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}.` : '',
   ].filter(Boolean).join('\n');
 }
 
-const SYSTEM = (actions, ctx) => `You are Diane Whitfield, Head of Client Services at Whiterock, a financial-services firm. You manage the support agent you're chatting with (the player of a training game). You're experienced, fair, warm but busy and businesslike; dry humour now and then. You care about customers being answered well and on time, and about your people not burning out.
+function recentlyEnded(t) {
+  const list = customerChats().filter((c) => c.status !== 'active' && c.endedAt && t - c.endedAt < 86400000 && c.endedAt <= t)
+    .sort((a, b) => b.endedAt - a.endedAt).slice(0, 10);
+  if (!list.length) return '';
+  const hm = (x) => new Date(x).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  return 'Chats that ended in the last 24 hours: ' + list.map((c) => `${handle(c)} ${c.customer.name}: ${c.endReason === 'transferred' ? 'transferred to a colleague by you' : reasonText(c.endReason)}${c.result && !c.result.missed ? `, score ${c.result.aiScore}/100` : ''} (${hm(c.endedAt)})`).join('; ') + '.';
+}
 
-Write like a manager on a work messenger: 1-4 short sentences, plain text, no headings. Never invent facts about the agent beyond what's below. Don't promise anything you can't do with the actions below.
+function actionLog() {
+  const xs = chat().messages.filter((m) => m.from === 'sys' && m.kind !== 'error').slice(-8);
+  if (!xs.length) return '';
+  return '\n\nTHINGS YOU ALREADY DID (system log, newest last):\n' + xs.map((m) => `- ${new Date(m.t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}: ${m.text}`).join('\n');
+}
 
-SITUATION
-${ctx}
+const PERSONA = `You are Diane Whitfield, Head of Client Services at Whiterock, a financial-services firm. You manage the support agent you're chatting with (the player of a training game). You're experienced, fair, warm but busy; dry humour now and then. You care about customers being answered well and on time, and about your people not burning out. Background (mention rarely, and only when you get on well): 19 years at Whiterock, started as an auditor, cycles to work, runs on black coffee, has a beagle called Ledger.
+
+Write like a manager on a work messenger: 1-4 short sentences, plain text, no headings. Never invent facts about the agent, their chats or customers beyond what's below.`;
+
+const SYSTEM = (actions, ctx) => `${PERSONA} Don't promise anything you can't do with the actions below.
+
+YOUR RELATIONSHIP WITH THE AGENT: ${relationship()}
+
+SITUATION (live and authoritative; it changes between messages: chats end, get transferred, new ones arrive. If it no longer matches something said earlier, that's because things moved on, not because anyone was mistaken.)
+${ctx}${actionLog()}
 
 ACTIONS YOU CAN TAKE NOW (pick at most one, only if the agent asked for it or it clearly fits):
 ${actions.out.map(([k, v]) => `- "${k}": ${v}`).join('\n')}
@@ -146,7 +228,29 @@ ${actions.no.length ? `\nNOT POSSIBLE RIGHT NOW (explain kindly if asked):\n${ac
 Use judgement like a real manager: e.g. you may refuse a heavier day or a rush if the agent has customers waiting over 12 hours, or ask them to clear the backlog before time off, or grant it anyway if they seem overwhelmed. A raise is only possible when listed above.
 
 OUTPUT: only a JSON object:
-{"reply": "<your message>", "action": "<one of: ${actions.out.map(([k]) => k).join(', ')}>", "hours": <number, only for time_off>, "chat": "<@chatN, only for transfer>"}`;
+{"reply": "<your message>", "action": "<one of: ${actions.out.map(([k]) => k).join(', ')}>", "hours": <number, only for time_off>, "chat": "<@chatN, only for transfer>", "tone": <integer -2..2: how the agent's latest messages came across to you, -2 rude, 0 neutral, 2 especially kind or pleasant>}`;
+
+const when = (t) => new Date(t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+
+function historyMessages() {
+  const msgs = [];
+  for (const m of chat().messages.filter((x) => x.from !== 'sys').slice(-20)) {
+    const role = m.from === 'me' ? 'user' : 'assistant';
+    const text = m.from === 'them' ? JSON.stringify({ reply: m.text }) : `[${when(m.t)}] ${m.text}`;
+    if (msgs.length && msgs[msgs.length - 1].role === role) msgs[msgs.length - 1].content += '\n\n' + text;
+    else msgs.push({ role, content: text });
+  }
+  while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+  return msgs;
+}
+
+async function typeOut(c, text, live) {
+  if (!live) return;
+  c.typing = true;
+  touchChat(c);
+  await sleep(Math.min(9000, Math.max(1500, text.length * 30)));
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let busy = false;
 
@@ -161,20 +265,17 @@ async function respond(t) {
     const live = clock.now() - t < 120000;
     if (live) { c.typing = true; touchChat(c); }
     const actions = allowedActions(t);
-    const msgs = [];
-    for (const m of c.messages.filter((x) => x.from !== 'sys').slice(-20)) {
-      const role = m.from === 'me' ? 'user' : 'assistant';
-      const text = m.from === 'them' ? JSON.stringify({ reply: m.text }) : m.text;
-      if (msgs.length && msgs[msgs.length - 1].role === role) msgs[msgs.length - 1].content += '\n\n' + text;
-      else msgs.push({ role, content: text });
-    }
-    while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+    const msgs = historyMessages();
     if (!msgs.length) return;
-    const raw = await withRetry(() => llmCall({ role: 'smart', category: 'boss', system: SYSTEM(actions, contextText(t)), messages: msgs, maxTokens: 400, temperature: 0.6 }), 3, 1500);
+    const raw = await withRetry(() => llmCall({ role: 'boss', category: 'boss', system: SYSTEM(actions, contextText(t)), messages: msgs, maxTokens: 400, temperature: 0.6 }), 3, 1500);
     const j = parseJSON(raw);
+    const reply = String(j.reply || 'Noted.').trim();
+    await typeOut(c, reply, live);
     const at = live ? clock.now() : t + 20000;
     c.typing = false;
-    addMessage(c, { from: 'them', text: String(j.reply || 'Noted.').trim(), t: at });
+    addMessage(c, { from: 'them', text: reply, t: at });
+    const tone = Math.max(-2, Math.min(2, Math.round(Number(j.tone) || 0)));
+    if (tone) bump(tone * 1.5);
     const allowed = new Set(actions.out.map(([k]) => k));
     if (j.action && j.action !== 'none' && allowed.has(j.action)) apply(j, at);
   } catch (e) {
@@ -219,6 +320,7 @@ function apply(j, t) {
       if (!target || target.status !== 'active') { sysMessage(c, '↪ No open chat matched, so nothing was transferred.', { t }); break; }
       transferChat(target);
       world.countTransfer();
+      bump(-1);
       sysMessage(c, `↪ ${handle(target)} (${target.customer.name}) was handed to a colleague. No pay or rating for that one.`, { t });
       break;
     }
@@ -242,28 +344,127 @@ export function retryBoss() {
   touchChat(c);
 }
 
+// ---------- unprompted messages ----------
+const REASONS = {
+  promotion: (e) => `The agent was just promoted${e.detail ? ' to ' + e.detail : ''}. Congratulate them, in your own way.`,
+  highStreak: () => 'The agent has had a run of excellent chats lately. Tell them, briefly.',
+  lowStreak: () => 'The agent\'s last few chats went badly (low ratings). Check in supportively; you might suggest the mentor, the 📖 Concept button, or a lighter day.',
+  firstVip: () => 'The agent just handled their first VIP client. A short remark about VIPs (they pay well and notice everything).',
+  missedMany: () => 'Several customers gave up today before the agent ever replied. Raise it, matching your relationship; offer a lighter day if they seem swamped.',
+  backlog: (e) => `Several customers have been waiting over 12 hours (${e.detail}). Ask the agent to get to them; offer to lighten the load or move one to a colleague.`,
+  casual: () => 'No particular reason: you are just dropping a casual message, like a manager who gets on well with them. How their day or week is going, plans for the weekend, a remark about the office, coffee or Ledger. Keep it light and short. Do not assign work.',
+  checkin: () => 'A brief, friendly work check-in: how are things going, do they need anything. Short.',
+  concern: () => 'A short, professional check-in about how things are going, based on the numbers above. Offer help (mentor, lighter day). Not harsh.',
+};
+
+const PING_SYSTEM = (reason, ctx) => `${PERSONA}
+
+YOUR RELATIONSHIP WITH THE AGENT: ${relationship()}
+
+SITUATION (live)
+${ctx}${actionLog()}
+
+You are writing UNPROMPTED: the agent has not just messaged you. Why you're writing: ${reason}
+Don't repeat what you said in your recent messages. 1-3 short sentences.
+
+OUTPUT: only a JSON object: {"reply": "<your message>"}`;
+
+function pingMessages() {
+  const msgs = historyMessages();
+  const note = '(no new message from the agent: write your unprompted message now)';
+  if (msgs.length && msgs[msgs.length - 1].role === 'user') msgs[msgs.length - 1].content += '\n\n' + note;
+  else msgs.push({ role: 'user', content: note });
+  return msgs;
+}
+
+async function ping(kind, T, ev = {}, fallback = null) {
+  const c = chat();
+  const b = bossState();
+  busy = true;
+  const live = clock.now() - T < 120000;
+  try {
+    let text;
+    try {
+      const raw = await withRetry(() => llmCall({ role: 'boss', category: 'boss', system: PING_SYSTEM(REASONS[kind](ev), contextText(T)), messages: pingMessages(), maxTokens: 300, temperature: 0.8 }), 2, 1500);
+      text = String(parseJSON(raw).reply || '').trim();
+    } catch (e) {
+      text = fallback;
+    }
+    if (!text) return;
+    await typeOut(c, text, live);
+    addMessage(c, { from: 'them', text, t: live ? clock.now() : T, unprompted: kind });
+    b.lastPingAt = T;
+  } finally {
+    busy = false;
+    c.typing = false;
+    touchChat(c);
+    touchProfile();
+  }
+}
+
+function scheduleCasual(from) {
+  const b = bossState();
+  const [a, z] = cfg().boss.ping.everyHours;
+  b.nextPingAt = from + rand(a, z) * 3600000 * (1.6 - b.rapport / 100);
+}
+
+function casualKind() {
+  const r = bossState().rapport;
+  const { n, avg } = recentAvg();
+  if (r >= 65) return Math.random() < 0.7 ? 'casual' : 'checkin';
+  if (r >= 40) return Math.random() < 0.5 ? 'checkin' : null;
+  return (n && avg < 70) || (S.profile.stats.missed || 0) > 0 ? 'concern' : 'checkin';
+}
+
+// Returns true if a message is being sent.
+function proactive(now) {
+  const c = chat();
+  const b = bossState();
+  if (world.vacation() || c.replyAt) return false;
+  const recent = c.messages.length ? c.messages[c.messages.length - 1].t : 0;
+  // things that happened
+  b.events = b.events.filter((e) => now - e.at < 86400000);
+  for (const e of b.events) {
+    const T = officeTime(e.at);
+    if (T > now) { e.at = T; continue; }
+    b.events = b.events.filter((x) => x !== e);
+    ping(e.kind, Math.max(T, recent + 60000), e);
+    return true;
+  }
+  // a backlog of customers waiting over 12 hours
+  const B = cfg().boss;
+  const od = overdue(now);
+  if (inOffice(now) && od.length >= B.overdueNagCount && now - (S.profile.lastBossNag || 0) >= B.overdueNagEveryMs) {
+    S.profile.lastBossNag = now;
+    bump(-2);
+    const list = od.slice(0, 5).map(handle).join(', ') + (od.length > 5 ? ', …' : '');
+    ping('backlog', now, { detail: list }, `${S.profile.name}, I'm seeing ${plural(od.length, 'customer')} who've been waiting over 12 hours (${list}). Can you get to them today? If you're swamped, tell me and I'll lighten your load or move one to a colleague.`);
+    return true;
+  }
+  // just checking in
+  if (b.nextPingAt == null) { scheduleCasual(now); return false; }
+  if (now < b.nextPingAt) return false;
+  const T = officeTime(b.nextPingAt);
+  if (T > now) { b.nextPingAt = T; return false; }
+  if (now - T > 12 * 3600000 || now - recent < 4 * 3600000) { scheduleCasual(now); return false; }
+  scheduleCasual(T);
+  const kind = casualKind();
+  if (kind) { ping(kind, T); return true; }
+  return false;
+}
+
 // ---------- the clock ----------
 export function tick(now = clock.now()) {
   const c = chat();
-  if (!c) return;
-  if (c.replyAt && now >= c.replyAt && !busy) {
+  if (!c || busy) return;
+  if (c.replyAt && now >= c.replyAt) {
     const t = c.replyAt;
     c.replyAt = null;
     respond(Math.max(t, now - 6 * 3600000));
+    return;
   }
-  nag(now);
+  proactive(now);
 }
 
-// Unprompted: Diane notices a backlog of customers who've waited over 12 hours.
-function nag(now) {
-  const B = cfg().boss;
-  const p = S.profile;
-  if (!inOffice(now) || world.vacation()) return;
-  if (now - (p.lastBossNag || 0) < B.overdueNagEveryMs) return;
-  const od = overdue(now);
-  if (od.length < B.overdueNagCount) return;
-  p.lastBossNag = now;
-  const list = od.slice(0, 5).map(handle).join(', ');
-  addMessage(chat(), { from: 'them', text: `${p.name}, I'm seeing ${plural(od.length, 'customer')} who've been waiting over 12 hours (${list}${od.length > 5 ? ', …' : ''}). Can you get to them today? If you're swamped, tell me and I'll lighten your load or move one to a colleague.`, t: now });
-  touchProfile();
-}
+// The system prompt Diane would get right now (for debugging in DevTools and for tests).
+export function promptPreview(t = clock.now()) { return SYSTEM(allowedActions(t), contextText(t)); }

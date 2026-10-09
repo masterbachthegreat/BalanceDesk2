@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS = {
   apiKey: '',
   customerModel: 'anthropic/claude-haiku-5.5',
   smartModel: 'anthropic/claude-sonnet-5.5',
+  bossModel: 'anthropic/claude-sonnet-5.5',
   sound: true,
   notifications: true,
 };
@@ -134,10 +135,10 @@ function usageAdd(rec) {
 }
 
 // ---------- LLM ----------
-// req: { role: 'customer' | 'smart', category: string, messages, maxTokens, temperature, chatId }
+// req: { role: 'customer' | 'smart' | 'boss', category: string, messages, maxTokens, temperature, chatId }
 async function llm(req) {
   const settings = loadSettingsRaw();
-  const model = req.role === 'customer' ? settings.customerModel : settings.smartModel;
+  const model = req.role === 'customer' ? settings.customerModel : req.role === 'boss' ? settings.bossModel || settings.smartModel : settings.smartModel;
   const started = Date.now();
 
   if (mock.enabled()) {

@@ -14,8 +14,8 @@ stats and maths questions; OpenRouter LLMs play the customers (Haiku), grade ans
   - `js/game/`:
     - `world.js`: wall-clock world (Telegram-like). Arrivals are a non-homogeneous Poisson process weighted by who's awake; `catchUp()` replays the time the app was closed on launch; rush shifts, lighter/heavier days, time off (timers are shifted by its length). State in `profile.world`.
     - `presence.js`: persona timezone (`tz`) and `schedule` → awake/busy, phone-check Poisson process (`nextCheck`).
-    - `customers.js`: per-chat event timeline in `cs` (`readAt`, `nudgeAt`, `leaveAt`, all wall time), shared by live play and catch-up; typing, Haiku prompt. Rush chats (`cs.mode === 'live'`) work in minutes. While the app is open pending reads run `world.onlineSpeedup`× faster. A hidden anger value (`cs.anger`, tuned by `config.customer.meter`) sets the customer's tone and VIP grace. The user doesn't want a visible meter.
-    - `boss.js`: manager Diane (chat id `boss`, Sonnet, category `boss`). The LLM returns `{reply, action}` and may only pick from actions the code lists as allowed right now (rush, lighter_day, heavier_day, time_off, end_time_off, transfer, raise). Also nags about chats waiting > 12 h.
+    - `customers.js`: per-chat event timeline in `cs` (`readAt`, `nudgeAt`, `leaveAt`, all wall time), shared by live play and catch-up; typing, Haiku prompt. Rush chats (`cs.mode === 'live'`) work in minutes. After a read, `thinkMs()` (config `customer.think`) delays typing by 10 s–2.5 min; while thinking live, new player messages are read and the LLM call restarts. While the app is open pending reads run `world.onlineSpeedup`× faster. A hidden anger value (`cs.anger`, tuned by `config.customer.meter`) sets the customer's tone and VIP grace. The user doesn't want a visible meter.
+    - `boss.js`: manager Diane (chat id `boss`, Sonnet, category `boss`). The LLM returns `{reply, action}` and may only pick from actions the code lists as allowed right now (rush, lighter_day, heavier_day, time_off, end_time_off, transfer, raise). Writes unprompted (`proactive`): events queued by `noteEvent()` from results/progress, the >12 h backlog, and casual check-ins scheduled by hidden `profile.boss.rapport` (0–100; moved by chat results, missed customers, transfers and the `tone` of the player's messages). Her prompt includes recently ended chats and a log of her own actions, so she doesn't "forget" what she did. Model: settings `bossModel` (LLM role `boss`).
     - `concept.js`: the 📖 Concept lesson (Sonnet, cached per chat)
     - `results.js`, `grading.js` (Sonnet prompt), `payout.js`: ending a chat
     - `bot.js`: slash commands, `/payout`
@@ -30,7 +30,7 @@ stats and maths questions; OpenRouter LLMs play the customers (Haiku), grade ans
   - `validate-data.mjs`: checks data, runs every template against the book's numbers, and samples 200 variants of each.
   - `build-personalities.py`: regenerates `data/personalities.json`.
   - `question-sources/`: Python sources that generate `data/questions/*.json`.
-- `tests/ui-test.mjs`: Playwright end-to-end test against the dev server with the mock LLM (53 checks; uses `__bd.clock.skip` and `__bd.world.catchUp` to simulate time away).
+- `tests/ui-test.mjs`: Playwright end-to-end test against the dev server with the mock LLM (57 checks; uses `__bd.clock.skip` and `__bd.world.catchUp` to simulate time away).
 
 ## Question pool
 

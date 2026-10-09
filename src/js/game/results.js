@@ -9,6 +9,7 @@ import { computePayout } from './payout.js';
 import { withRetry } from './llm.js';
 import { recordChat } from './progress.js';
 import { botSay } from './bot.js';
+import { noteEvent } from './boss.js';
 
 const END_TEXT = {
   satisfied: '✅ The customer is satisfied — conversation ended',
@@ -51,6 +52,7 @@ function noAnswer(chat, reason, at) {
   };
   p.stats.missed = (p.stats.missed || 0) + 1;
   clock.today(at).missed++;
+  noteEvent('missed', { t: at });
   addMessage(chat, { from: 'sys', kind: 'payout', text: 'No pay', t: at });
   if (!S.catchingUp) botSay(`📭 ${chat.customer.name}${chat.customer.vip ? ' 👑' : ''} (${handle(chat)}) ${reason === 'closed' ? 'was closed' : 'gave up'} before you replied. No pay.`, { silent: true });
   touchProfile();
@@ -95,6 +97,7 @@ export async function gradeAndPay(chat) {
     chat.messages = chat.messages.filter((m) => m.kind !== 'grading');
     addMessage(chat, { from: 'sys', kind: 'payout', text: `Paid ${money(payout.total)}`, t: Math.max(chat.endedAt, ...chat.messages.map((m) => m.t || 0)) });
     recordChat(chat);
+    noteEvent('chat', { chat, t: chat.endedAt });
     botSay(`💸 **${money(payout.total, { plus: true })}** from ${chat.customer.name}${chat.customer.vip ? ' 👑' : ''} (${handle(chat)}${chat.deleted ? ', deleted' : ''}) · ${starsText(payout.stars)} · score ${grade.score}/100\nBalance: **${money(p.balance)}**`, { silent: true });
     touchProfile();
     emit('payout', chat);

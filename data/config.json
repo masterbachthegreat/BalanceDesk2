@@ -29,6 +29,23 @@
     "typingMsPerChar": 35,
     "typingMinMs": 1200,
     "typingMaxMs": 12000,
+    "_think": "After reading your message the customer thinks before typing: baseMs + perWordMs per word + perNumberMs per number (up to maxNumbers), times readSpeed, clamped to minMs..maxMs.",
+    "think": {
+      "baseMs": [
+        6000,
+        14000
+      ],
+      "perWordMs": 220,
+      "perNumberMs": 1500,
+      "maxNumbers": 12,
+      "readSpeed": {
+        "fast": 0.7,
+        "normal": 1.0,
+        "slow": 1.4
+      },
+      "minMs": 10000,
+      "maxMs": 150000
+    },
     "_meter": "Hidden impatience (0-100, never shown to the player; it sets the customer's tone). Each customer reply adds 'perReply' by persona patience; pushing back on a wrong/unclear answer adds 'pushback'. At 100 they leave. VIPs tolerate 1-3 pushbacks calmly (vipGrace), then each pushback adds vipPushback.",
     "meter": {
       "perReply": {
@@ -195,6 +212,17 @@
       "lighter": 0.5,
       "heavier": 1.5
     },
-    "maxTimeOffHours": 168
+    "maxTimeOffHours": 168,
+    "ping": {
+      "_readme": "Unprompted messages from Diane: about events (delay eventDelayMs), and casual check-ins every everyHours (scaled by rapport: more often when you get on well).",
+      "everyHours": [
+        16,
+        48
+      ],
+      "eventDelayMs": [
+        600000,
+        5400000
+      ]
+    }
   }
 }

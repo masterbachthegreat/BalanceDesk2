@@ -65,7 +65,10 @@ try {
   check((await bd(() => window.__bd.S.chats.get('mentor').messages.length)) >= 1, 'mentor intro message');
   check((await bd(() => window.__bd.S.chats.get('manager').messages.length)) >= 1, 'manager welcome memo');
   check((await bd(() => window.__bd.S.chats.get('boss').messages.length)) >= 1, 'manager Diane says hello');
-  await bd(() => { window.__bd.S.profile.world.nextArrivalAt = Date.now() + 1e12; }); // keep random arrivals out of the way
+  await bd(() => {
+    window.__bd.S.profile.world.nextArrivalAt = Date.now() + 1e12; // keep random arrivals out of the way
+    window.__bd.S.data.config.boss.workHours = [0, 24]; // Diane is always in, whatever time the test runs
+  });
 
   console.log('Customer conversation');
   const c1 = await newCustomer();
@@ -73,8 +76,12 @@ try {
   check(c1msgs === 2, 'greeting and question posted', 'got ' + c1msgs);
   await send('Hi! 🙂 Let me check.');
   await forceRead(c1);
-  await waitFor((id) => window.__bd.S.chats.get(id).cs.turns === 1, c1);
+  await page.waitForTimeout(2500);
+  const thinking = await bd((id) => { const c = window.__bd.S.chats.get(id); return { read: c.messages.filter((m) => m.from === 'me').every((m) => m.read), thinking: c.cs.thinking, typing: c.cs.typing, turns: c.cs.turns }; }, c1);
+  check(thinking.read && thinking.thinking && !thinking.typing && thinking.turns === 0, 'customer reads (✓✓), then thinks before typing', JSON.stringify(thinking));
+  await waitFor((id) => window.__bd.S.chats.get(id).cs.turns === 1, c1, 45000);
   check((await bd((id) => window.__bd.S.chats.get(id).messages.filter((m) => m.from === 'me').every((m) => m.read), c1)), 'read ticks set');
+  await bd(() => Object.assign(window.__bd.S.data.config.customer.think, { baseMs: [200, 400], perWordMs: 2, perNumberMs: 10, minMs: 300, maxMs: 800 })); // speed up the rest
   check((await bd((id) => window.__bd.S.chats.get(id).cs.waitingSince !== null && window.__bd.S.chats.get(id).cs.nudgeAt > window.__bd.clock.now() + HOUR, c1)), 'waiting timer starts after customer reply (chase hours later)');
   const balBefore = await bd(() => window.__bd.S.profile.balance);
   await send(LONG);
@@ -96,6 +103,7 @@ try {
   check((await bd((id) => window.__bd.S.chats.get(id).cs.turns, c1)) === turnsBefore, 'ended chat: customer does not react');
   check((await bd((id) => window.__bd.S.chats.get(id).messages.at(-1).after === true, c1)), 'after-end message flagged');
   check((await bd(() => window.__bd.S.chats.get('bot').messages.some((m) => /from .*@chat1/.test(m.text)))), 'bot posted payout receipt');
+  check((await bd(() => window.__bd.boss.bossState().rapport > 55)), 'a good chat improves Diane\'s (hidden) opinion of you');
 
   console.log('Bot and shop');
   await page.click('.chat-row[data-id="bot"]');
@@ -215,11 +223,17 @@ try {
   const tr = await bd(() => [...window.__bd.S.chats.values()].find((c) => c.rush && c.status === 'active').seq);
   await askBoss(`Please transfer @chat${tr} to a colleague`);
   check((await bd((seq) => [...window.__bd.S.chats.values()].find((c) => c.seq === seq).endReason === 'transferred', tr)), 'boss transfers a chat');
+  const prompt = await bd(() => window.__bd.boss.promptPreview());
+  check(/THINGS YOU ALREADY DID[\s\S]*handed to a colleague/.test(prompt) && /transferred to a colleague by you/.test(prompt), 'Diane remembers what she did and sees recently ended chats');
   await askBoss('Could I take some time off tomorrow?');
   check((await bd(() => !!window.__bd.world.vacation())), 'boss grants time off');
   check((await page.textContent('#statusBar')).includes('off until'), 'status bar shows time off');
   await askBoss("I'm back, open my queue please");
   check((await bd(() => !window.__bd.world.vacation())), 'time off ended early');
+  const nBoss = await bd(() => window.__bd.S.chats.get('boss').messages.length);
+  await bd(() => { const { boss, clock } = window.__bd; boss.noteEvent('promotion', { title: 'Test Rank' }); boss.bossState().events[0].at = clock.now() - 1000; });
+  await waitFor((n) => window.__bd.S.chats.get('boss').messages.some((m, i) => i >= n && m.unprompted === 'promotion'), nBoss);
+  check(true, 'Diane messages unprompted when something happens');
 
   console.log('Concept, hints and review');
   const c6 = await newCustomer();

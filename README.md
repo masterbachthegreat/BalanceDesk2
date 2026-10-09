@@ -23,6 +23,7 @@ Saves are kept in `%APPDATA%\BalanceDesk\save` (☰ → *Open save folder*) and 
 - Models (changeable in ☰ → Settings):
   - customers: `anthropic/claude-haiku-5.5`
   - grading and the mentor: `anthropic/claude-sonnet-5.5`
+  - your manager Diane: `anthropic/claude-sonnet-5.5` (separate setting)
 - Use **Test connection** in Settings to check the key and models.
 
 ## How to play
@@ -32,8 +33,9 @@ Saves are kept in `%APPDATA%\BalanceDesk\save` (☰ → *Open save folder*) and 
   sums it up ("While you were away…").
   - About 30 customers write in per day, at most 30, with up to 15 open chats at once. Each has a personality
     (over 100 of them, including VIPs 👑, who pay 2.5×), a timezone and a daily rhythm: they sleep, work, and check
-    their phone now and then. That's when they read your reply. While the app is open they answer twice as fast,
-    and if they're online right now they reply within seconds.
+    their phone now and then. That's when they read your reply. While the app is open they answer twice as fast.
+    After reading (✓✓) they take 10 seconds to a couple of minutes to think, longer for long, number-heavy
+    messages and for slow readers, then start typing. Anything else you send meanwhile gets read too.
   - Aim to answer within **3 hours** for full pay. After about **12 hours** a customer chases you, and if you still
     don't reply they give up. A customer who gives up before you ever replied pays nothing.
   - Customers don't spell out what you got wrong: they just push back. The longer a chat drags on, the curter they get (short-tempered ones get rude). VIPs stay calm for one to three wrong answers, then get angry or leave.
@@ -44,7 +46,10 @@ Saves are kept in `%APPDATA%\BalanceDesk\save` (☰ → *Open save folder*) and 
   - give you **time off**: no new customers, and open chats are paused until you're back
   - **hand a chat to a colleague** (mention it, e.g. `@chat3`; two a day, no pay for it)
   - give you a **raise** when your recent scores are good
-  - She also messages you if several customers have waited more than 12 hours.
+  - She also writes to you unprompted: when something happens (a promotion, a great or bad streak, customers
+    giving up, a backlog of people waiting over 12 hours), and now and then just to check in. How often and how
+    casually depends on how well you get on with her, which depends on your work and how you talk to her.
+  - She runs on her own model (☰ → Settings → *Manager model*).
 - **📖 Concept** (button in the chat header): a short beginner lesson on the idea behind the customer's question, with a worked example using different numbers.
 - **Ending a chat:** it ends when the customer is satisfied, when they give up, or when you close it.
   - The AI then grades your **answer (1–100)** and your **service (1–5★)**, and pays you.
