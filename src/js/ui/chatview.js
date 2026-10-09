@@ -1,13 +1,13 @@
 // Right column: the open chat (header, messages, composer, info panel).
 import { S, cfg } from '../core/state.js';
-import { escapeHtml, clockTime, dayLabel, waitWords, durationWords, money, starsText, stars, num } from '../core/format.js';
+import { escapeHtml, clockTime, dayLabel, waitWords, lastSeenText, durationWords, money, starsText, stars, num } from '../core/format.js';
 import { chatAvatar } from './avatar.js';
 import { renderMarkdown, splitCharts } from './markdown.js';
 import { renderChart, destroyChartsIn } from './charts.js';
 import { displayName, handle, customerChats, markRead, getChat } from '../game/chats.js';
 import * as clock from '../game/clock.js';
 import * as shop from '../game/shop.js';
-import { onPlayerMessage, retryCustomer, isOnline } from '../game/customers.js';
+import { onPlayerMessage, retryCustomer, isOnline, lastSeen } from '../game/customers.js';
 import * as boss from '../game/boss.js';
 import { gradeAndPay } from '../game/results.js';
 import { handleBotInput, handleChatCommand, COMMANDS, CHAT_COMMANDS } from '../game/bot.js';
@@ -31,20 +31,11 @@ function subtitle(chat) {
     if (chat.cs.typing) return { text: 'typing…', cls: 'online' };
     const vip = chat.customer.vip ? ' · VIP client' : '';
     if (isOnline(chat)) return { text: 'online' + vip, cls: 'online' };
-    return { text: lastSeen(chat.cs.lastSeen) + vip, cls: '' };
+    return { text: lastSeenText(lastSeen(chat), clock.now()) + vip, cls: '' };
   }
   if (chat.status === 'grading') return { text: 'conversation ended · grading…', cls: '' };
   const r = chat.result;
   return { text: r ? `conversation ended · ${starsText(r.stars)} · score ${r.aiScore}/100 · ${money(r.payout.total)}` : 'conversation ended', cls: '' };
-}
-
-function lastSeen(t) {
-  if (!t) return 'last seen a while ago';
-  const ago = clock.now() - t;
-  if (ago < 60000) return 'last seen just now';
-  if (ago < 3600000) return `last seen ${Math.floor(ago / 60000)} min ago`;
-  if (new Date(t).toDateString() === new Date(clock.now()).toDateString()) return 'last seen at ' + clockTime(t);
-  return `last seen ${dayLabel(t).toLowerCase()} at ${clockTime(t)}`;
 }
 
 function timersHtml(chat) {
@@ -268,7 +259,7 @@ function composerHtml(chat) {
   let note = '';
   if (chat.kind === 'customer' && chat.status !== 'active') note = '<div class="composer-note">This conversation has ended — the customer won\'t see new messages. Try /payout or /feedback.</div>';
   if (chat.kind === 'mentor') note = '<div class="composer-note">Mention a chat with @ (e.g. @chat3) and the mentor reads the whole conversation.</div>';
-  if (chat.kind === 'boss') note = `<div class="composer-note">Diane answers during office hours (${String(cfg().boss.workHours[0]).padStart(2, '0')}:00–${cfg().boss.workHours[1]}:00). Ask for a rush, a lighter or heavier day, time off, a transfer (@chat3) or a raise.</div>`;
+  if (chat.kind === 'boss') note = `<div class="composer-note">Diane is at her desk ${boss.shiftText()} and answers fastest then. Ask for a rush, a lighter or heavier day, time off, a transfer (@chat3) or a raise, or just chat.</div>`;
   const placeholder = chat.kind === 'bot' ? 'Type a command, e.g. /help' : chat.kind === 'mentor' ? 'Ask your mentor…' : chat.kind === 'boss' ? 'Message Diane…' : chat.status === 'active' ? 'Write a message…' : 'Message (the customer has left)';
   const emojiBtn = chat.kind === 'bot' ? '' : '<button class="icon-btn" id="emojiBtn" title="Emoji">😊</button>';
   return `<div class="composer">${note}<div class="composer-inner">${emojiBtn}
@@ -384,7 +375,7 @@ function infoHtml(chat) {
       bot: 'Your desk assistant. Type /help for commands: balance, stats, rank, shop, spendings and more.',
       mentor: 'A senior analyst who coaches you. Ask about any concept, get graphs, or mention a chat (@chat3) so the mentor can read it.',
       manager: 'Official memos from Whiterock management. Some memos come with pay bonuses.',
-      boss: 'Diane Whitfield, Head of Client Services: your manager. Ask her for a rush shift (the next few customers right away), a lighter or heavier day, time off, to hand a chat to a colleague, or a raise when your numbers are good.',
+      boss: `Diane Whitfield, Head of Client Services: your manager (the whole team works remotely). She's at her desk ${boss.shiftText()} (your time) and replies within minutes then; evenings and weekends she answers when she checks her phone. Ask her for a rush shift (the next few customers right away), a lighter or heavier day, time off, to hand a chat to a colleague, or a raise when your numbers are good. Or just talk to her.`,
     }[chat.kind];
     return `<div class="ip-top">${chatAvatar(chat, 'lg')}<h3>${escapeHtml(chat.title)}</h3></div><div class="ip-val">${about}</div>`;
   }

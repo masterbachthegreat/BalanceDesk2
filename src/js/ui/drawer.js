@@ -21,6 +21,7 @@ export function openDrawer() {
     ['🌗', document.documentElement.dataset.theme === 'day' ? 'Night mode' : 'Day mode', () => ui.toggleDayNight()],
     ['⚙', 'Settings', () => ui.openSettings()],
     ['📂', 'Open save folder', () => window.api.openDataFolder()],
+    ['🧹', 'Reset game…', () => ui.openReset()],
   ];
   d.innerHTML = `<div class="drawer-head">${playerAvatar('sm')}<div class="dname">${playerNameHtml()}</div><div class="dtitle">${escapeHtml(playerTitle() || r.title)} · rank ${p.rank}</div><div class="dbal">${money(p.balance)}</div></div>
     <div class="drawer-items">${items.map(([ic, label, , locked], i) => `<div class="drawer-item${locked ? ' locked' : ''}" data-i="${i}"><span class="ic">${ic}</span>${label}${locked ? ' 🔒' : ''}</div>`).join('')}</div>

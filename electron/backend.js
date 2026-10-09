@@ -207,7 +207,22 @@ async function testConnection() {
   return { ok: true, reply: r.text.trim(), model: r.model };
 }
 
+// ---------- reset ----------
+// Starts the game over. The old save is copied to save-backups/<time>/ next to the save folder
+// first. Settings (API key, models) are kept; the API usage log only if keepUsage.
+function resetSave({ keepUsage = true } = {}) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backup = path.join(path.dirname(dataDir), 'save-backups', stamp);
+  fs.mkdirSync(backup, { recursive: true });
+  fs.cpSync(dataDir, backup, { recursive: true });
+  fs.rmSync(path.join(dataDir, 'chats'), { recursive: true, force: true });
+  fs.rmSync(path.join(dataDir, 'profile.json'), { force: true });
+  if (!keepUsage) fs.rmSync(usageFile(), { force: true });
+  fs.mkdirSync(path.join(dataDir, 'chats'), { recursive: true });
+  return { backup };
+}
+
 module.exports = {
-  init, readGameData, store, settingsGet, settingsSet, usageGet, llm, testConnection,
+  init, readGameData, store, settingsGet, settingsSet, usageGet, llm, testConnection, resetSave,
   get dataDir() { return dataDir; },
 };

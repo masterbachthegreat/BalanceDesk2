@@ -42,11 +42,39 @@ export function isOnline(chat, t = clock.now()) {
   return chat.kind === 'customer' && chat.status === 'active' && (chat.cs.onlineUntil || 0) > t;
 }
 
-function comeOnline(chat, t) {
+// engaged = they just wrote or read something in this chat (they tend to stay a little longer)
+function comeOnline(chat, t, engaged = true) {
   const cs = chat.cs;
-  const len = cs.mode === 'live' ? 6 * 3600000 : presence.sessionLength();
+  const len = cs.mode === 'live' ? 6 * 3600000 : presence.sessionLength(personaOf(chat), t, engaged);
   cs.onlineUntil = Math.max(cs.onlineUntil || 0, t + len);
   cs.lastSeen = Math.max(cs.lastSeen || 0, t);
+}
+
+export function lastSeen(chat) {
+  const cs = chat.cs;
+  return Math.min(Math.max(cs.lastSeen || 0, cs.onlineUntil || 0), clock.now());
+}
+
+// While they wait on you, customers still open the messenger now and then (you see them online),
+// with nothing new to read from you.
+export function ambientPresence(dt, now = clock.now()) {
+  for (const chat of activeCustomerChats()) {
+    const cs = chat.cs;
+    if (cs.mode === 'live' || cs.readAt != null || cs.typing || cs.thinking || inflight.has(chat.id) || isOnline(chat, now)) continue;
+    const r = presence.checkRate(personaOf(chat), now);
+    if (r > 0 && Math.random() < 1 - Math.exp(-r * dt / 3600000)) { comeOnline(chat, now, false); touchChat(chat); }
+  }
+}
+
+// After the app was closed: when did each waiting customer last pop online?
+export function backfillPresence(since, now = clock.now()) {
+  for (const chat of activeCustomerChats()) {
+    const cs = chat.cs;
+    if (cs.mode === 'live') continue;
+    const from = Math.max(since, cs.lastSeen || 0, chat.createdAt);
+    const t = presence.lastCheckBefore(personaOf(chat), from, now);
+    if (t != null) comeOnline(chat, t, false);
+  }
 }
 
 function patienceMs(chat) {

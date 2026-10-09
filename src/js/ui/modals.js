@@ -91,13 +91,14 @@ export function settingsModal() {
       <label class="check"><input type="checkbox" id="stSound" ${s.sound ? 'checked' : ''}> Sound when a message arrives</label>
       <label class="check"><input type="checkbox" id="stFlash" ${s.notifications ? 'checked' : ''}> Flash the taskbar when a customer writes</label>
       <div id="stResult"></div>
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" id="stTest">Test connection</button><button class="btn small" id="stFolder">Open save folder</button></div>`,
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" id="stTest">Test connection</button><button class="btn small" id="stFolder">Open save folder</button><button class="btn small danger" id="stReset" style="margin-left:auto">Reset game…</button></div>`,
     foot: '<button class="btn" data-cancel>Cancel</button><button class="btn primary" id="stSave">Save</button>',
   });
   const $ = (q) => m.querySelector(q);
   $('[data-cancel]').onclick = () => closeModal();
   $('#stLink').onclick = (e) => { e.preventDefault(); window.api.openExternal('https://openrouter.ai/keys'); };
   $('#stFolder').onclick = () => window.api.openDataFolder();
+  $('#stReset').onclick = () => resetModal();
   if ($('#stClear')) $('#stClear').onclick = async () => { S.settings = await window.api.settings.set({ clearKey: true }); emit('settings'); closeModal(); settingsModal(); };
   const save = async () => {
     S.settings = await window.api.settings.set({
@@ -122,6 +123,34 @@ export function settingsModal() {
       out.innerHTML = `<div class="note err">❌ ${escapeHtml(e.message.replace(/^Error invoking remote method '\w+': (Error: )?/, ''))}</div>`;
     }
   };
+}
+
+// ---------- reset ----------
+export function resetModal() {
+  const m = openModal({
+    title: '🧹 Reset game',
+    body: `<div style="line-height:1.5">This starts BalanceDesk over from scratch: rank, balance, purchases, every chat, Diane and the mentor all reset.<br>
+      Your API key and model settings are kept. A backup of the current save is copied to <i>save-backups</i> next to your save folder, just in case.</div>
+      <label class="check" style="margin-top:10px"><input type="checkbox" id="rsUsage"> Also clear the API spending history (/spendings)</label>
+      <div class="field" style="margin-top:10px"><label>Type <b>RESET</b> to confirm</label><input type="text" id="rsConfirm" autocomplete="off"></div>`,
+    foot: '<button class="btn" data-cancel>Cancel</button><button class="btn danger" id="rsGo" disabled>Reset everything</button>',
+  });
+  const $ = (q) => m.querySelector(q);
+  $('[data-cancel]').onclick = () => closeModal();
+  $('#rsConfirm').oninput = () => { $('#rsGo').disabled = $('#rsConfirm').value.trim().toUpperCase() !== 'RESET'; };
+  $('#rsGo').onclick = async () => {
+    $('#rsGo').disabled = true;
+    S.resetting = true; // stop any pending save from writing the old game back
+    try {
+      await window.api.resetSave({ keepUsage: !$('#rsUsage').checked });
+      location.reload();
+    } catch (e) {
+      S.resetting = false;
+      toast('Reset failed', e.message, 'bad');
+      $('#rsGo').disabled = false;
+    }
+  };
+  setTimeout(() => $('#rsConfirm').focus(), 0);
 }
 
 // ---------- profile ----------

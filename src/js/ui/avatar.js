@@ -3,6 +3,7 @@ import { S } from '../core/state.js';
 import { escapeHtml } from '../core/format.js';
 import * as shop from '../game/shop.js';
 import { isOnline } from '../game/customers.js';
+import * as boss from '../game/boss.js';
 
 const SYSTEM = {
   bot: { emoji: '🤖', color: '#4f8fd6' },
@@ -19,7 +20,8 @@ function initials(name) {
 export function chatAvatar(chat, size = '') {
   if (SYSTEM[chat.kind]) {
     const s = SYSTEM[chat.kind];
-    return `<div class="avatar-wrap"><div class="avatar emoji ${size}" style="background:${s.color}">${s.emoji}</div></div>`;
+    const dot = chat.kind === 'boss' && boss.isOnline() ? '<span class="online-dot"></span>' : '';
+    return `<div class="avatar-wrap"><div class="avatar emoji ${size}" style="background:${s.color}">${s.emoji}</div>${dot}</div>`;
   }
   const c = chat.customer;
   const inner = c.emoji ? escapeHtml(c.emoji) : escapeHtml(initials(c.name));

@@ -25,6 +25,7 @@
     usage: () => call('usage'),
     llm: (req) => call('llm', req),
     testConnection: () => call('testConnection'),
+    resetSave: (opts) => call('resetSave', opts),
     openDataFolder: () => call('dataDir').then((d) => alert('Save folder: ' + d)),
     openExternal: (url) => window.open(url, '_blank'),
     flash: async () => {},

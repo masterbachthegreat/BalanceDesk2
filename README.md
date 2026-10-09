@@ -15,6 +15,8 @@ borders, tools and upgrades, and climb the ranks to harder (and better-paid) que
 3. Windows may say *"Windows protected your PC"* because the app isn't code-signed: click **More info → Run anyway**.
 
 Saves are kept in `%APPDATA%\BalanceDesk\save` (☰ → *Open save folder*) and survive updates.
+To start over, use ☰ → *Reset game…* (or Settings → *Reset game…*). The old save is backed up to
+`%APPDATA%\BalanceDesk\save-backups` first; your API key is kept.
 
 ## First run
 
@@ -40,15 +42,21 @@ Saves are kept in `%APPDATA%\BalanceDesk\save` (☰ → *Open save folder*) and 
     don't reply they give up. A customer who gives up before you ever replied pays nothing.
   - Customers don't spell out what you got wrong: they just push back. The longer a chat drags on, the curter they get (short-tempered ones get rude). VIPs stay calm for one to three wrong answers, then get angry or leave.
   - `/queue` lists your open chats, longest-waiting first.
-- **Your manager, Diane** (💼 chat): she answers during office hours (08:00–21:00, your time) and can:
+- **Online status** works like Telegram: customers are online for a minute between meetings or for an hour on a
+  lazy evening, depending on who they are and the time of day, and they pop online now and then while they wait.
+- **Your manager, Diane** (💼 chat). The whole team is remote, so you only ever talk here. She's at her desk on
+  weekdays 08:00–18:00 (your time) and answers within minutes then; evenings and weekends she replies when she checks
+  her phone. She remembers your whole conversation, and can:
   - start a **rush shift**: the next 2–3 customers arrive within minutes and stay online, expecting replies in minutes (+25% pay; once every 3 hours)
   - give you a **lighter or heavier day** (fewer or more customers until midnight)
   - give you **time off**: no new customers, and open chats are paused until you're back
   - **hand a chat to a colleague** (mention it, e.g. `@chat3`; two a day, no pay for it)
   - give you a **raise** when your recent scores are good
+  - She has two separate (hidden) views of you: how good your work is, and how well you get on personally. The
+    second only depends on how you talk to her, so you can be a terrible employee and still her best friend. The
+    friendlier you are, the more she opens up about life outside work.
   - She also writes to you unprompted: when something happens (a promotion, a great or bad streak, customers
-    giving up, a backlog of people waiting over 12 hours), and now and then just to check in. How often and how
-    casually depends on how well you get on with her, which depends on your work and how you talk to her.
+    giving up, a backlog of people waiting over 12 hours), and, if you get on well, just to chat.
   - She runs on her own model (☰ → Settings → *Manager model*).
 - **📖 Concept** (button in the chat header): a short beginner lesson on the idea behind the customer's question, with a worked example using different numbers.
 - **Ending a chat:** it ends when the customer is satisfied, when they give up, or when you close it.

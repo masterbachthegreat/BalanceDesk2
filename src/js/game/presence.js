@@ -62,7 +62,32 @@ export function nextAwake(persona, from) {
   return from;
 }
 
-export function sessionLength() {
-  const [a, b] = cfg().world.sessionMs;
-  return rand(a, b);
+// Log-normal sample with the given median (ms), clamped.
+export function lognormal(median, sigma, min, max) {
+  const z = Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+  return Math.max(min, Math.min(max, median * Math.exp(sigma * z)));
+}
+
+const SESSION_MULT = { student: 1.6, night: 1.5, retired: 1.2, regular: 1, early: 0.9, executive: 0.6 };
+
+// How long the customer stays online once they open the app: a minute at work, often longer
+// in the evening; students and night owls linger, executives dash in and out.
+export function sessionLength(persona, t, engaged = false) {
+  const W = cfg().world.session;
+  let median = (isBusy(persona, t) ? W.busyMedianMin : W.freeMedianMin) * 60000;
+  if (!isAwake(persona, t)) median = W.nightMedianMin * 60000;
+  const h = local(persona, t).hour;
+  if (h >= 19 && h < 24) median *= W.eveningMult;
+  median *= (SESSION_MULT[persona.schedule] || 1) * (W.readMult[persona.read] || 1) * (engaged ? W.engagedMult : 1);
+  return lognormal(median, W.sigma, W.minMs, W.maxMs);
+}
+
+// When did the customer last open the app in (from, to]? Searches backwards; null if never.
+export function lastCheckBefore(persona, from, to) {
+  const step = 5 * 60000;
+  for (let t = to; t > from; t -= step) {
+    const r = checkRate(persona, t);
+    if (r > 0 && Math.random() < 1 - Math.exp(-r * step / 3600000)) return Math.max(from, t - Math.random() * step);
+  }
+  return null;
 }

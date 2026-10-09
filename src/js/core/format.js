@@ -37,6 +37,16 @@ export function durationWords(ms) {
   return Math.floor(h / 24) + 'd ' + (h % 24) + 'h';
 }
 
+// Telegram-style "last seen …" for time t.
+export function lastSeenText(t, now = Date.now()) {
+  if (!t) return 'last seen a while ago';
+  const ago = now - t;
+  if (ago < 60000) return 'last seen just now';
+  if (ago < 3600000) return `last seen ${Math.floor(ago / 60000)} min ago`;
+  if (new Date(t).toDateString() === new Date(now).toDateString()) return 'last seen at ' + clockTime(t);
+  return `last seen ${dayLabel(t).toLowerCase()} at ${clockTime(t)}`;
+}
+
 // Coarse "3h 12m" / "45m" / "2d 4h" for waiting times.
 export function waitWords(ms) {
   const m = Math.max(0, Math.floor(ms / 60000));

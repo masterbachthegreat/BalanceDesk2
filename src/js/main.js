@@ -14,7 +14,7 @@ import { ui } from './ui/registry.js';
 import { renderSidebar, renderStatusBar, bindSidebar } from './ui/sidebar.js';
 import { renderChatPane, updateChatPane, tickChatPane, bindChatPane, prefillInput } from './ui/chatview.js';
 import { chatContextMenu, bindContextMenu } from './ui/contextmenu.js';
-import { onboardingModal, settingsModal, profileModal, shopModal, closeModal, conceptModal } from './ui/modals.js';
+import { onboardingModal, settingsModal, profileModal, shopModal, closeModal, conceptModal, resetModal } from './ui/modals.js';
 import { maybeMentorHint, reviewWithMentor } from './game/mentor.js';
 import { bindDrawer, closeDrawer } from './ui/drawer.js';
 import { openCalculator, openNotepad } from './ui/floating.js';
@@ -148,7 +148,7 @@ function toggleDayNight() {
 Object.assign(ui, {
   openChat, refresh, askMentorAbout,
   showQueue: () => { openChat('bot'); handleBotInput('/queue'); }, toggleDayNight, chatContextMenu,
-  openSettings: settingsModal, openProfile: profileModal, openShop: (c) => shopModal(c),
+  openSettings: settingsModal, openReset: resetModal, openProfile: profileModal, openShop: (c) => shopModal(c),
   openCalculator: () => { if (!openCalculator()) shopModal('tools'); },
   openNotepad: () => { if (!openNotepad()) shopModal('tools'); },
   toast,

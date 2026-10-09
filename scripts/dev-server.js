@@ -23,6 +23,7 @@ const handlers = {
   usage: () => backend.usageGet(),
   llm: (req) => backend.llm(req),
   testConnection: () => backend.testConnection(),
+  resetSave: (opts) => backend.resetSave(opts),
   dataDir: () => dataDir,
 };
 

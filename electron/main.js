@@ -42,6 +42,7 @@ const handlers = {
   usage: () => backend.usageGet(),
   llm: (req) => backend.llm(req),
   testConnection: () => backend.testConnection(),
+  resetSave: (opts) => backend.resetSave(opts),
   openDataFolder: () => shell.openPath(backend.dataDir),
   openExternal: (url) => { if (/^https:\/\//.test(url)) shell.openExternal(url); },
   flash: () => { if (win && !win.isFocused()) win.flashFrame(true); },

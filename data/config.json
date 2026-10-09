@@ -156,16 +156,28 @@
     },
     "vipPatienceMult": 0.5,
     "onlineSpeedup": 2,
-    "sessionMs": [
-      300000,
-      1500000
-    ],
     "checksPerHourFree": 1.6,
     "checksPerHourBusy": 0.5,
     "readSpeedMult": {
       "fast": 1.5,
       "normal": 1.0,
       "slow": 0.6
+    },
+    "_session": "How long customers stay online once they open the app (log-normal; medians in minutes): at work ~1.5 min, free ~5 min, evenings longer; scaled by schedule (students/night owls longer, executives shorter) and reading speed.",
+    "session": {
+      "busyMedianMin": 1.5,
+      "freeMedianMin": 5,
+      "nightMedianMin": 0.7,
+      "eveningMult": 1.6,
+      "engagedMult": 1.5,
+      "readMult": {
+        "fast": 1.3,
+        "normal": 1.0,
+        "slow": 0.8
+      },
+      "sigma": 1.0,
+      "minMs": 20000,
+      "maxMs": 5400000
     }
   },
   "rush": {
@@ -189,14 +201,41 @@
     "slowReplyMs": 300000
   },
   "boss": {
-    "_readme": "Your manager Diane: reachable during workHours (your local time); replies in replyDelayMs.",
-    "workHours": [
-      8,
-      21
+    "_readme": "Your manager Diane. Times are your local time. On shift she's online most of the time (short gaps, sometimes a meeting) and replies in replyDelayMs once she sees your message; off shift (while awake) she checks her phone offChecksPerHour; asleep outside 'awake'.",
+    "shift": {
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "hours": [
+        8,
+        18
+      ]
+    },
+    "awake": [
+      6.5,
+      23.5
     ],
+    "presence": {
+      "shiftGapMs": [
+        60000,
+        900000
+      ],
+      "meetingChance": 0.15,
+      "meetingMs": [
+        1200000,
+        2700000
+      ],
+      "shiftSessionMedianMin": 25,
+      "offChecksPerHour": 0.8,
+      "offSessionMedianMin": 3
+    },
     "replyDelayMs": [
-      20000,
-      180000
+      15000,
+      90000
     ],
     "transfersPerDay": 2,
     "raise": {

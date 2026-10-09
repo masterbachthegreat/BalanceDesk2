@@ -67,7 +67,7 @@ try {
   check((await bd(() => window.__bd.S.chats.get('boss').messages.length)) >= 1, 'manager Diane says hello');
   await bd(() => {
     window.__bd.S.profile.world.nextArrivalAt = Date.now() + 1e12; // keep random arrivals out of the way
-    window.__bd.S.data.config.boss.workHours = [0, 24]; // Diane is always in, whatever time the test runs
+    Object.assign(window.__bd.S.data.config.boss, { shift: { days: [0, 1, 2, 3, 4, 5, 6], hours: [0, 24] }, awake: [0, 24] }); // Diane is always on shift, whatever time the test runs
   });
 
   console.log('Customer conversation');
@@ -103,7 +103,7 @@ try {
   check((await bd((id) => window.__bd.S.chats.get(id).cs.turns, c1)) === turnsBefore, 'ended chat: customer does not react');
   check((await bd((id) => window.__bd.S.chats.get(id).messages.at(-1).after === true, c1)), 'after-end message flagged');
   check((await bd(() => window.__bd.S.chats.get('bot').messages.some((m) => /from .*@chat1/.test(m.text)))), 'bot posted payout receipt');
-  check((await bd(() => window.__bd.boss.bossState().rapport > 55)), 'a good chat improves Diane\'s (hidden) opinion of you');
+  check((await bd(() => window.__bd.boss.bossState().work > 55)), 'a good chat improves Diane\'s (hidden) opinion of your work');
 
   console.log('Bot and shop');
   await page.click('.chat-row[data-id="bot"]');
@@ -224,12 +224,18 @@ try {
   await askBoss(`Please transfer @chat${tr} to a colleague`);
   check((await bd((seq) => [...window.__bd.S.chats.values()].find((c) => c.seq === seq).endReason === 'transferred', tr)), 'boss transfers a chat');
   const prompt = await bd(() => window.__bd.boss.promptPreview());
-  check(/THINGS YOU ALREADY DID[\s\S]*handed to a colleague/.test(prompt) && /transferred to a colleague by you/.test(prompt), 'Diane remembers what she did and sees recently ended chats');
+  check(/\[done\] ↪ @chat\d+ .*handed to a colleague/.test(prompt) && /transferred to a colleague by you/.test(prompt), 'Diane remembers what she did and sees recently ended chats');
   await askBoss('Could I take some time off tomorrow?');
   check((await bd(() => !!window.__bd.world.vacation())), 'boss grants time off');
   check((await page.textContent('#statusBar')).includes('off until'), 'status bar shows time off');
   await askBoss("I'm back, open my queue please");
   check((await bd(() => !window.__bd.world.vacation())), 'time off ended early');
+  const f0 = await bd(() => window.__bd.boss.bossState().friendship);
+  await askBoss('haha thanks Diane, how are you doing? How is Ledger?');
+  check((await bd((f) => window.__bd.boss.bossState().friendship > f, f0)), 'a friendly chat with Diane raises friendship (separate from work opinion)');
+  const full = await bd(() => window.__bd.boss.promptPreview());
+  check(full.includes('Hi Test Agent, Diane here') && full.includes('It is quiet, can you send me a rush'), 'Diane gets the entire conversation');
+  check(/online|last seen/.test(await page.textContent('#chSub')), 'Diane shows online / last seen');
   const nBoss = await bd(() => window.__bd.S.chats.get('boss').messages.length);
   await bd(() => { const { boss, clock } = window.__bd; boss.noteEvent('promotion', { title: 'Test Rank' }); boss.bossState().events[0].at = clock.now() - 1000; });
   await waitFor((n) => window.__bd.S.chats.get('boss').messages.some((m, i) => i >= n && m.unprompted === 'promotion'), nBoss);
@@ -295,6 +301,22 @@ try {
   check(after.bal === snapshot.bal && after.n === snapshot.n && after.rank === snapshot.rank, 'state survives reload', JSON.stringify({ snapshot, after }));
   const mig = await bd((id) => { const { S } = window.__bd; const cs = S.chats.get(id).cs; return { v: S.profile.version, mode: cs.mode, w: cs.waitingSince != null && cs.nudgeAt > Date.now(), old: 'waitingSinceA' in cs }; }, c9);
   check(mig.v === 2 && mig.mode === 'async' && mig.w && !mig.old, 'v0.2 active chat migrated to wall-clock timers', JSON.stringify(mig));
+
+  console.log('Reset');
+  await bd(() => window.__bd.ui.openReset());
+  check((await page.locator('#rsGo').isDisabled()), 'reset needs RESET typed');
+  await page.fill('#rsConfirm', 'reset');
+  await page.click('#rsGo');
+  await page.waitForSelector('#obName', { timeout: 10000 });
+  check(true, 'reset starts over with onboarding');
+  await page.fill('#obName', 'Fresh Start');
+  await page.click('#obGo');
+  await page.waitForFunction(() => window.__bd?.S.profile.name === 'Fresh Start');
+  check((await bd(() => window.__bd.S.chats.size)) <= 4 && (await bd(() => window.__bd.S.profile.balance)) === 100, 'clean save after reset');
+  const backups = path.join(path.dirname(dataDir), 'save-backups');
+  const made = fs.existsSync(backups) ? fs.readdirSync(backups).filter((d) => fs.existsSync(path.join(backups, d, 'profile.json'))) : [];
+  check(made.length > 0, 'old save backed up');
+  fs.rmSync(backups, { recursive: true, force: true });
   await page.screenshot({ path: path.join(dataDir, 'final.png') });
 
   check(errors.length === 0, 'no console/page errors', errors.slice(0, 3).join(' | '));

@@ -1,22 +1,30 @@
-// Your manager, Diane Whitfield (Head of Client Services). You can message her; she replies
-// during office hours (your local time) and can change things: a rush shift, a lighter or
-// heavier day, time off, taking a chat off your hands, or a raise. The LLM only picks from
-// the actions this code says are allowed right now; the code applies them.
-// She also writes to you unprompted now and then: about things that happened (a promotion,
-// a bad streak, a backlog) or just to chat, depending on how well you get on (`rapport`,
-// hidden, 0-100, in profile.boss).
+// Your manager, Diane Whitfield (Head of Client Services). Whiterock support is fully remote:
+// you only ever talk on this messenger. She has her own online presence: on her shift (weekdays,
+// your local time) she's at her desk and answers within minutes; evenings and weekends she
+// replies when she checks her phone; at night she sleeps.
+// She can change things: a rush shift, a lighter or heavier day, time off, taking a chat off
+// your hands, or a raise. The LLM only picks from the actions this code says are allowed right
+// now; the code applies them. She remembers the whole conversation.
+// Two hidden scores (0-100, profile.boss), never shown:
+//   work        her professional opinion of you (chat results, missed customers, backlogs)
+//   friendship  how well you get on personally (only from how you talk to her)
+// They're independent: you can be a poor employee and her best friend. Friendship makes her
+// more open to off-work talk and more likely to message you just to chat.
 import { S, cfg, rand, touchChat, touchProfile } from '../core/state.js';
-import { waitWords, num, plural } from '../core/format.js';
+import { waitWords, num, plural, lastSeenText } from '../core/format.js';
 import { addMessage, getChat, sysMessage, findChatByHandle, activeCustomerChats, customerChats, handle } from './chats.js';
 import { reasonText } from './transcript.js';
 import * as clock from './clock.js';
 import * as world from './world.js';
+import { lognormal } from './presence.js';
 import { transferChat, openCount } from './customers.js';
 import { llmCall, parseJSON, withRetry } from './llm.js';
 import { rankInfo } from './progress.js';
 import { emit } from '../core/bus.js';
 
 export const BOSS = { name: 'Diane Whitfield', role: 'Head of Client Services' };
+const MIN = 60000;
+const HOUR = 3600000;
 
 function chat() { return getChat('boss'); }
 
@@ -24,23 +32,37 @@ export function bossState() {
   const p = S.profile;
   p.boss ||= {};
   const b = p.boss;
-  b.rapport ??= 55;
+  if (b.rapport != null && b.work == null) b.work = b.rapport; // v0.3 dev saves
+  delete b.rapport;
+  b.work ??= 55;
+  b.friendship ??= 25;
   b.events ||= [];
   return b;
 }
 
-function bump(delta) {
+const clamp100 = (x) => Math.max(0, Math.min(100, x));
+function bumpWork(d) { const b = bossState(); b.work = clamp100(b.work + d); }
+function bumpFriendship(d) {
   const b = bossState();
-  b.rapport = Math.max(0, Math.min(100, b.rapport + delta));
+  b.friendship = clamp100(b.friendship + (d > 0 ? d * (1 - b.friendship / 130) : d));
 }
 
-function relationship() {
-  const r = bossState().rapport;
-  if (r >= 75) return 'close: you genuinely like working with them. Relaxed, first-name, light banter; you may share a small personal remark now and then. You give them the benefit of the doubt.';
-  if (r >= 55) return 'good: friendly and supportive; you trust them.';
-  if (r >= 35) return 'neutral: professional and polite, not much small talk.';
-  if (r >= 20) return 'strained: cooler and more formal; you are keeping an eye on their performance and are less inclined to do favours.';
-  return 'poor: curt and businesslike; you are worried about their performance.';
+function workView() {
+  const r = bossState().work;
+  if (r >= 75) return 'excellent: one of your best people; you trust their work completely.';
+  if (r >= 55) return 'solid: reliable, you trust them.';
+  if (r >= 35) return 'mixed: some good work, some problems; you keep an eye on it.';
+  if (r >= 20) return 'poor: you are worried about their performance and less inclined to do work favours.';
+  return 'very poor: frankly one of the weaker agents; you are concerned.';
+}
+
+function friendshipView() {
+  const f = bossState().friendship;
+  if (f >= 80) return 'close friends: you genuinely enjoy talking to them. You chat freely about life outside work, joke around, share personal things (Ledger, books, what you cooked, your weekend), ask about theirs and remember it, and look out for them.';
+  if (f >= 60) return 'friends: warm and relaxed; happy to chat about non-work things and share a bit about yourself.';
+  if (f >= 40) return 'friendly colleagues: some small talk is welcome; you share the odd personal detail.';
+  if (f >= 20) return 'acquaintances: mostly work. Polite, but you keep personal topics short at first; you warm up if they are pleasant and genuinely interested.';
+  return 'cool: you prefer to keep it to work.';
 }
 
 // Things that happen elsewhere in the game (results.js, progress.js) and how Diane takes them.
@@ -56,50 +78,122 @@ export function noteEvent(kind, data = {}) {
   switch (kind) {
     case 'chat': {
       const r = data.chat.result;
-      if (r.aiScore >= 85 && r.stars >= 4) bump(1.5);
-      else if (r.aiScore >= 70) bump(0.5);
-      else if (r.aiScore < 50) bump(-2);
-      if (data.chat.endReason === 'closed') bump(-1);
+      if (r.aiScore >= 85 && r.stars >= 4) bumpWork(1.5);
+      else if (r.aiScore >= 70) bumpWork(0.5);
+      else if (r.aiScore < 50) bumpWork(-2);
+      if (data.chat.endReason === 'closed') bumpWork(-1);
       break;
     }
     case 'missed':
-      bump(-3);
-      if (clock.today(t).missed >= 3 && !b.missedTold?.startsWith?.(new Date(t).toDateString())) { b.missedTold = new Date(t).toDateString(); tell('missedMany'); }
+      bumpWork(-3);
+      if (clock.today(t).missed >= 3 && b.missedTold !== new Date(t).toDateString()) { b.missedTold = new Date(t).toDateString(); tell('missedMany'); }
       break;
-    case 'promotion': bump(5); tell('promotion', { detail: data.title }); break;
-    case 'highStreak': bump(3); tell('highStreak'); break;
-    case 'lowStreak': bump(-2); tell('lowStreak'); break;
+    case 'promotion': bumpWork(5); tell('promotion', { detail: data.title }); break;
+    case 'highStreak': bumpWork(3); tell('highStreak'); break;
+    case 'lowStreak': bumpWork(-2); tell('lowStreak'); break;
     case 'firstVip': tell('firstVip'); break;
     default: break;
   }
   touchProfile();
 }
 
-function inOffice(t) {
-  const h = new Date(t).getHours();
-  const [a, b] = cfg().boss.workHours;
-  return h >= a && h < b;
+// ---------- when Diane is around ----------
+function hourOf(t) { const d = new Date(t); return d.getHours() + d.getMinutes() / 60; }
+export function onShift(t) {
+  const B = cfg().boss.shift;
+  const h = hourOf(t);
+  return B.days.includes(new Date(t).getDay()) && h >= B.hours[0] && h < B.hours[1];
+}
+function awake(t) {
+  const [a, z] = cfg().boss.awake;
+  const h = hourOf(t);
+  return h >= a && h < z;
 }
 
-// t if Diane is in the office then, else shortly after she next gets in.
-function officeTime(t) {
-  if (inOffice(t)) return t;
-  const d = new Date(t);
-  if (d.getHours() >= cfg().boss.workHours[1]) d.setDate(d.getDate() + 1);
-  d.setHours(cfg().boss.workHours[0], 0, 0, 0);
-  return d.getTime() + rand(5, 40) * 60000;
+function sessionLen(t) {
+  const P = cfg().boss.presence;
+  if (onShift(t)) return lognormal(P.shiftSessionMedianMin * MIN, 0.7, 3 * MIN, 2 * HOUR);
+  const f = bossState().friendship >= 70 ? 1.5 : 1;
+  return lognormal(P.offSessionMedianMin * MIN * f, 0.9, 20000, 30 * MIN);
 }
 
-// When Diane will get to a message sent at t.
+// Her next stretch online starting after `from`.
+function nextSession(from) {
+  const P = cfg().boss.presence;
+  let t = from;
+  for (let i = 0; i < 3000; i++) {
+    if (onShift(t)) {
+      const gap = Math.random() < P.meetingChance ? rand(P.meetingMs[0], P.meetingMs[1]) : rand(P.shiftGapMs[0], P.shiftGapMs[1]);
+      const start = t + gap;
+      if (onShift(start) || awake(start)) return { start, end: start + sessionLen(start) };
+      t = start;
+    } else if (awake(t)) {
+      const step = 5 * MIN;
+      const rate = P.offChecksPerHour * (bossState().friendship >= 70 ? 1.4 : 1);
+      if (Math.random() < 1 - Math.exp(-rate * step / HOUR)) {
+        const start = t + Math.random() * step;
+        return { start, end: start + sessionLen(start) };
+      }
+      t += step;
+    } else t += 10 * MIN;
+  }
+  return { start: from + 86400000, end: from + 86400000 + MIN };
+}
+
+// Bring her timeline up to time t.
+function presence(t = clock.now()) {
+  const b = bossState();
+  if (!b.pres || t - b.pres.end > 2 * 86400000) b.pres = nextSession(t - HOUR);
+  for (let i = 0; i < 500 && b.pres.end <= t; i++) {
+    b.lastSeen = b.pres.end;
+    b.pres = nextSession(b.pres.end);
+  }
+  return b.pres;
+}
+
+export function isOnline(t = clock.now()) {
+  const p = presence(t);
+  return (p.start <= t && t < p.end) || !!chat()?.typing;
+}
+
+// She's on the app now (she's writing, or just read something).
+function comeOnline(t) {
+  const b = bossState();
+  const p = presence(t);
+  if (p.start <= t && t < p.end) return;
+  b.lastSeen = Math.max(b.lastSeen || 0, t);
+  b.pres = { start: t, end: t + sessionLen(t) };
+}
+
+// When Diane will reply to a message sent at t.
 function replyTime(t) {
-  const [a, b] = cfg().boss.replyDelayMs;
-  return officeTime(t + rand(a, b));
+  const [a, z] = cfg().boss.replyDelayMs;
+  if (isOnline(t)) return t + rand(a, z);
+  return Math.max(t, presence(t).start) + rand(10000, 60000);
+}
+
+// The next moment at or after t when she'd write about work (on shift) / just to chat (awake).
+function workTime(t) {
+  for (let x = t, i = 0; i < 2000; i++, x += 10 * MIN) if (onShift(x)) return x === t ? t : x + rand(5, 40) * MIN;
+  return t;
+}
+function chatTime(t) {
+  for (let x = t, i = 0; i < 2000; i++, x += 10 * MIN) if (awake(x) && (onShift(x) || bossState().friendship >= 60)) return x === t ? t : x + rand(5, 60) * MIN;
+  return t;
 }
 
 export function presenceText(t = clock.now()) {
   const c = chat();
   if (c?.typing) return { text: 'typing…', cls: 'online' };
-  return inOffice(t) ? { text: BOSS.role + ' · in the office', cls: 'online' } : { text: BOSS.role + ' · out of office, back at ' + String(cfg().boss.workHours[0]).padStart(2, '0') + ':00', cls: '' };
+  if (isOnline(t)) return { text: 'online', cls: 'online' };
+  return { text: lastSeenText(bossState().lastSeen, t), cls: '' };
+}
+
+export function shiftText() {
+  const B = cfg().boss.shift;
+  const days = B.days.length === 5 && [1, 2, 3, 4, 5].every((d) => B.days.includes(d)) ? 'weekdays' : 'on her work days';
+  const hh = (h) => String(Math.floor(h)).padStart(2, '0') + ':' + String(Math.round((h % 1) * 60)).padStart(2, '0');
+  return `${days} ${hh(B.hours[0])}–${hh(B.hours[1])}`;
 }
 
 export function welcomeMessage() {
@@ -108,7 +202,7 @@ export function welcomeMessage() {
   c.welcomed = true;
   addMessage(c, {
     from: 'them',
-    text: `Hi ${S.profile.name}, Diane here. I run Client Services, so I'm your manager.\n\nCustomers will write to you through the day. Aim to answer within about 3 hours; after 12 hours they start chasing, and if you leave them much longer they'll go elsewhere.\n\nMessage me any time (I answer during office hours) if you want:\n• a **rush**: I'll route the next few customers to you right now\n• a **lighter or heavier day**\n• **time off**: I'll pause your queue\n• to **hand a chat over** to a colleague (mention it, e.g. @chat3)\n\nAnd if your numbers are good, you're welcome to ask about a raise.`,
+    text: `Hi ${S.profile.name}, Diane here. I run Client Services, so I'm your manager. Welcome to the (fully remote) team.\n\nCustomers will write to you through the day. Aim to answer within about 3 hours; after 12 hours they start chasing, and if you leave them much longer they'll go elsewhere.\n\nI'm at my desk ${shiftText()} and answer quickly then; otherwise I reply when I check my phone. Message me if you want:\n• a **rush**: I'll route the next few customers to you right now\n• a **lighter or heavier day**\n• **time off**: I'll pause your queue\n• to **hand a chat over** to a colleague (mention it, e.g. @chat3)\n\nAnd if your numbers are good, you're welcome to ask about a raise.`,
   });
 }
 
@@ -120,6 +214,7 @@ export function onPlayerMessage(text) {
   touchChat(c);
 }
 
+// ---------- what Diane may do right now ----------
 // ---------- what Diane may do right now ----------
 function recentAvg() {
   const R = cfg().boss.raise;
@@ -200,47 +295,71 @@ function recentlyEnded(t) {
   const list = customerChats().filter((c) => c.status !== 'active' && c.endedAt && t - c.endedAt < 86400000 && c.endedAt <= t)
     .sort((a, b) => b.endedAt - a.endedAt).slice(0, 10);
   if (!list.length) return '';
-  const hm = (x) => new Date(x).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
-  return 'Chats that ended in the last 24 hours: ' + list.map((c) => `${handle(c)} ${c.customer.name}: ${c.endReason === 'transferred' ? 'transferred to a colleague by you' : reasonText(c.endReason)}${c.result && !c.result.missed ? `, score ${c.result.aiScore}/100` : ''} (${hm(c.endedAt)})`).join('; ') + '.';
+  return 'Chats that ended in the last 24 hours: ' + list.map((c) => `${handle(c)} ${c.customer.name}: ${c.endReason === 'transferred' ? 'transferred to a colleague by you' : reasonText(c.endReason)}${c.result && !c.result.missed ? `, score ${c.result.aiScore}/100` : ''} (${when(c.endedAt)})`).join('; ') + '.';
 }
 
-function actionLog() {
-  const xs = chat().messages.filter((m) => m.from === 'sys' && m.kind !== 'error').slice(-8);
-  if (!xs.length) return '';
-  return '\n\nTHINGS YOU ALREADY DID (system log, newest last):\n' + xs.map((m) => `- ${new Date(m.t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}: ${m.text}`).join('\n');
-}
+const when = (t) => new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-const PERSONA = `You are Diane Whitfield, Head of Client Services at Whiterock, a financial-services firm. You manage the support agent you're chatting with (the player of a training game). You're experienced, fair, warm but busy; dry humour now and then. You care about customers being answered well and on time, and about your people not burning out. Background (mention rarely, and only when you get on well): 19 years at Whiterock, started as an auditor, cycles to work, runs on black coffee, has a beagle called Ledger.
+// Static, so the long conversation history after it can be cached by the API.
+const SYSTEM = `You are Diane Whitfield, Head of Client Services at Whiterock, a financial-services firm, chatting on the company messenger with one of your support agents (the player of a training game). You're experienced, fair, warm but busy, with dry humour. You care about customers being answered well and on time, and about your people not burning out.
 
-Write like a manager on a work messenger: 1-4 short sentences, plain text, no headings. Never invent facts about the agent, their chats or customers beyond what's below.`;
+Whiterock's support team is fully remote. You work from home and you and the agent have never met in person: everything happens over this messenger. Never suggest meeting up, coffee, lunch, drinks, office visits or anything in person, and don't talk as if you share an office. You can still be personal in a remote way.
 
-const SYSTEM = (actions, ctx) => `${PERSONA} Don't promise anything you can't do with the actions below.
+About you (share only as much as your friendship with the agent warrants): 19 years at Whiterock, started as an auditor; a beagle called Ledger who sleeps under your desk; black coffee; you read crime novels and like cooking on Sundays; you live with your partner, Tom.
 
-YOUR RELATIONSHIP WITH THE AGENT: ${relationship()}
+You hold two separate views of the agent, given in the CONTEXT note with each message: your professional opinion of their work, and your personal friendship. They are independent. You can be honest that their work is poor and still be close friends, or respect their work while keeping things purely professional. Friendship decides how open you are to off-work conversation; work opinion decides how you talk about their performance and how readily you do work favours.
 
-SITUATION (live and authoritative; it changes between messages: chats end, get transferred, new ones arrive. If it no longer matches something said earlier, that's because things moved on, not because anyone was mistaken.)
-${ctx}${actionLog()}
+Style: a work messenger. Usually 1-4 short sentences, plain text, no headings; a little longer only for a real personal conversation. Remember everything said earlier in this conversation and stay consistent with it. Never invent facts about the agent, their chats or customers beyond what the conversation and the CONTEXT note say. The CONTEXT note is live and authoritative: chats end, get transferred and arrive between messages, so if it no longer matches something said earlier, things moved on (nobody was mistaken). Lines in the history starting with "[done]" are actions you already took.
 
-ACTIONS YOU CAN TAKE NOW (pick at most one, only if the agent asked for it or it clearly fits):
-${actions.out.map(([k, v]) => `- "${k}": ${v}`).join('\n')}
-${actions.no.length ? `\nNOT POSSIBLE RIGHT NOW (explain kindly if asked):\n${actions.no.map((x) => '- ' + x).join('\n')}` : ''}
+Reply with ONLY a JSON object in the format the CONTEXT note asks for.`;
 
-Use judgement like a real manager: e.g. you may refuse a heavier day or a rush if the agent has customers waiting over 12 hours, or ask them to clear the backlog before time off, or grant it anyway if they seem overwhelmed. A raise is only possible when listed above.
-
-OUTPUT: only a JSON object:
-{"reply": "<your message>", "action": "<one of: ${actions.out.map(([k]) => k).join(', ')}>", "hours": <number, only for time_off>, "chat": "<@chatN, only for transfer>", "tone": <integer -2..2: how the agent's latest messages came across to you, -2 rude, 0 neutral, 2 especially kind or pleasant>}`;
-
-const when = (t) => new Date(t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
-
-function historyMessages() {
-  const msgs = [];
-  for (const m of chat().messages.filter((x) => x.from !== 'sys').slice(-20)) {
-    const role = m.from === 'me' ? 'user' : 'assistant';
-    const text = m.from === 'them' ? JSON.stringify({ reply: m.text }) : `[${when(m.t)}] ${m.text}`;
-    if (msgs.length && msgs[msgs.length - 1].role === role) msgs[msgs.length - 1].content += '\n\n' + text;
-    else msgs.push({ role, content: text });
+function contextNote(t, actions) {
+  const lines = [
+    '[CONTEXT: not written by the agent]',
+    `Your professional view of their work: ${workView()}`,
+    `Your personal friendship with them: ${friendshipView()}`,
+    `You are ${onShift(t) ? 'on your shift, at your desk' : awake(t) ? 'off shift, on your phone (evening or weekend)' : 'up unusually late'}.`,
+    '',
+    'SITUATION',
+    contextText(t),
+  ];
+  if (actions) {
+    lines.push('', 'ACTIONS YOU CAN TAKE NOW (at most one; only if the agent asked for it or it clearly fits):');
+    for (const [k, v] of actions.out) lines.push(`- "${k}": ${v}`);
+    if (actions.no.length) { lines.push('', 'NOT POSSIBLE RIGHT NOW (explain kindly if asked):'); for (const x of actions.no) lines.push('- ' + x); }
+    lines.push('', 'Use judgement like a real manager: you may refuse a heavier day or a rush while customers have waited over 12 hours, ask them to clear the backlog before time off, or grant it anyway if they seem overwhelmed. A raise is only possible when listed above. Off shift you can still act from your phone, or say you\'ll handle it tomorrow.');
+    lines.push('', `OUTPUT: {"reply": "<your message>", "action": "<one of: ${actions.out.map(([k]) => k).join(', ')}>", "hours": <number, only for time_off>, "chat": "<@chatN, only for transfer>", "warmth": <integer -2..2: how the agent's new messages felt to you personally: 2 genuinely kind, funny or interested in you; 1 friendly; 0 neutral or purely work; -1 cold or curt; -2 rude>}`);
   }
-  while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+  return lines.join('\n');
+}
+
+// The whole conversation, oldest first. Actions she took are folded into her turns.
+function historyMessages(exclude = new Set()) {
+  const msgs = [{ role: 'user', content: '(The conversation with the agent starts here.)' }];
+  const push = (role, text) => {
+    const last = msgs[msgs.length - 1];
+    if (last.role === role) last.content += '\n\n' + text;
+    else msgs.push({ role, content: text });
+  };
+  for (const m of chat().messages) {
+    if (exclude.has(m.id) || m.kind === 'error') continue;
+    if (m.from === 'me') push('user', `[${when(m.t)}] ${m.text}`);
+    else if (m.from === 'them') push('assistant', JSON.stringify({ at: when(m.t), reply: m.text }));
+    else push('assistant', `[done] ${m.text}`);
+  }
+  return msgs;
+}
+
+// History + one final user turn; marks the end of the history as cacheable.
+function buildMessages(finalText, exclude) {
+  const msgs = historyMessages(exclude);
+  let cacheAt = msgs.length - 1;
+  if (msgs[msgs.length - 1].role === 'user') { msgs[msgs.length - 1].content += '\n\n' + finalText; cacheAt -= 1; }
+  else msgs.push({ role: 'user', content: finalText });
+  if (cacheAt >= 2) {
+    const m = msgs[cacheAt];
+    m.content = [{ type: 'text', text: m.content, cache_control: { type: 'ephemeral' } }];
+  }
   return msgs;
 }
 
@@ -263,19 +382,21 @@ async function respond(t) {
     if (!pending.length) return;
     for (const m of pending) { m.read = true; m.readAt = t; }
     const live = clock.now() - t < 120000;
-    if (live) { c.typing = true; touchChat(c); }
+    if (live) { comeOnline(clock.now()); c.typing = true; touchChat(c); }
     const actions = allowedActions(t);
-    const msgs = historyMessages();
-    if (!msgs.length) return;
-    const raw = await withRetry(() => llmCall({ role: 'boss', category: 'boss', system: SYSTEM(actions, contextText(t)), messages: msgs, maxTokens: 400, temperature: 0.6 }), 3, 1500);
+    const final = contextNote(t, actions) + '\n\n[NEW MESSAGES FROM THE AGENT]\n' + pending.map((m) => `[${when(m.t)}] ${m.text}`).join('\n\n');
+    const messages = buildMessages(final, new Set(pending.map((m) => m.id)));
+    const raw = await withRetry(() => llmCall({ role: 'boss', category: 'boss', system: SYSTEM, messages, maxTokens: 500, temperature: 0.7 }), 3, 1500);
     const j = parseJSON(raw);
     const reply = String(j.reply || 'Noted.').trim();
     await typeOut(c, reply, live);
     const at = live ? clock.now() : t + 20000;
     c.typing = false;
+    comeOnline(at);
     addMessage(c, { from: 'them', text: reply, t: at });
-    const tone = Math.max(-2, Math.min(2, Math.round(Number(j.tone) || 0)));
-    if (tone) bump(tone * 1.5);
+    const warmth = Math.max(-2, Math.min(2, Math.round(Number(j.warmth ?? j.tone) || 0)));
+    bumpFriendship([-6, -3, 0.3, 1.5, 3][warmth + 2]);
+    if (warmth <= -2) bumpWork(-2); // rude to your manager: noted professionally too
     const allowed = new Set(actions.out.map(([k]) => k));
     if (j.action && j.action !== 'none' && allowed.has(j.action)) apply(j, at);
   } catch (e) {
@@ -285,6 +406,7 @@ async function respond(t) {
     busy = false;
     c.typing = false;
     touchChat(c);
+    touchProfile();
   }
 }
 
@@ -320,7 +442,7 @@ function apply(j, t) {
       if (!target || target.status !== 'active') { sysMessage(c, '↪ No open chat matched, so nothing was transferred.', { t }); break; }
       transferChat(target);
       world.countTransfer();
-      bump(-1);
+      bumpWork(-1);
       sysMessage(c, `↪ ${handle(target)} (${target.customer.name}) was handed to a colleague. No pay or rating for that one.`, { t });
       break;
     }
@@ -350,32 +472,12 @@ const REASONS = {
   highStreak: () => 'The agent has had a run of excellent chats lately. Tell them, briefly.',
   lowStreak: () => 'The agent\'s last few chats went badly (low ratings). Check in supportively; you might suggest the mentor, the 📖 Concept button, or a lighter day.',
   firstVip: () => 'The agent just handled their first VIP client. A short remark about VIPs (they pay well and notice everything).',
-  missedMany: () => 'Several customers gave up today before the agent ever replied. Raise it, matching your relationship; offer a lighter day if they seem swamped.',
+  missedMany: () => 'Several customers gave up today before the agent ever replied. Raise it, in a way that fits both your views of them; offer a lighter day if they seem swamped.',
   backlog: (e) => `Several customers have been waiting over 12 hours (${e.detail}). Ask the agent to get to them; offer to lighten the load or move one to a colleague.`,
-  casual: () => 'No particular reason: you are just dropping a casual message, like a manager who gets on well with them. How their day or week is going, plans for the weekend, a remark about the office, coffee or Ledger. Keep it light and short. Do not assign work.',
+  casual: () => 'No work reason: you are messaging because you like talking to them. Pick up something personal from earlier in your conversation if there is one (ask how it went), or share something small from your day (remote-work life, Ledger, cooking, a book). Keep it light and short. No work assignments.',
   checkin: () => 'A brief, friendly work check-in: how are things going, do they need anything. Short.',
-  concern: () => 'A short, professional check-in about how things are going, based on the numbers above. Offer help (mentor, lighter day). Not harsh.',
+  concern: () => 'A short, professional check-in about how their work is going, based on the numbers. Offer help (mentor, lighter day). Not harsh.',
 };
-
-const PING_SYSTEM = (reason, ctx) => `${PERSONA}
-
-YOUR RELATIONSHIP WITH THE AGENT: ${relationship()}
-
-SITUATION (live)
-${ctx}${actionLog()}
-
-You are writing UNPROMPTED: the agent has not just messaged you. Why you're writing: ${reason}
-Don't repeat what you said in your recent messages. 1-3 short sentences.
-
-OUTPUT: only a JSON object: {"reply": "<your message>"}`;
-
-function pingMessages() {
-  const msgs = historyMessages();
-  const note = '(no new message from the agent: write your unprompted message now)';
-  if (msgs.length && msgs[msgs.length - 1].role === 'user') msgs[msgs.length - 1].content += '\n\n' + note;
-  else msgs.push({ role: 'user', content: note });
-  return msgs;
-}
 
 async function ping(kind, T, ev = {}, fallback = null) {
   const c = chat();
@@ -385,12 +487,15 @@ async function ping(kind, T, ev = {}, fallback = null) {
   try {
     let text;
     try {
-      const raw = await withRetry(() => llmCall({ role: 'boss', category: 'boss', system: PING_SYSTEM(REASONS[kind](ev), contextText(T)), messages: pingMessages(), maxTokens: 300, temperature: 0.8 }), 2, 1500);
+      const final = contextNote(T, null) + `\n\nYou are writing UNPROMPTED: the agent has not just messaged you. Why: ${REASONS[kind](ev)}\nDon't repeat what you said recently. 1-3 short sentences.\nOUTPUT: {"reply": "<your message>"}`;
+      const raw = await withRetry(() => llmCall({ role: 'boss', category: 'boss', system: SYSTEM, messages: buildMessages(final), maxTokens: 300, temperature: 0.85 }), 2, 1500);
       text = String(parseJSON(raw).reply || '').trim();
     } catch (e) {
       text = fallback;
     }
     if (!text) return;
+    const at = live ? clock.now() : T;
+    comeOnline(at);
     await typeOut(c, text, live);
     addMessage(c, { from: 'them', text, t: live ? clock.now() : T, unprompted: kind });
     b.lastPingAt = T;
@@ -402,19 +507,22 @@ async function ping(kind, T, ev = {}, fallback = null) {
   }
 }
 
+// Friends hear from her more often.
 function scheduleCasual(from) {
   const b = bossState();
   const [a, z] = cfg().boss.ping.everyHours;
-  b.nextPingAt = from + rand(a, z) * 3600000 * (1.6 - b.rapport / 100);
+  b.nextPingAt = from + rand(a, z) * HOUR * (1.7 - b.friendship / 100);
 }
 
 function casualKind() {
-  const r = bossState().rapport;
+  const b = bossState();
   const { n, avg } = recentAvg();
-  if (r >= 65) return Math.random() < 0.7 ? 'casual' : 'checkin';
-  if (r >= 40) return Math.random() < 0.5 ? 'checkin' : null;
-  return (n && avg < 70) || (S.profile.stats.missed || 0) > 0 ? 'concern' : 'checkin';
+  if (b.friendship >= 55) return Math.random() < 0.8 ? 'casual' : 'checkin';
+  if (b.work < 35 && ((n && avg < 70) || (S.profile.stats.missed || 0) > 0)) return 'concern';
+  return Math.random() < 0.5 ? 'checkin' : null;
 }
+
+const WORK_KINDS = new Set(['highStreak', 'lowStreak', 'firstVip', 'missedMany', 'backlog', 'checkin', 'concern']);
 
 // Returns true if a message is being sent.
 function proactive(now) {
@@ -425,46 +533,50 @@ function proactive(now) {
   // things that happened
   b.events = b.events.filter((e) => now - e.at < 86400000);
   for (const e of b.events) {
-    const T = officeTime(e.at);
+    const T = WORK_KINDS.has(e.kind) ? workTime(e.at) : chatTime(e.at);
     if (T > now) { e.at = T; continue; }
     b.events = b.events.filter((x) => x !== e);
-    ping(e.kind, Math.max(T, recent + 60000), e);
+    ping(e.kind, Math.min(now, Math.max(T, recent + MIN)), e);
     return true;
   }
   // a backlog of customers waiting over 12 hours
   const B = cfg().boss;
   const od = overdue(now);
-  if (inOffice(now) && od.length >= B.overdueNagCount && now - (S.profile.lastBossNag || 0) >= B.overdueNagEveryMs) {
+  if (onShift(now) && od.length >= B.overdueNagCount && now - (S.profile.lastBossNag || 0) >= B.overdueNagEveryMs) {
     S.profile.lastBossNag = now;
-    bump(-2);
+    bumpWork(-2);
     const list = od.slice(0, 5).map(handle).join(', ') + (od.length > 5 ? ', …' : '');
     ping('backlog', now, { detail: list }, `${S.profile.name}, I'm seeing ${plural(od.length, 'customer')} who've been waiting over 12 hours (${list}). Can you get to them today? If you're swamped, tell me and I'll lighten your load or move one to a colleague.`);
     return true;
   }
-  // just checking in
+  // just checking in / chatting
   if (b.nextPingAt == null) { scheduleCasual(now); return false; }
   if (now < b.nextPingAt) return false;
-  const T = officeTime(b.nextPingAt);
-  if (T > now) { b.nextPingAt = T; return false; }
-  if (now - T > 12 * 3600000 || now - recent < 4 * 3600000) { scheduleCasual(now); return false; }
-  scheduleCasual(T);
   const kind = casualKind();
-  if (kind) { ping(kind, T); return true; }
-  return false;
+  if (!kind) { scheduleCasual(now); return false; }
+  const T = kind === 'casual' ? chatTime(b.nextPingAt) : workTime(b.nextPingAt);
+  if (T > now) { b.nextPingAt = T; return false; }
+  if (now - T > 12 * HOUR || now - recent < 4 * HOUR) { scheduleCasual(now); return false; }
+  scheduleCasual(T);
+  ping(kind, T);
+  return true;
 }
 
 // ---------- the clock ----------
 export function tick(now = clock.now()) {
   const c = chat();
   if (!c || busy) return;
+  presence(now);
   if (c.replyAt && now >= c.replyAt) {
     const t = c.replyAt;
     c.replyAt = null;
-    respond(Math.max(t, now - 6 * 3600000));
+    respond(Math.max(t, now - 6 * HOUR));
     return;
   }
   proactive(now);
 }
 
-// The system prompt Diane would get right now (for debugging in DevTools and for tests).
-export function promptPreview(t = clock.now()) { return SYSTEM(allowedActions(t), contextText(t)); }
+// What Diane would be sent right now (for debugging in DevTools and for tests).
+export function promptPreview(t = clock.now()) {
+  return SYSTEM + '\n\n' + historyMessages().map((m) => m.role + ': ' + m.content).join('\n') + '\n\n' + contextNote(t, allowedActions(t));
+}

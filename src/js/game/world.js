@@ -16,7 +16,7 @@ import * as clock from './clock.js';
 import * as presence from './presence.js';
 import * as shop from './shop.js';
 import { activeCustomerChats, customerChats, handle, sysMessage } from './chats.js';
-import { spawnCustomer, advanceChat, advanceTimers, speedUpReads, shiftTimers, openCount } from './customers.js';
+import { spawnCustomer, advanceChat, advanceTimers, speedUpReads, shiftTimers, openCount, ambientPresence, backfillPresence } from './customers.js';
 import { tickMemos } from './manager.js';
 import { botSay } from './bot.js';
 import { ui } from '../ui/registry.js';
@@ -199,6 +199,7 @@ export function tick(dt) {
   tickMemos(now);
   if (vacation()) return;
   speedUpReads(dt);
+  ambientPresence(dt, now);
   const spawned = processArrivals(now);
   if (spawned.length && !S.activeChatId) ui.openChat?.(spawned[0].id);
   tickRush(now);
@@ -217,6 +218,7 @@ export async function catchUp() {
     if (!vacation()) {
       processArrivals(now, true);
       for (const c of activeCustomerChats()) advanceTimers(c, now);
+      if (now - since > 10 * 60000) backfillPresence(since, now);
       if (w.rush.left > 0 && now - (w.rush.nextAt || 0) > 10 * 60000) w.rush.left = 0;
     }
     tickMemos(now);

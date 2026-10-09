@@ -21,19 +21,21 @@ function debounced(key, ms, fn) {
 }
 
 export function saveChat(chat) {
-  if (chat.deleted) return;
+  if (chat.deleted || S.resetting) return;
   debounced('chat:' + chat.id, 300, () => {
     if (!chat.deleted) window.api.store.write('chats/' + chat.id + '.json', chat);
   });
 }
 
 export function saveProfile() {
+  if (S.resetting) return;
   debounced('profile', 400, () => window.api.store.write('profile.json', S.profile));
 }
 
 export function flushAll() {
   for (const [key] of timers) clearTimeout(timers.get(key));
   timers.clear();
+  if (S.resetting) return;
   window.api.store.write('profile.json', S.profile);
   for (const c of S.chats.values()) if (!c.deleted) window.api.store.write('chats/' + c.id + '.json', c);
 }

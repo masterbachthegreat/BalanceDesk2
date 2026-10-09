@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('api', {
   usage: () => call('usage'),
   llm: (req) => call('llm', req),
   testConnection: () => call('testConnection'),
+  resetSave: (opts) => call('resetSave', opts),
   pickImage: () => call('pickImage'),
   openDataFolder: () => call('openDataFolder'),
   openExternal: (url) => call('openExternal', url),

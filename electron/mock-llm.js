@@ -36,22 +36,23 @@ async function respond(req) {
   }
 
   if (req.category === 'boss') {
-    const sys = req.messages[0]?.content || '';
-    if (/UNPROMPTED/.test(sys)) return JSON.stringify({ reply: 'Hey, just checking in. How is your week going?' });
-    const can = (a) => sys.includes(`- "${a}"`);
+    if (/UNPROMPTED/.test(text)) return JSON.stringify({ reply: 'Hey, just checking in. How is your week going?' });
+    const said = text.split('[NEW MESSAGES FROM THE AGENT]')[1] || '';
+    const can = (a) => text.includes(`- "${a}"`);
+    const warmth = /thank|haha|how are you|weekend|ledger/i.test(said) ? 2 : /stupid|idiot|useless/i.test(said) ? -2 : 0;
     const pickAct = () => {
-      if (/rush|more customers|busy/i.test(text) && can('rush')) return { action: 'rush' };
-      if (/lighter|fewer/i.test(text) && can('lighter_day')) return { action: 'lighter_day' };
-      if (/heavier/i.test(text) && can('heavier_day')) return { action: 'heavier_day' };
-      if (/back|return/i.test(text) && can('end_time_off')) return { action: 'end_time_off' };
-      if (/time off|day off|vacation|holiday/i.test(text) && can('time_off')) return { action: 'time_off', hours: 24 };
-      const m = /@chat\d+/.exec(text);
-      if (/transfer|hand/i.test(text) && m && can('transfer')) return { action: 'transfer', chat: m[0] };
-      if (/raise/i.test(text) && can('raise')) return { action: 'raise' };
+      if (/rush|more customers|busy/i.test(said) && can('rush')) return { action: 'rush' };
+      if (/lighter|fewer/i.test(said) && can('lighter_day')) return { action: 'lighter_day' };
+      if (/heavier/i.test(said) && can('heavier_day')) return { action: 'heavier_day' };
+      if (/back|return/i.test(said) && can('end_time_off')) return { action: 'end_time_off' };
+      if (/time off|day off|vacation|holiday/i.test(said) && can('time_off')) return { action: 'time_off', hours: 24 };
+      const m = /@chat\d+/.exec(said);
+      if (/transfer|hand/i.test(said) && m && can('transfer')) return { action: 'transfer', chat: m[0] };
+      if (/raise/i.test(said) && can('raise')) return { action: 'raise' };
       return { action: 'none' };
     };
     const a = pickAct();
-    return JSON.stringify({ reply: a.action === 'none' ? 'Noted. Keep up the good work.' : 'Sure, done.', ...a });
+    return JSON.stringify({ reply: a.action === 'none' ? 'Noted. Keep up the good work.' : 'Sure, done.', ...a, warmth });
   }
 
   if (req.category === 'concept') {
