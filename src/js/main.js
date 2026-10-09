@@ -258,7 +258,7 @@ async function boot() {
   }
   setInterval(tick, 500);
   setInterval(() => { S.profile.lastOpenChat = S.activeChatId; }, 5000);
-  window.__bd = { S, spawnCustomer, clock }; // handy for debugging in DevTools
+  window.__bd = { S, spawnCustomer, clock, ui }; // handy for debugging in DevTools (and used by tests)
 }
 
 boot().catch((e) => {

@@ -9,7 +9,12 @@ export function rankInfo(r) {
   const ranks = S.data.ranks;
   return ranks.find((x) => x.rank === r) || ranks[ranks.length - 1];
 }
-export function maxRank() { return Math.max(...S.data.ranks.map((r) => r.rank)); }
+// The top rank is the highest one that actually has questions, so adding a new
+// data/questions/rankNN_*.json file is all it takes to open up the next rank.
+export function maxRank() {
+  const withQuestions = S.data.ranks.filter((r) => S.data.questions.some((q) => q.rank === r.rank));
+  return Math.max(...(withQuestions.length ? withQuestions : S.data.ranks).map((r) => r.rank));
+}
 
 export function promotionStatus() {
   const P = cfg().promotion;

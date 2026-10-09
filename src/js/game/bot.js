@@ -85,7 +85,7 @@ const handlers = {
     const r = rankInfo(p.rank);
     const s = promotionStatus();
     let txt = `🏅 **${r.title}** — rank ${p.rank} of ${maxRank()}\nTopics: ${r.topics} (book chapters ${r.chapters[0]}–${r.chapters[r.chapters.length - 1]})\nBase pay per chat: ${money(r.basePay)}`;
-    if (s.atMax) txt += '\n\nYou are at the top. Nothing left but glory.';
+    if (s.atMax) txt += '\n\nThis is the highest rank available right now. More ranks open when new question sets are added.';
     else {
       const next = rankInfo(p.rank + 1);
       txt += `\n\nNext: **${next.title}** — ${next.topics}\nPromotion rule: your last ${s.need} chats at this rank must average ≥ ${s.minAvg}/100.\nProgress: ${s.have}/${s.need} chats, average ${s.have ? num(s.avg, 1) : '—'}`;
