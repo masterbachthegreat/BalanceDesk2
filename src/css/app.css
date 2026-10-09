@@ -395,3 +395,6 @@ input, textarea, select { font: inherit; color: var(--text); }
 /* group chat: sender names */
 .bubble .sender { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
 .msg.in:not(.first) .bubble .sender { display: none; }
+
+.info-panel .ip-status { font-size: 13px; color: var(--muted); }
+.info-panel .ip-status.online { color: var(--accent); }

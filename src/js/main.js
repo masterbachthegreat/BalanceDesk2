@@ -4,7 +4,7 @@ import { on } from './core/bus.js';
 import { money } from './core/format.js';
 import * as clock from './game/clock.js';
 import * as shop from './game/shop.js';
-import { newChat, getChat, addMessage, markRead, handle } from './game/chats.js';
+import { newChat, getChat, addMessage, markRead, handle, displayName } from './game/chats.js';
 import { spawnCustomer, resumeAfterLoad, migrateChat } from './game/customers.js';
 import { botSay, handleBotInput } from './game/bot.js';
 import { triggerMemo } from './game/manager.js';
@@ -13,6 +13,7 @@ import * as boss from './game/boss.js';
 import * as team from './game/team.js';
 import * as customers from './game/customers.js';
 import * as mentor from './game/mentor.js';
+import { loadPhotos, photoCount, shufflePhotos } from './ui/photos.js';
 import { ui } from './ui/registry.js';
 import { renderSidebar, renderStatusBar, bindSidebar } from './ui/sidebar.js';
 import { renderChatPane, updateChatPane, tickChatPane, bindChatPane, prefillInput } from './ui/chatview.js';
@@ -155,7 +156,12 @@ function toggleDayNight() {
 Object.assign(ui, {
   openChat, refresh, askMentorAbout,
   showQueue: () => { openChat('bot'); handleBotInput('/queue'); }, toggleDayNight, chatContextMenu,
-  openSettings: settingsModal, openReset: resetModal, openProfile: profileModal, openShop: (c) => shopModal(c),
+  openSettings: settingsModal, openReset: resetModal,
+  openPhotos: () => {
+    window.api.openAvatarFolder?.();
+    botSay(`📷 **Character photos**: put pictures in the folder that just opened (${photoCount()} there now).\n• Name a file after someone to give it to them: \`diane.jpg\`, \`priya.png\`, \`mentor.jpg\`, \`Margaret Ellis.jpg\`\n• Any other photos are shared out: each character without their own photo gets a different one and keeps it.\nNew photos appear when you switch back to BalanceDesk.`, { buttons: [[{ label: '🔀 Shuffle shared photos', action: 'ui', value: 'shufflePhotos' }]] });
+  },
+  shufflePhotos, openProfile: profileModal, openShop: (c) => shopModal(c),
   openCalculator: () => { if (!openCalculator()) shopModal('tools'); },
   openNotepad: () => { if (!openNotepad()) shopModal('tools'); },
   toast,
@@ -186,7 +192,7 @@ function onIncoming(chat) {
   let kind = '';
   if (chat.kind === 'customer') {
     const first = chat.messages.filter((x) => x.from === 'them').length === 1;
-    title = first ? `New customer: ${chat.customer.name}${chat.customer.vip ? ' 👑' : ''}` : chat.customer.name;
+    title = first ? `New customer: ${displayName(chat)}${chat.customer.vip ? ' 👑' : ''}` : displayName(chat);
     kind = first ? 'good' : '';
   } else if (chat.kind === 'boss') title = '💼 Diane';
   else if (chat.kind === 'team') { title = '👥 #support-team'; body = `${team.member(m?.who)?.name.split(' ')[0] || ''}: ${body}`; }
@@ -199,6 +205,7 @@ function onIncoming(chat) {
 // ---------- boot ----------
 async function boot() {
   S.data = await window.api.gameData();
+  await loadPhotos().catch(() => {});
   S.settings = await window.api.settings.get();
   const saved = await window.api.store.read('profile.json');
   const chats = await window.api.store.readAll('chats');
@@ -238,6 +245,8 @@ async function boot() {
   on('modalClosed', () => { const c = getChat(S.activeChatId); if (c) markRead(c); });
 
   window.api.onOpenChat?.((id) => openChat(id));
+  on('photos', () => { renderSidebar(); renderChatPane(); });
+  window.addEventListener('focus', () => { loadPhotos(); });
   window.addEventListener('focus', () => { S.focused = true; const c = getChat(S.activeChatId); if (c) markRead(c); });
   window.addEventListener('blur', () => { S.focused = false; });
   window.addEventListener('beforeunload', () => flushAll());

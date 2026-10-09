@@ -4,7 +4,7 @@ import { escapeHtml, clockTime, dayLabel, waitWords, lastSeenText, durationWords
 import { chatAvatar } from './avatar.js';
 import { renderMarkdown, splitCharts } from './markdown.js';
 import { renderChart, destroyChartsIn } from './charts.js';
-import { displayName, handle, customerChats, markRead, getChat } from '../game/chats.js';
+import { displayName, handle, customerChats, markRead, getChat, customerNames } from '../game/chats.js';
 import * as clock from '../game/clock.js';
 import * as shop from '../game/shop.js';
 import { onPlayerMessage, retryCustomer, isOnline, lastSeen } from '../game/customers.js';
@@ -171,7 +171,7 @@ function messageEl(chat, m) {
     const nm = document.createElement('div');
     nm.className = 'sender';
     nm.style.color = sender.color;
-    nm.textContent = sender.name + (sender.id === 'diane' ? ' · manager' : '');
+    nm.textContent = (sender.display || sender.name) + (sender.id === 'diane' ? ' · manager' : '');
     bubble.appendChild(nm);
   }
   if (m.kind === 'file' && m.attachment) {
@@ -418,7 +418,12 @@ function infoHtml(chat) {
   }
   const c = chat.customer;
   const q = chat.question;
-  let h = `<div class="ip-top">${chatAvatar(chat, 'lg')}<h3>${escapeHtml(c.name)}${c.vip ? ' 👑' : ''}</h3><div style="color:var(--muted)">${handle(chat)}${c.vip ? ' · VIP client' : ''}</div></div>
+  const nm = customerNames(chat);
+  const past = customerChats().filter((x) => x.id !== chat.id && x.customer.personaId === c.personaId && x.result && !x.result.missed);
+  const mutual = past.length ? `${past.length} earlier chat${past.length > 1 ? 's' : ''} with you · last: ${escapeHtml(past.sort((a, b) => b.endedAt - a.endedAt)[0].question.topic)} · ★${(past.reduce((s, x) => s + x.result.stars, 0) / past.length).toFixed(1)} average` : 'First time talking to you';
+  let h = `<div class="ip-top">${chatAvatar(chat, 'lg')}<h3>${escapeHtml(nm.display)}${c.vip ? ' 👑' : ''}</h3><div style="color:var(--muted)">${escapeHtml(nm.username || '')} · ${handle(chat)}${c.vip ? ' · VIP client' : ''}</div><div class="ip-status ${isOnline(chat) ? 'online' : ''}">${chat.status === 'active' ? (isOnline(chat) ? 'online' : escapeHtml(lastSeenText(lastSeen(chat), clock.now()))) : 'chat ended'}</div></div>
+    <div class="ip-sec">Name</div><div class="ip-val">${escapeHtml(nm.full)}</div>
+    <div class="ip-sec">With you</div><div class="ip-val">${mutual}</div>
     <div class="ip-sec">About</div><div class="ip-val">${escapeHtml(c.bio)}</div>
     <div class="ip-sec">Traits</div><div class="ip-val">Reads ${c.read} · patience ${c.patience}</div>
     <div class="ip-sec">Local time</div><div class="ip-val">${localTimeOf(chat)}</div>
@@ -592,7 +597,7 @@ export function bindChatPane() {
       const b = m?.buttons?.[ri]?.[bi];
       if (!b) return;
       if (b.action === 'cmd') handleBotInput(b.value);
-      else if (b.action === 'ui') ({ shop: ui.openShop, settings: ui.openSettings, profile: ui.openProfile })[b.value]?.();
+      else if (b.action === 'ui') ({ shop: ui.openShop, settings: ui.openSettings, profile: ui.openProfile, shufflePhotos: ui.shufflePhotos })[b.value]?.();
       else if (b.action === 'open') ui.openChat(b.value);
       return;
     }

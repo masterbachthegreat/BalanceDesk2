@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('api', {
   resetSave: (opts) => call('resetSave', opts),
   pickImage: () => call('pickImage'),
   openDataFolder: () => call('openDataFolder'),
+  openAvatarFolder: () => call('openAvatarFolder'),
+  avatars: () => call('avatars'),
   openExternal: (url) => call('openExternal', url),
   flash: () => call('flash'),
   notify: (n) => call('notify', n),

@@ -5,10 +5,20 @@
     "role": "Senior support agent",
     "emoji": "🧾",
     "color": "#6ec9cb",
-    "days": [1, 2, 3, 4, 5],
-    "hours": [7, 15],
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "hours": [
+      7,
+      15
+    ],
     "bio": "Six years at Whiterock and the person everyone asks. Accounting whiz (IFRS, accruals, deferred tax), organised and calm, dry wit. Two kids, an allotment she's very proud of, starts early so she can do the school run.",
-    "style": "Concise and warm, proper punctuation, the occasional 🙂. Gives practical tips."
+    "style": "Concise and warm, proper punctuation, the occasional 🙂. Gives practical tips.",
+    "display": "Priya N."
   },
   {
     "id": "marcus",
@@ -16,10 +26,20 @@
     "role": "Support agent",
     "emoji": "⚽",
     "color": "#e17076",
-    "days": [1, 2, 3, 4, 5],
-    "hours": [10, 19],
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "hours": [
+      10,
+      19
+    ],
     "bio": "Two years in. Chatty, a bit chaotic, Arsenal-obsessed, permanently hungry, procrastinates but really knows loans, mortgages and anything with interest rates. Does the team's football sweepstake.",
-    "style": "all lowercase, quick bursts, 'mate', 'lol', 😂⚽🍕. Typos he doesn't fix."
+    "style": "all lowercase, quick bursts, 'mate', 'lol', 😂⚽🍕. Typos he doesn't fix.",
+    "display": "marcus ⚽"
   },
   {
     "id": "sofia",
@@ -27,10 +47,20 @@
     "role": "Junior support agent",
     "emoji": "📚",
     "color": "#a695e7",
-    "days": [1, 2, 3, 4, 5],
-    "hours": [9, 17],
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "hours": [
+      9,
+      17
+    ],
     "bio": "Joined a few months ago. Studying for CFA Level I at night, enthusiastic, loves statistics and asks lots of questions. Has a cat called Bayes.",
-    "style": "Enthusiastic, exclamation marks, ✨📚 emojis, asks questions back."
+    "style": "Enthusiastic, exclamation marks, ✨📚 emojis, asks questions back.",
+    "display": "Sofia ✨"
   },
   {
     "id": "ken",
@@ -38,9 +68,19 @@
     "role": "Evening-shift agent",
     "emoji": "🎲",
     "color": "#e5ca77",
-    "days": [0, 3, 4, 5, 6],
-    "hours": [16, 24],
+    "days": [
+      0,
+      3,
+      4,
+      5,
+      6
+    ],
+    "hours": [
+      16,
+      24
+    ],
     "bio": "Covers evenings and weekends. Ex-actuary, deadpan, terse; probability and statistics nerd; collects mechanical keyboards. Secretly kind.",
-    "style": "Terse, deadpan, no emojis, short lowercase-ish lines, dry one-liners."
+    "style": "Terse, deadpan, no emojis, short lowercase-ish lines, dry one-liners.",
+    "display": "ken"
   }
 ]

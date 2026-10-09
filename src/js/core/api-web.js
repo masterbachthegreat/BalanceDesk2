@@ -27,6 +27,8 @@
     testConnection: () => call('testConnection'),
     resetSave: (opts) => call('resetSave', opts),
     openDataFolder: () => call('dataDir').then((d) => alert('Save folder: ' + d)),
+    openAvatarFolder: () => call('avatarDir').then((d) => alert('Photos folder: ' + d)),
+    avatars: () => call('avatars'),
     openExternal: (url) => window.open(url, '_blank'),
     flash: async () => {},
     notify: async () => {},

@@ -405,29 +405,49 @@ async function customerReads(chat, at) {
   let out;
   try {
     if (thinkEnd > clock.now() - 2000) {
-      // live: think in real time, picking up anything else the agent sends meanwhile
-      cs.thinking = true;
-      touchChat(chat);
-      while (clock.now() < thinkEnd) {
-        await sleep(Math.min(1000, Math.max(50, thinkEnd - clock.now())));
-        if (gone()) return false;
+      // live: think, then type. Anything else the agent sends meanwhile is read at once (they have the
+      // chat open); if they were already typing, they stop, take it in, and write a new reply.
+      const fresh = () => {
         const more = markRead(chat, clock.now());
-        if (more.length) {
-          thinkEnd = Math.max(thinkEnd, clock.now() + thinkMs(chat, more) * 0.6);
-          call = withRetry(() => customerReply(chat), 3, 1500);
-          call.catch(() => {});
-          touchChat(chat);
+        if (!more.length) return false;
+        thinkEnd = Math.max(thinkEnd, clock.now() + thinkMs(chat, more) * 0.6);
+        call = withRetry(() => customerReply(chat), 3, 1500);
+        call.catch(() => {});
+        touchChat(chat);
+        return true;
+      };
+      for (let round = 0; round < 8; round++) {
+        cs.typing = false;
+        cs.thinking = true;
+        touchChat(chat);
+        while (clock.now() < thinkEnd) {
+          await sleep(Math.min(500, Math.max(50, thinkEnd - clock.now())));
+          if (gone()) return false;
+          fresh();
         }
+        cs.thinking = false;
+        cs.typing = true;
+        touchChat(chat);
+        const started = performance.now();
+        const current = call;
+        let interrupted = false;
+        let done = null;
+        current.then((v) => { done = v; }, () => { done = false; });
+        while (done === null) { // waiting for the reply text: still "typing"
+          await sleep(300);
+          if (gone()) return false;
+          if (fresh()) { interrupted = true; break; }
+        }
+        if (interrupted) continue;
+        out = await current;
+        const typingMs = clamp(out.messages[0].length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
+        while (performance.now() - started < typingMs) {
+          await sleep(Math.min(300, typingMs - (performance.now() - started)));
+          if (gone()) return false;
+          if (fresh()) { interrupted = true; break; }
+        }
+        if (!interrupted) break;
       }
-      cs.thinking = false;
-      cs.typing = true;
-      touchChat(chat);
-      const started = performance.now();
-      out = await call;
-      if (gone()) return false;
-      const typingMs = clamp(out.messages[0].length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
-      const remaining = typingMs - (performance.now() - started);
-      if (remaining > 0) await sleep(remaining);
       if (gone()) return false;
       out.t = clock.now();
     } else {

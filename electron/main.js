@@ -47,6 +47,23 @@ function applyOsSettings() {
   }
 }
 
+// Character photos: centre-cropped to a square and shrunk, cached until the file changes.
+const photoCache = new Map();
+function photoUrl(f) {
+  try {
+    const key = f.path + ':' + fs.statSync(f.path).mtimeMs;
+    if (!photoCache.has(key)) {
+      let img = nativeImage.createFromPath(f.path);
+      if (img.isEmpty()) return null;
+      const { width, height } = img.getSize();
+      const side = Math.min(width, height);
+      img = img.crop({ x: Math.floor((width - side) / 2), y: Math.floor((height - side) / 2), width: side, height: side }).resize({ width: 192, height: 192, quality: 'best' });
+      photoCache.set(key, 'data:image/jpeg;base64,' + img.toJPEG(88).toString('base64'));
+    }
+    return { file: f.file, url: photoCache.get(key) };
+  } catch { return null; }
+}
+
 function notify({ title, body, chatId }) {
   if (!Notification.isSupported() || (win && win.isVisible() && win.isFocused())) return;
   const n = new Notification({ title: String(title).slice(0, 120), body: String(body || '').slice(0, 240), icon: ICON, silent: true });
@@ -82,6 +99,8 @@ const handlers = {
   testConnection: () => backend.testConnection(),
   resetSave: (opts) => backend.resetSave(opts),
   openDataFolder: () => shell.openPath(backend.dataDir),
+  openAvatarFolder: () => shell.openPath(backend.avatarsDir()),
+  avatars: () => backend.avatarFiles().map(photoUrl).filter(Boolean),
   openExternal: (url) => { if (/^https:\/\//.test(url)) shell.openExternal(url); },
   flash: () => { if (win && !win.isFocused()) win.flashFrame(true); },
   notify: (n) => notify(n || {}),

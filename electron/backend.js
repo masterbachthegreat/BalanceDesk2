@@ -212,6 +212,25 @@ async function testConnection() {
   return { ok: true, reply: r.text.trim(), model: r.model };
 }
 
+// ---------- character photos ----------
+// The player drops photos into avatars/ next to the save folder (kept on reset).
+const IMG = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.bmp': 'image/bmp' };
+function avatarsDir() {
+  const d = path.join(path.dirname(dataDir), 'avatars');
+  fs.mkdirSync(d, { recursive: true });
+  return d;
+}
+function avatarFiles() {
+  const d = avatarsDir();
+  return fs.readdirSync(d).filter((f) => IMG[path.extname(f).toLowerCase()]).sort().slice(0, 400)
+    .map((f) => ({ file: f, path: path.join(d, f), mime: IMG[path.extname(f).toLowerCase()] }))
+    .filter((f) => { try { return fs.statSync(f.path).size < 20 * 1024 * 1024; } catch { return false; } });
+}
+// Plain version (dev server): the file as-is.
+function avatarsRaw() {
+  return avatarFiles().map((f) => ({ file: f.file, url: 'data:' + f.mime + ';base64,' + fs.readFileSync(f.path).toString('base64') }));
+}
+
 // ---------- reset ----------
 // Starts the game over. The old save is copied to save-backups/<time>/ next to the save folder
 // first. Settings (API key, models) are kept; the API usage log only if keepUsage.
@@ -228,6 +247,6 @@ function resetSave({ keepUsage = true } = {}) {
 }
 
 module.exports = {
-  init, readGameData, store, settingsGet, settingsSet, usageGet, llm, testConnection, resetSave,
+  init, readGameData, store, settingsGet, settingsSet, usageGet, llm, testConnection, resetSave, avatarsDir, avatarFiles, avatarsRaw,
   get dataDir() { return dataDir; },
 };

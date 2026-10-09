@@ -2,6 +2,7 @@
 import { S, touchChat, uid } from '../core/state.js';
 import { emit } from '../core/bus.js';
 import * as clock from './clock.js';
+import { displayFor } from './names.js';
 
 export const SYSTEM_CHATS = ['bot', 'mentor', 'manager', 'boss', 'team'];
 
@@ -82,8 +83,18 @@ export function handle(chat) {
 }
 
 export function displayName(chat) {
-  if (chat.kind === 'customer') return chat.customer.name;
+  if (chat.kind === 'customer') return customerNames(chat).display;
   return chat.title;
+}
+
+// Casual display name and @username (worked out once per chat, from the persona).
+export function customerNames(chat) {
+  const c = chat.customer;
+  if (!c.display) {
+    const p = S.data.personalities.find((x) => x.id === c.personaId) || { id: c.personaId || c.name, name: c.name };
+    Object.assign(c, displayFor(p));
+  }
+  return { display: c.display, username: c.username, full: c.name };
 }
 
 export function findChatByHandle(token) {
