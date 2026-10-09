@@ -1,7 +1,7 @@
 {
   "name": "balancedesk",
   "productName": "BalanceDesk",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Whiterock customer-support simulator: answer finance, accounting, statistics and maths questions for pay.",
   "main": "electron/main.js",
   "author": "masterbachthegreat",

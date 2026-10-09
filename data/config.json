@@ -79,6 +79,30 @@
         "😅?",
         "hi, just checking you got my message"
       ]
+    },
+    "_stepAway": "During a live back-and-forth a customer sometimes has to step away (chance per reply; x busyMult while at work) for a log-normal while (median awayMedianMin). They read what you sent when they're back and say so.",
+    "stepAway": {
+      "chance": 0.06,
+      "busyMult": 2,
+      "awayMedianMin": 20,
+      "sigma": 0.8,
+      "minMin": 3,
+      "maxMin": 180,
+      "busyLines": [
+        "sorry, meeting starting, back in a bit",
+        "my boss just walked in, give me a few minutes",
+        "gotta jump on a call, I'll read your reply after"
+      ],
+      "freeLines": [
+        "brb, someone's at the door",
+        "one sec, the kids need me",
+        "sorry, have to pop out for a bit, back soon",
+        "dinner's ready, back in a bit"
+      ],
+      "vipLines": [
+        "I have a call now. I'll read your answer afterwards.",
+        "Excuse me, something urgent came up. I'll be back shortly."
+      ]
     }
   },
   "pay": {
@@ -198,7 +222,12 @@
       "sigma": 1.0,
       "minMs": 20000,
       "maxMs": 5400000
-    }
+    },
+    "_brb": "'brb' moments (a customer or Diane stepping away mid-conversation) happen at most once every brbEveryHours, shared between everyone.",
+    "brbEveryHours": [
+      24,
+      48
+    ]
   },
   "rush": {
     "_readme": "Rush shift (ask your boss): a few customers who stay online and expect fast replies.",
@@ -296,6 +325,32 @@
         "maxMissedRate": 0.25
       },
       "bonusChats": 5
+    },
+    "_stepAway": "Sometimes after replying live Diane has to step away for a while; she comes back online after that and acknowledges it. 'urgent' = the one /urgent call per game.",
+    "stepAway": {
+      "chanceShift": 0.07,
+      "chanceOff": 0.1,
+      "awayMedianMin": 15,
+      "sigma": 0.7,
+      "minMin": 3,
+      "maxMin": 90,
+      "shiftLines": [
+        "brb, call with the CFO",
+        "jumping into a meeting, back in a bit",
+        "Ledger is losing his mind at the postman, back in 5",
+        "give me 10 min, fire to put out"
+      ],
+      "offLines": [
+        "cooking dinner, back later",
+        "walking Ledger, back in a bit",
+        "gotta go, Tom's calling me, back later"
+      ]
+    },
+    "urgent": {
+      "sessionMin": [
+        25,
+        45
+      ]
     }
   },
   "secondChance": {

@@ -20,6 +20,8 @@ stats and maths questions; OpenRouter LLMs play the customers (Haiku), grade ans
       - Memory: the whole chat is sent every time (her own actions folded in as `[done]` lines); the system prompt is static and the end of the history carries `cache_control` so OpenRouter/Anthropic can cache it. The live situation and allowed actions go in the final user turn (`contextNote`).
       - The LLM returns `{reply, action, warmth}` and may only pick actions the code lists as allowed (rush, lighter_day, heavier_day, time_off, end_time_off, transfer, raise).
       - Two hidden scores in `profile.boss`: `work` (chat results, missed customers, backlog) and `friendship` (only the `warmth` of the player's messages). Independent on purpose: the user wants a bad employee to be able to be her best friend.
+      - `/urgent` (bot) → `boss.urgent()`: once per game (`profile.boss.urgentAt`), she comes online and reacts.
+      - Rare "brb": `maybeStepAway` after a live reply; shared rate limit with customers (`customers.brbAllowed`, `config.world.brbEveryHours`). Customers: `customer.stepAway`, `cs.away`, acknowledged via `awayNote` in the prompt.
       - Unprompted messages (`proactive`): events from `noteEvent()` (results/progress), the >12 h backlog, and check-ins whose frequency and kind depend on friendship.
     - `team.js`: `#support-team` group chat (`data/team.json` coworkers + Diane). Every 12 h the customer model writes the next 12 h of chatter from code-decided facts (warnings about difficult customers, thanks when a coworker gets a customer the player flagged, transfers, promotions), queued in `profile.team.queue` and posted at their times. Player messages get replies from coworkers on shift (settings `teamModel`, LLM role `team`); Diane answers there via `boss.teamReply` (same memory as her DM; her DM prompt includes the channel). Warned personas get a higher arrival weight (`personaWeight`).
     - `questions.js` second chances: `noteResult` queues questions scored < 60 or never answered (`profile.retry`); `pickQuestion` serves a due one from a different persona. Returning customers: `customers.returningCustomer` (config `returning`).
@@ -39,7 +41,7 @@ stats and maths questions; OpenRouter LLMs play the customers (Haiku), grade ans
   - `validate-data.mjs`: checks data, runs every template against the book's numbers, and samples 200 variants of each.
   - `build-personalities.py`: regenerates `data/personalities.json`.
   - `question-sources/`: Python sources that generate `data/questions/*.json`.
-- `tests/ui-test.mjs`: Playwright end-to-end test against the dev server with the mock LLM (78 checks; uses `__bd.clock.skip` and `__bd.world.catchUp` to simulate time away).
+- `tests/ui-test.mjs`: Playwright end-to-end test against the dev server with the mock LLM (85 checks; uses `__bd.clock.skip` and `__bd.world.catchUp` to simulate time away).
 
 ## Question pool
 

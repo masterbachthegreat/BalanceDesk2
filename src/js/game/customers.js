@@ -116,6 +116,8 @@ function setWaiting(chat, t) {
 
 // When will the customer read what the agent just sent (at `from`)?
 function scheduleRead(chat, from) {
+  const away = chat.cs.away;
+  if (away && away.until > from) return away.until + liveReadDelay(chat); // they stepped away: they read it when they're back
   if (chat.cs.mode === 'live' || isOnline(chat, from)) return from + liveReadDelay(chat);
   const next = presence.nextCheck(personaOf(chat), from);
   return from + Math.max(60000, (next - from) * shop.effectProduct('readMult'));
@@ -165,6 +167,12 @@ function returningGreeting(info) {
   if (info.stars >= cfg().returning.loyalStars) return pick([`Hi again! You helped me with ${topic} last time, so I asked for you.`, `Hello, it's me again! Your answer on ${topic} was a lifesaver.`, `Hey, back again! You were great with my ${topic} question.`]);
   if (info.stars <= 2) return pick([`Hi. We spoke before, about ${topic}. That didn't go great.`, `Hello again. Hoping this goes better than last time.`]);
   return pick([`Hi again, we talked about ${topic} a while ago.`, `Hello! I've got another one for you.`]);
+}
+
+function awayNote(chat) {
+  const a = chat.cs.away;
+  if (!a || a.told) return '';
+  return `\nYou had to step away for a while ("${a.reason}") and you're back now. Start your reply with a short, natural acknowledgement (like "sorry, back now") before answering.\n`;
 }
 
 function historyNote(chat) {
@@ -437,6 +445,7 @@ async function customerReads(chat, at) {
   let t = out.t;
   cs.typing = false;
   cs.thinking = false;
+  if (cs.away && cs.away.until <= t) { cs.away = null; } // they're back and said so
   cs.turns += 1;
   cs.mood = out.mood;
   if (out.followUp) cs.followUps += 1;
@@ -469,8 +478,48 @@ async function customerReads(chat, at) {
     finishConversation(chat, 'left', t + 5000);
     return false;
   }
+  if (live && cs.mode !== 'live' && maybeStepAway(chat, t)) {
+    if (chat.messages.some((m) => m.from === 'me' && !m.read)) cs.readAt = scheduleRead(chat, t);
+    else setWaiting(chat, t);
+    return true;
+  }
   if (chat.messages.some((m) => m.from === 'me' && !m.read)) cs.readAt = t + liveReadDelay(chat); // they're in the chat already
   else setWaiting(chat, t);
+  return true;
+}
+
+// Mid-conversation, people sometimes have to go: "brb, meeting starting". They come back after a
+// while, read whatever you sent meanwhile, and say so in their next reply (see buildCustomerPrompt).
+// One "brb" every day or two at most, across customers and Diane.
+export function brbAllowed(t) {
+  const w = S.profile.world ||= {};
+  if (w.nextBrbAt == null) { const [a, b] = cfg().world.brbEveryHours; w.nextBrbAt = t + rand(a, b) / 2 * 3600000; }
+  return t >= w.nextBrbAt;
+}
+export function brbUsed(t) {
+  const [a, b] = cfg().world.brbEveryHours;
+  S.profile.world.nextBrbAt = t + rand(a, b) * 3600000;
+  touchProfile();
+}
+
+function maybeStepAway(chat, t) {
+  const A = cfg().customer.stepAway;
+  if (!brbAllowed(t)) return false;
+  const persona = personaOf(chat);
+  const busy = presence.isBusy(persona, t);
+  if (Math.random() >= A.chance * (busy ? A.busyMult : 1)) return false;
+  const cs = chat.cs;
+  const lines = chat.customer.vip ? A.vipLines : busy ? A.busyLines : A.freeLines;
+  const text = pick(lines);
+  const away = presence.lognormal(A.awayMedianMin * 60000, A.sigma, A.minMin * 60000, A.maxMin * 60000);
+  const at = Math.min(clock.now(), t + rand(2000, 6000));
+  addMessage(chat, { from: 'them', text: transform(persona, text), kind: 'away', t: at });
+  cs.away = { reason: text, at, until: at + away, told: false };
+  brbUsed(at);
+  cs.onlineUntil = at + 3000;
+  cs.lastSeen = at;
+  if (cs.readAt != null) cs.readAt = Math.max(cs.readAt, cs.away.until + liveReadDelay(chat));
+  touchChat(chat);
   return true;
 }
 
@@ -521,7 +570,7 @@ WHO YOU ARE
 Name: ${c.name}
 About you: ${c.bio}
 How you write: ${c.style}
-${c.vip ? 'You are a VIP client: you expect precise, professional, complete answers and you notice sloppiness.\n' : ''}${historyNote(chat)}
+${c.vip ? 'You are a VIP client: you expect precise, professional, complete answers and you notice sloppiness.\n' : ''}${historyNote(chat)}${awayNote(chat)}
 YOUR QUESTION (you already sent it):
 """${questionText(q)}"""
 

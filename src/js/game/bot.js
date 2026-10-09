@@ -24,6 +24,7 @@ export const COMMANDS = [
   { cmd: 'bonuses', desc: 'Active bonuses from memos and items' },
   { cmd: 'spendings', desc: 'OpenRouter usage & cost, with graphs' },
   { cmd: 'queue', desc: 'Open chats, longest-waiting first' },
+  { cmd: 'urgent', desc: 'Get Diane online right now (once per game)' },
   { cmd: 'calc', desc: 'Open the calculator (shop item)' },
   { cmd: 'notes', desc: 'Open your notepad (shop item)' },
   { cmd: 'profile', desc: 'Open your profile' },
@@ -206,6 +207,12 @@ const handlers = {
       },
     ];
     botSay(`💳 **OpenRouter usage**\n${table}${useCost ? '' : '\n\n_OpenRouter did not report costs, so the graphs show tokens._'}`, { charts });
+  },
+  async urgent() {
+    const boss = await import('./boss.js');
+    const r = boss.urgent();
+    if (!r.ok) return botSay(`📵 You already used your one urgent call this game (${new Date(r.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}). Diane answers when she's online.`);
+    botSay('📞 You called Diane urgently. She\'ll be online in a moment.\n_That was your one urgent call for this game._', { buttons: [[{ label: '💼 Open Diane\'s chat', action: 'open', value: 'boss' }]] });
   },
   queue() {
     const t = clock.now();

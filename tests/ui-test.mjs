@@ -336,7 +336,7 @@ try {
     Object.assign(S.data.config.team, { flagHitChance: 1, warnChance: 1, dianePostChance: 0 });
     team.teamState().nextSimAt = clock.now() - 1000;
   });
-  await waitFor(() => window.__bd.team.teamState().queue.length > 0);
+  await waitFor(() => window.__bd.team.teamState().queue.some((q) => !q.reply)); // the simulated 12 hours, not pending replies
   await bd(() => { const { team, clock } = window.__bd; for (const q of team.teamState().queue) q.at = clock.now() - 1000; });
   await waitFor(() => window.__bd.S.chats.get('team').messages.some((m) => /heads-up/.test(m.text)));
   check(true, 'a coworker who got the customer you warned about thanks you');
@@ -398,6 +398,30 @@ try {
   await bd(() => { for (const q of window.__bd.team.teamState().queue) if (q.reply) q.at = window.__bd.clock.now(); });
   await waitFor((p) => window.__bd.S.chats.get('team').messages.some((m) => m.who === p.who && m.text === p.text), pending);
   check(true, 'a coworker reply that was still pending is delivered after the app restarts');
+
+  console.log('Urgent call and brb');
+  await bd(() => Object.assign(window.__bd.S.data.config.customer.think, { baseMs: [200, 400], perWordMs: 2, perNumberMs: 10, minMs: 300, maxMs: 800 })); // the reloads above reset the test speed-ups
+  await page.click('.chat-row[data-id="bot"]');
+  await send('/urgent');
+  await waitFor(() => window.__bd.S.chats.get('bot').messages.some((m) => /You called Diane urgently/.test(m.text)));
+  await waitFor(() => window.__bd.S.chats.get('boss').messages.some((m) => m.unprompted === 'urgent'), null, 45000);
+  check((await bd(() => window.__bd.boss.isOnline())), '/urgent brings Diane online and she reacts');
+  await send('/urgent');
+  await waitFor(() => window.__bd.S.chats.get('bot').messages.some((m) => /already used your one urgent call/.test(m.text)));
+  check(true, '/urgent works only once per game');
+  await bd(() => { const { S } = window.__bd; S.data.config.customer.stepAway.chance = 1; S.profile.world.nextBrbAt = 0; });
+  const c12 = await newCustomer();
+  await send('Let me check one thing for you.');
+  await forceRead(c12);
+  await waitFor((id) => window.__bd.S.chats.get(id).messages.some((m) => m.kind === 'away'), c12);
+  const aw = await bd((id) => { const { S, clock } = window.__bd; const cs = S.chats.get(id).cs; return { away: !!cs.away, online: cs.onlineUntil > clock.now(), next: S.profile.world.nextBrbAt - clock.now() }; }, c12);
+  check(aw.away && aw.next > 20 * 3600000, 'a customer can step away mid-chat (and the next brb is a day or more away)', JSON.stringify(aw));
+  await send('No rush, here is the answer whenever you are back: ' + LONG);
+  const ra = await bd((id) => { const cs = window.__bd.S.chats.get(id).cs; return cs.readAt >= cs.away.until; }, c12);
+  check(ra, 'they read your message only once they are back');
+  await bd((id) => { const { S, clock } = window.__bd; const cs = S.chats.get(id).cs; cs.away.until = clock.now(); cs.readAt = clock.now(); }, c12);
+  await waitFor((id) => window.__bd.S.chats.get(id).status !== 'active' || window.__bd.S.chats.get(id).cs.turns >= 2, c12);
+  check((await bd((id) => !window.__bd.S.chats.get(id).cs.away, c12)), 'back from the break, they carry on');
 
   console.log('Reset');
   await bd(() => window.__bd.ui.openReset());

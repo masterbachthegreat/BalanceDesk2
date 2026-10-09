@@ -69,6 +69,9 @@ To start over, use ☰ → *Reset game…* (or Settings → *Reset game…*). Th
     friendlier you are, the more she opens up about life outside work.
   - She also writes to you unprompted: when something happens (a promotion, a great or bad streak, customers
     giving up, a backlog of people waiting over 12 hours), and, if you get on well, just to chat.
+  - Once per game you can type `/urgent` (in the Desk Bot) to get her online right away, whatever the time.
+  - Now and then (about once every day or two) a customer or Diane has to step away mid-conversation
+    ("brb, meeting starting"). They read what you sent once they're back and acknowledge the break.
   - She runs on her own model (☰ → Settings → *Manager model*).
 - **📖 Concept** (button in the chat header): a short beginner lesson on the idea behind the customer's question, with a worked example using different numbers.
 - **Ending a chat:** it ends when the customer is satisfied, when they give up, or when you close it.
@@ -83,6 +86,7 @@ To start over, use ☰ → *Reset game…* (or Settings → *Reset game…*). Th
   - `/shop`, `/buy`, `/equip`, `/use`, `/inventory`, `/bonuses`
   - `/spendings`: charts of your OpenRouter usage and cost, split by customers, grading and mentor
   - `/queue`: open chats, longest-waiting first
+  - `/urgent`: get Diane online right now (once per game)
   - `/calc`, `/notes`, `/settings`
 - **Mentor:** ask about any concept and get graphs when they help.
   - If a customer keeps pushing back on you, the mentor messages you a hint without giving away the answer.

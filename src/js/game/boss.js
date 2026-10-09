@@ -10,14 +10,14 @@
 //   friendship  how well you get on personally (only from how you talk to her)
 // They're independent: you can be a poor employee and her best friend. Friendship makes her
 // more open to off-work talk and more likely to message you just to chat.
-import { S, cfg, rand, touchChat, touchProfile } from '../core/state.js';
+import { S, cfg, rand, pick, touchChat, touchProfile } from '../core/state.js';
 import { waitWords, num, plural, lastSeenText } from '../core/format.js';
 import { addMessage, getChat, sysMessage, findChatByHandle, activeCustomerChats, customerChats, handle } from './chats.js';
 import { reasonText } from './transcript.js';
 import * as clock from './clock.js';
 import * as world from './world.js';
 import { lognormal } from './presence.js';
-import { transferChat, openCount } from './customers.js';
+import { transferChat, openCount, brbAllowed, brbUsed } from './customers.js';
 import { llmCall, parseJSON, withRetry } from './llm.js';
 import { rankInfo } from './progress.js';
 import { botSay } from './bot.js';
@@ -327,6 +327,9 @@ function contextNote(t, actions) {
     contextText(t),
   ];
   const tl = getChat('team') ? team.recentLines(30) : '';
+  const b = bossState();
+  if (b.away && !b.away.told && b.away.until <= t) lines.push('', `Earlier (${when(b.away.at)}) you had to step away ("${b.away.reason}") and you're back now. If the agent wrote meanwhile, start with a brief, natural acknowledgement.`);
+  if (b.urgentAt && t - b.urgentAt < 2 * HOUR) lines.push('', `At ${when(b.urgentAt)} the agent used their once-per-game URGENT call to get you online${onShift(b.urgentAt) ? '' : awake(b.urgentAt) ? ' outside your shift' : ' in the middle of the night'}.`);
   if (tl) lines.push('', 'TEAM CHANNEL #support-team (group chat with the agent and four coworkers; you are a member). Recent messages:', tl);
   if (actions) {
     lines.push('', 'ACTIONS YOU CAN TAKE NOW (at most one; only if the agent asked for it or it clearly fits):');
@@ -404,6 +407,8 @@ async function respond(t) {
     if (warmth <= -2) bumpWork(-2); // rude to your manager: noted professionally too
     const allowed = new Set(actions.out.map(([k]) => k));
     if (j.action && j.action !== 'none' && allowed.has(j.action)) apply(j, at);
+    if (bossState().away?.until <= at) bossState().away.told = true;
+    if (live) await maybeStepAway(at);
   } catch (e) {
     c.typing = false;
     sysMessage(c, '⚠ Diane couldn\'t reply: ' + e.message, { kind: 'error', retry: 'boss' });
@@ -475,6 +480,7 @@ export function retryBoss() {
 
 // ---------- unprompted messages ----------
 const REASONS = {
+  urgent: () => `The agent just used their once-per-game URGENT call to get you online right now (${new Date(clock.now()).toLocaleString('en-GB', { weekday: 'long', hour: '2-digit', minute: '2-digit' })}). React in character to being summoned (how you feel depends on the time, whether you were on shift or asleep, and your friendship) and ask what's up.`,
   promotion: (e) => `The agent was just promoted${e.detail ? ' to ' + e.detail : ''}. Congratulate them, in your own way.`,
   highStreak: () => 'The agent has had a run of excellent chats lately. Tell them, briefly.',
   lowStreak: () => 'The agent\'s last few chats went badly (low ratings). Check in supportively; you might suggest the mentor, the 📖 Concept button, or a lighter day.',
@@ -541,7 +547,7 @@ function proactive(now) {
   // things that happened
   b.events = b.events.filter((e) => e.kind === 'review' || now - e.at < 86400000);
   for (const e of b.events) {
-    const T = WORK_KINDS.has(e.kind) || e.kind === 'review' ? workTime(e.at) : chatTime(e.at);
+    const T = e.kind === 'urgent' ? e.at : WORK_KINDS.has(e.kind) || e.kind === 'review' ? workTime(e.at) : chatTime(e.at);
     if (T > now) { e.at = T; continue; }
     b.events = b.events.filter((x) => x !== e);
     ping(e.kind, Math.min(now, Math.max(T, recent + MIN)), e, e.fallback || null).then(() => { if (e.card) sysMessage(chat(), e.card.title, { kind: 'review', review: e.card, t: clock.now() }); });
@@ -659,6 +665,50 @@ function maybeReview(now) {
   b.events.push({ kind: 'review', at: now, month: monthName, rating, outcome, kpiText, card,
     fallback: `${p.name}, your review for ${monthName}: ${rating}. ${outcome[0].toUpperCase() + outcome.slice(1)}. Details below.` });
   touchProfile();
+}
+
+// ---------- brb ----------
+// Rarely (shared limit with customers: about once every day or two), right after replying live,
+// Diane has to go for a while. She's offline until then and acknowledges it when she's back.
+async function maybeStepAway(t) {
+  const A = cfg().boss.stepAway;
+  if (!brbAllowed(t) || Math.random() >= (onShift(t) ? A.chanceShift : A.chanceOff)) return;
+  const b = bossState();
+  if (b.urgentAt && t - b.urgentAt < HOUR) return; // you called her urgently: she stays
+  const c = chat();
+  const text = pick(onShift(t) ? A.shiftLines : A.offLines);
+  c.typing = true;
+  touchChat(c);
+  await sleep(rand(2500, 6000));
+  c.typing = false;
+  const at = clock.now();
+  addMessage(c, { from: 'them', text, kind: 'away', t: at });
+  const until = at + lognormal(A.awayMedianMin * MIN, A.sigma, A.minMin * MIN, A.maxMin * MIN);
+  b.away = { reason: text, at, until, told: false };
+  b.lastSeen = at;
+  b.pres = { start: until, end: until + sessionLen(until) };
+  brbUsed(at);
+  touchProfile();
+}
+
+// ---------- the one urgent call per game ----------
+export function urgentUsed() { return bossState().urgentAt || null; }
+
+export function urgent() {
+  const b = bossState();
+  if (b.urgentAt) return { ok: false, at: b.urgentAt };
+  const now = clock.now();
+  const [a, z] = cfg().boss.urgent.sessionMin;
+  b.urgentAt = now;
+  b.lastSeen = Math.max(b.lastSeen || 0, now);
+  b.pres = { start: now + 5000, end: now + rand(a, z) * MIN };
+  b.away = null;
+  const c = chat();
+  if (c.messages.some((m) => m.from === 'me' && !m.read)) c.replyAt = now + rand(10000, 30000);
+  else b.events.push({ kind: 'urgent', at: now + rand(10000, 30000) });
+  touchProfile();
+  touchChat(c);
+  return { ok: true };
 }
 
 // ---------- the clock ----------
