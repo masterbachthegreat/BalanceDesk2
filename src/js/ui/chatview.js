@@ -1,10 +1,11 @@
 // Right column: the open chat (header, messages, composer, info panel).
-import { S, cfg } from '../core/state.js';
+import { S, cfg, touchChat } from '../core/state.js';
 import { escapeHtml, clockTime, dayLabel, waitWords, lastSeenText, durationWords, money, starsText, stars, num } from '../core/format.js';
-import { chatAvatar } from './avatar.js';
+import { chatAvatar, memberAvatar } from './avatar.js';
+import { showMenu, hideMenu } from './contextmenu.js';
 import { renderMarkdown, splitCharts } from './markdown.js';
 import { renderChart, destroyChartsIn } from './charts.js';
-import { displayName, handle, customerChats, markRead, getChat, customerNames } from '../game/chats.js';
+import { displayName, handle, customerChats, markRead, getChat, customerNames, findMessage, toggleReaction, canEdit, editMessage, deleteMessage, pinMessage, quoteText } from '../game/chats.js';
 import * as clock from '../game/clock.js';
 import * as shop from '../game/shop.js';
 import { onPlayerMessage, retryCustomer, isOnline, lastSeen } from '../game/customers.js';
@@ -14,10 +15,12 @@ import { gradeAndPay } from '../game/results.js';
 import { handleBotInput, handleChatCommand, COMMANDS, CHAT_COMMANDS } from '../game/bot.js';
 import { sendToMentor, retryMentor } from '../game/mentor.js';
 import { reasonText } from '../game/transcript.js';
+import { schedule, cancel as cancelScheduled, SCHEDULABLE } from '../game/scheduled.js';
+import { openModal, closeModal } from './modals.js';
 import { ui } from './registry.js';
 
-const drafts = new Map();
-let view = { chatId: null, els: new Map(), typingEl: null };
+let view = { chatId: null, els: new Map(), sigs: new Map(), typingEl: null, replyTo: null, editing: null, newBelow: 0 };
+const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 let suggest = { items: [], index: 0, kind: null };
 
 const pane = () => document.getElementById('chatPane');
@@ -56,6 +59,19 @@ function timersHtml(chat) {
   }
   if (chat.rush) h += '<span class="timer-pill" title="Rush shift customer: expects replies within minutes">⚡ rush</span>';
   return h;
+}
+
+function senderName(chat, m) {
+  if (m.from === 'me') return 'You';
+  if (chat.kind === 'team') { const t = team.member(m.who); return t ? (t.display || t.name) : '?'; }
+  if (chat.kind === 'customer') return displayName(chat);
+  return chat.title;
+}
+
+function pinnedBarHtml(chat) {
+  const m = chat.pinnedMsg && findMessage(chat, chat.pinnedMsg);
+  if (!m) return '';
+  return `<div class="pinned-bar" id="pinnedBar" data-jump="${m.id}"><span class="pb-line"></span><div class="pb-body"><div class="pb-title">📌 Pinned message</div><div class="pb-text">${escapeHtml(quoteText(m, 140))}</div></div><button class="icon-btn" data-unpin title="Unpin">✕</button></div>`;
 }
 
 function headerHtml(chat) {
@@ -167,12 +183,29 @@ function messageEl(chat, m) {
   const text = document.createElement('div');
   text.className = 'text';
   const sender = chat.kind === 'team' && !out ? team.member(m.who) : null;
+  el.dataset.id = m.id;
+  if (sender) {
+    const av = document.createElement('div');
+    av.className = 'msg-av';
+    av.innerHTML = memberAvatar(sender, 'xs');
+    el.appendChild(av);
+  }
   if (sender) {
     const nm = document.createElement('div');
     nm.className = 'sender';
     nm.style.color = sender.color;
     nm.textContent = (sender.display || sender.name) + (sender.id === 'diane' ? ' · manager' : '');
     bubble.appendChild(nm);
+  }
+  const quoted = m.replyTo && findMessage(chat, m.replyTo);
+  if (m.replyTo) {
+    const q = document.createElement('div');
+    q.className = 'reply-quote';
+    if (quoted) {
+      q.dataset.jump = quoted.id;
+      q.innerHTML = `<b>${escapeHtml(senderName(chat, quoted))}</b><span>${escapeHtml(quoteText(quoted))}</span>`;
+    } else q.innerHTML = '<span><i>Deleted message</i></span>';
+    bubble.appendChild(q);
   }
   if (m.kind === 'file' && m.attachment) {
     text.innerHTML = fileCard(m.attachment);
@@ -185,14 +218,30 @@ function messageEl(chat, m) {
       } else renderChart(text, part.json);
     }
   } else {
-    text.innerHTML = renderMarkdown(m.text, { full, commands: chat.kind === 'bot', mentions: chat.kind === 'mentor' || chat.kind === 'boss' || chat.kind === 'team' });
+    text.innerHTML = renderMarkdown(m.text, { full, italic: out, commands: chat.kind === 'bot', mentions: chat.kind === 'mentor' || chat.kind === 'boss' || chat.kind === 'team' });
   }
   if (m.charts) for (const spec of m.charts) renderChart(text, spec);
   bubble.appendChild(text);
   const meta = document.createElement('span');
   meta.className = 'meta';
-  meta.innerHTML = `${m.kind === 'nudge' ? '⌛ ' : ''}${clockTime(m.t)}${out ? ` <span class="ticks ${m.read && !m.after ? 'read' : ''}">${m.read && !m.after ? '✓✓' : '✓'}</span>` : ''}`;
+  const seen = m.read && !m.after;
+  if (m.scheduled) meta.title = 'Sent as a scheduled message';
+  meta.innerHTML = `${m.edited ? '<span class="edited">edited</span> ' : ''}${m.kind === 'nudge' ? '⌛ ' : ''}${clockTime(m.t)}${out ? ` <span class="ticks ${seen ? 'read' : ''}" title="${seen && m.readAt ? 'Seen ' + clockTime(m.readAt) : seen ? 'Seen' : 'Sent'}">${seen ? '✓✓' : '✓'}</span>` : ''}`;
   text.appendChild(meta);
+  if (m.reactions?.length) {
+    const rx = document.createElement('div');
+    rx.className = 'reactions';
+    const counts = {};
+    for (const r of m.reactions) (counts[r.e] ||= []).push(r.by);
+    rx.innerHTML = Object.entries(counts).map(([e, by]) => `<button class="rx ${by.includes('me') ? 'mine' : ''}" data-react="${e}" title="${by.map((b) => (b === 'me' ? 'You' : b === 'them' ? displayName(chat) : team.member(b)?.name || b)).join(', ')}">${e}${by.length > 1 ? ' ' + by.length : ''}</button>`).join('');
+    bubble.appendChild(rx);
+  }
+  if (m.from !== 'sys' && m.kind !== 'file') {
+    const hv = document.createElement('div');
+    hv.className = 'hover-actions';
+    hv.innerHTML = `${chat.kind !== 'bot' && chat.kind !== 'manager' ? '<button data-act="reply" title="Reply">↩</button>' : ''}<button data-act="react" title="React">🙂</button><button data-act="more" title="More">⋯</button>`;
+    el.appendChild(hv);
+  }
   col.appendChild(bubble);
   if (m.buttons && m.buttons.length) {
     const ib = document.createElement('div');
@@ -234,11 +283,15 @@ function regroup(inner) {
   });
 }
 
-function syncMessages(chat, forceBottom = false) {
+const sigOf = (m) => [m.text, m.read, m.after, m.edited, (m.reactions || []).map((r) => r.e + r.by).join(), m.replyTo].join('|');
+
+function syncMessages(chat, forceBottom = false, opts = {}) {
   const box = document.getElementById('messages');
   const inner = document.getElementById('messagesInner');
   if (!box || !inner) return;
   const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
+  const initial = view.els.size === 0;
+  let added = 0;
   const ids = new Set(chat.messages.map((m) => m.id));
   // remove deleted
   for (const [id, el] of view.els) {
@@ -272,19 +325,58 @@ function syncMessages(chat, forceBottom = false) {
       el = messageEl(chat, m);
       inner.appendChild(el);
       view.els.set(m.id, el);
-    } else if (m.from === 'me') {
-      const t = el.querySelector('.ticks');
-      if (t) {
-        const read = m.read && !m.after;
-        t.classList.toggle('read', read);
-        t.textContent = read ? '✓✓' : '✓';
-      }
+      view.sigs.set(m.id, sigOf(m));
+      if (!initial) { el.classList.add('appear'); if (m.from !== 'me') added++; }
+    } else if (view.sigs.get(m.id) !== sigOf(m)) { // edited, reacted, read: redraw just this one
+      const fresh = messageEl(chat, m);
+      destroyChartsIn(el);
+      el.replaceWith(fresh);
+      view.els.set(m.id, fresh);
+      view.sigs.set(m.id, sigOf(m));
+    }
+  }
+  // "Unread messages" divider when opening a chat with unread messages
+  if (initial && opts.unread > 0) {
+    const them = chat.messages.filter((m) => m.from !== 'me' && m.from !== 'sys');
+    const first = them[Math.max(0, them.length - opts.unread)];
+    const el = first && view.els.get(first.id);
+    if (el) {
+      const div = document.createElement('div');
+      div.className = 'unread-sep';
+      div.textContent = 'Unread messages';
+      el.before(div);
+      view.unreadEl = div;
     }
   }
   const typing = chat.kind === 'customer' ? chat.status === 'active' && chat.cs.typing : chat.typing;
   if (typing) { view.typingEl = typingEl(); inner.appendChild(view.typingEl); }
   regroup(inner);
-  if (forceBottom || nearBottom) box.scrollTop = box.scrollHeight;
+  if (view.unreadEl && initial) view.unreadEl.scrollIntoView({ block: 'center' });
+  else if (forceBottom || nearBottom) box.scrollTop = box.scrollHeight;
+  else if (added) view.newBelow += added;
+  updateJump();
+}
+
+function updateJump() {
+  const box = document.getElementById('messages');
+  const btn = document.getElementById('jumpBtn');
+  if (!box || !btn) return;
+  const far = box.scrollHeight - box.scrollTop - box.clientHeight > 300;
+  if (!far) view.newBelow = 0;
+  btn.classList.toggle('hidden', !far);
+  btn.querySelector('.jb-count').textContent = view.newBelow || '';
+  btn.querySelector('.jb-count').classList.toggle('hidden', !view.newBelow);
+}
+
+export function jumpToMessage(id) { jumpTo(id); }
+
+function jumpTo(id) {
+  const el = view.els.get(id);
+  if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
 }
 
 // ---------- composer ----------
@@ -297,10 +389,156 @@ function composerHtml(chat) {
   if (chat.kind === 'team') note = '<div class="composer-note">Your remote team. Coworkers on shift answer; mention a customer (e.g. @chat3) to warn everyone about them.</div>';
   const placeholder = chat.kind === 'bot' ? 'Type a command, e.g. /help' : chat.kind === 'mentor' ? 'Ask your mentor…' : chat.kind === 'boss' ? 'Message Diane…' : chat.kind === 'team' ? 'Message #support-team…' : chat.status === 'active' ? 'Write a message…' : 'Message (the customer has left)';
   const emojiBtn = chat.kind === 'bot' ? '' : '<button class="icon-btn" id="emojiBtn" title="Emoji">😊</button>';
-  return `<div class="composer">${note}<div class="composer-inner">${emojiBtn}
+  return `<div class="composer">${note}<div id="schedBar" class="sched-bar hidden"></div><div id="replyBar" class="reply-bar hidden"></div><div id="fmtBar" class="fmt-bar hidden"><button data-fmt="b" title="Bold (Ctrl+B)"><b>B</b></button><button data-fmt="i" title="Italic (Ctrl+I)"><i>I</i></button><button data-fmt="c" title="Code (Ctrl+E)">&lt;/&gt;</button></div><div class="composer-inner">${emojiBtn}
     <textarea id="input" rows="1" placeholder="${placeholder}" spellcheck="true"></textarea>
-    <button class="icon-btn send" id="sendBtn" title="Send (Enter)">➤</button></div>
+    <span id="charCount" class="char-count hidden"></span><button class="icon-btn send" id="sendBtn" title="Send (Enter) · right-click to schedule">➤</button></div>
     <div id="suggest" class="suggest hidden"></div><div id="emojiPicker" class="emoji-picker hidden"></div></div>`;
+}
+
+function renderReplyBar() {
+  const bar = document.getElementById('replyBar');
+  const chat = getChat(view.chatId);
+  if (!bar || !chat) return;
+  const id = view.editing || view.replyTo;
+  const m = id && findMessage(chat, id);
+  if (!m) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
+  bar.classList.remove('hidden');
+  bar.innerHTML = `<span class="rb-ic">${view.editing ? '✏️' : '↩'}</span><div class="rb-body"><div class="rb-title">${view.editing ? 'Edit message' : 'Reply to ' + escapeHtml(senderName(chat, m))}</div><div class="rb-text">${escapeHtml(quoteText(m))}</div></div><button class="icon-btn" data-cancel-reply title="Cancel (Esc)">✕</button>`;
+}
+
+function startReply(chat, m) {
+  view.editing = null;
+  view.replyTo = m.id;
+  renderReplyBar();
+  document.getElementById('input')?.focus();
+}
+
+function startEdit(chat, m) {
+  if (!canEdit(chat, m)) return;
+  view.replyTo = null;
+  view.editing = m.id;
+  const ta = document.getElementById('input');
+  if (ta) { ta.value = m.text; autosize(ta); ta.focus(); }
+  renderReplyBar();
+}
+
+function cancelReply() {
+  const wasEditing = view.editing;
+  view.replyTo = null;
+  view.editing = null;
+  renderReplyBar();
+  if (wasEditing) { const ta = document.getElementById('input'); if (ta) { ta.value = ''; autosize(ta); } }
+}
+
+// Right-click (or ⋯) on a message.
+function messageMenu(chat, m, x, y) {
+  const items = [];
+  if (chat.kind !== 'bot' && chat.kind !== 'manager') items.push({ ic: '↩', label: 'Reply', run: () => startReply(chat, m) });
+  items.push({ ic: '📋', label: 'Copy text', run: () => navigator.clipboard?.writeText(m.text || '') });
+  if (canEdit(chat, m)) items.push({ ic: '✏️', label: 'Edit', run: () => startEdit(chat, m) });
+  items.push({ ic: '📌', label: chat.pinnedMsg === m.id ? 'Unpin' : 'Pin', run: () => { pinMessage(chat, m); renderPinned(chat); } });
+  if (chat.kind === 'customer') items.push({ ic: '🎓', label: 'Ask the mentor about this', run: () => { ui.openChat('mentor'); prefillInput(`${handle(chat)} about this message: "${quoteText(m, 160)}" `); } });
+  if (canEdit(chat, m)) items.push({ sep: true }, { ic: '🗑', label: 'Delete', danger: true, run: () => { deleteMessage(chat, m); if (view.replyTo === m.id || view.editing === m.id) cancelReply(); } });
+  const head = `<div class="ctx-reactions">${REACTIONS.map((e) => `<button data-rx="${e}">${e}</button>`).join('')}</div>`;
+  const el = showMenu(items, x, y, head);
+  el.querySelectorAll('[data-rx]').forEach((b) => { b.onclick = (ev) => { ev.stopPropagation(); hideMenu(); toggleReaction(chat, m, b.dataset.rx); }; });
+  el.onclick = (e) => {
+    const row = e.target.closest('.ctx-item');
+    if (!row) return;
+    hideMenu();
+    items[+row.dataset.i].run();
+  };
+}
+
+function reactPicker(chat, m, x, y) {
+  const el = showMenu([], x, y, `<div class="ctx-reactions">${REACTIONS.map((e) => `<button data-rx="${e}">${e}</button>`).join('')}</div>`);
+  el.querySelectorAll('[data-rx]').forEach((b) => { b.onclick = (ev) => { ev.stopPropagation(); hideMenu(); toggleReaction(chat, m, b.dataset.rx); }; });
+}
+
+function renderPinned(chat) {
+  const old = document.getElementById('pinnedBar');
+  const html = pinnedBarHtml(chat);
+  if (old) old.outerHTML = html || '<div id="pinnedBar" class="hidden"></div>';
+}
+
+// ---------- formatting, counter, scheduled ----------
+function wrapSelection(ta, mark) {
+  const a = ta.selectionStart, b = ta.selectionEnd;
+  const sel = ta.value.slice(a, b) || 'text';
+  ta.value = ta.value.slice(0, a) + mark + sel + mark + ta.value.slice(b);
+  ta.selectionStart = a + mark.length;
+  ta.selectionEnd = a + mark.length + sel.length;
+  ta.focus();
+  autosize(ta);
+}
+const FMT = { b: '**', i: '_', c: '`' };
+
+function updateFmtBar() {
+  const ta = document.getElementById('input');
+  const bar = document.getElementById('fmtBar');
+  if (!ta || !bar) return;
+  bar.classList.toggle('hidden', ta.selectionStart === ta.selectionEnd || document.activeElement !== ta);
+}
+
+function updateCounter() {
+  const ta = document.getElementById('input');
+  const el = document.getElementById('charCount');
+  if (!ta || !el) return;
+  const n = ta.value.length;
+  el.textContent = n;
+  el.classList.toggle('hidden', n < 400);
+  el.classList.toggle('long', n > 2000);
+}
+
+function renderSchedBar(chat) {
+  const bar = document.getElementById('schedBar');
+  if (!bar) return;
+  const list = chat.scheduled || [];
+  if (!list.length) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
+  bar.classList.remove('hidden');
+  const when = (t) => new Date(t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  bar.innerHTML = `<div class="sb-title">🕓 ${list.length} scheduled</div>` + list.map((x) => `<div class="sb-item"><span class="sb-when">${when(x.at)}</span><span class="sb-text">${escapeHtml(quoteText({ text: x.text }, 80))}</span><button class="icon-btn" data-unsched="${x.id}" title="Cancel">✕</button></div>`).join('');
+}
+
+function scheduleMenu(chat, x, y) {
+  const ta = document.getElementById('input');
+  const text = ta?.value.trim();
+  if (!text || !SCHEDULABLE.has(chat.kind)) return;
+  const now = clock.now();
+  const at9 = (days) => { const d = new Date(now); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0); return d.getTime(); };
+  const go = (at) => {
+    schedule(chat, text, at, view.replyTo);
+    ta.value = ''; chat.draft = ''; autosize(ta); updateCounter();
+    view.replyTo = null; renderReplyBar(); renderSchedBar(chat);
+  };
+  const items = [
+    { ic: '🕐', label: 'Send in 1 hour', run: () => go(now + 3600000) },
+    { ic: '🕒', label: 'Send in 3 hours', run: () => go(now + 3 * 3600000) },
+    { ic: '🌅', label: 'Send tomorrow at 09:00', run: () => go(at9(1)) },
+    { ic: '📅', label: 'Pick a time…', run: () => pickTime(go) },
+  ];
+  const el = showMenu(items, x, y, '<div class="ctx-title">Schedule message</div>');
+  el.onclick = (e) => { const row = e.target.closest('.ctx-item'); if (!row) return; hideMenu(); items[+row.dataset.i].run(); };
+}
+
+function pickTime(go) {
+  const d = new Date(clock.now() + 3600000);
+  const pad = (n) => String(n).padStart(2, '0');
+  const val = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const m = openModal({ title: '📅 Schedule message', body: `<div class="field"><label>Send at</label><input type="datetime-local" id="schedAt" value="${val}"></div>`, foot: '<button class="btn" data-cancel>Cancel</button><button class="btn primary" id="schedGo">Schedule</button>' });
+  m.querySelector('[data-cancel]').onclick = () => closeModal();
+  m.querySelector('#schedGo').onclick = () => {
+    const t = new Date(m.querySelector('#schedAt').value).getTime();
+    if (!Number.isFinite(t) || t <= clock.now()) return;
+    closeModal();
+    go(t);
+  };
+}
+
+// A chart, big (click any chart).
+function chartViewer(spec) {
+  const m = openModal({ title: '📈 Chart', body: '<div id="chartBig" class="chart-big"></div>', wide: true });
+  renderChart(m.querySelector('#chartBig'), spec);
 }
 
 function autosize(ta) {
@@ -315,10 +553,20 @@ function send() {
   const text = ta.value.trim();
   if (!text) return;
   ta.value = '';
-  drafts.delete(chat.id);
+  if (chat.draft) chat.draft = '';
   autosize(ta);
   hideSuggest();
   hideEmoji();
+  if (view.editing) {
+    const m = findMessage(chat, view.editing);
+    if (m) editMessage(chat, m, text);
+    cancelReply();
+    return;
+  }
+  const replyTo = view.replyTo;
+  view.replyTo = null;
+  renderReplyBar();
+  const before = new Set(chat.messages.map((m) => m.id));
   if (chat.kind === 'bot') handleBotInput(text);
   else if (chat.kind === 'mentor') sendToMentor(text);
   else if (chat.kind === 'boss') boss.onPlayerMessage(text);
@@ -326,6 +574,10 @@ function send() {
   else if (chat.kind === 'customer') {
     if (text.startsWith('/') && handleChatCommand(chat, text)) return;
     onPlayerMessage(chat, text);
+  }
+  if (replyTo) {
+    const mine = chat.messages.find((m) => !before.has(m.id) && m.from === 'me');
+    if (mine) mine.replyTo = replyTo;
   }
   syncMessages(chat, true);
 }
@@ -346,10 +598,15 @@ function updateSuggest() {
   let kind = null;
   const cm = /^\/(\w*)$/.exec(before);
   const mm = /(^|\s)@(\w*)$/.exec(before);
-  if (cm && (chat.kind === 'bot' || chat.kind === 'customer')) {
+  if (cm && ['bot', 'customer', 'boss', 'team'].includes(chat.kind)) {
     kind = 'cmd';
-    const list = chat.kind === 'bot' ? COMMANDS : CHAT_COMMANDS;
-    items = list.filter((c) => c.cmd.startsWith(cm[1].toLowerCase())).map((c) => ({ key: '/' + c.cmd + (c.args ? ' ' : ''), label: '/' + c.cmd, desc: (c.args ? c.args + ' — ' : '') + c.desc }));
+    const q = cm[1].toLowerCase();
+    const list = chat.kind === 'bot' ? COMMANDS : chat.kind === 'customer' ? CHAT_COMMANDS : [];
+    items = list.filter((c) => c.cmd.startsWith(q)).map((c) => ({ key: '/' + c.cmd + (c.args ? ' ' : ''), label: '/' + c.cmd, desc: (c.args ? c.args + ' — ' : '') + c.desc }));
+    if (chat.kind !== 'bot') {
+      items.push(...(S.profile.snippets || []).filter((x) => !q || x.name.toLowerCase().replace(/\s+/g, '').startsWith(q) || x.text.toLowerCase().includes(q))
+        .map((x) => ({ key: x.text, label: '💬 ' + x.name, desc: quoteText({ text: x.text }, 70), snippet: true })));
+    }
   } else if (mm && (chat.kind === 'mentor' || chat.kind === 'boss' || chat.kind === 'team')) {
     kind = 'mention';
     const q = mm[2].toLowerCase();
@@ -461,9 +718,9 @@ export function renderChatPane() {
   const p = pane();
   const prev = view.chatId && getChat(view.chatId);
   const ta = document.getElementById('input');
-  if (prev && ta) drafts.set(prev.id, ta.value);
+  if (prev && ta && !view.editing && (prev.draft || '') !== ta.value) { prev.draft = ta.value; touchChat(prev); } // drafts survive switching chats and restarts
   destroyChartsIn(p);
-  view = { chatId: S.activeChatId, els: new Map(), typingEl: null, lastDay: null };
+  view = { chatId: S.activeChatId, els: new Map(), sigs: new Map(), typingEl: null, lastDay: null, replyTo: null, editing: null, newBelow: 0, unreadEl: null };
   const chat = S.activeChatId && getChat(S.activeChatId);
   // wallpaper
   p.className = 'chat-pane';
@@ -475,12 +732,15 @@ export function renderChatPane() {
     p.innerHTML = '<div class="empty-hint">Select a chat to start messaging</div>';
     return;
   }
-  p.innerHTML = headerHtml(chat) + '<div class="messages" id="messages"><div class="messages-inner" id="messagesInner"></div></div>' + composerHtml(chat);
-  syncMessages(chat, true);
+  p.innerHTML = headerHtml(chat) + (pinnedBarHtml(chat) || '<div id="pinnedBar" class="hidden"></div>') + '<div class="messages" id="messages"><div class="messages-inner" id="messagesInner"></div></div><button id="jumpBtn" class="jump-btn hidden" title="Jump to the latest"><span class="jb-count hidden"></span>⌄</button>' + composerHtml(chat);
+  syncMessages(chat, true, { unread: chat.unread || 0 });
+  renderSchedBar(chat);
+  p.className += ' bg-' + chat.kind + (chat.kind === 'customer' && chat.customer.vip ? ' bg-vip' : '') + (chat.rush ? ' bg-rush' : '');
+  document.getElementById('messages').addEventListener('scroll', updateJump, { passive: true });
   if (S.infoOpen) openInfo(chat);
   const input = document.getElementById('input');
   if (input) {
-    input.value = drafts.get(chat.id) || '';
+    input.value = chat.draft || '';
     autosize(input);
     input.focus();
   }
@@ -512,6 +772,8 @@ export function updateChatPane(chatId) {
     if (nta) { nta.value = val; autosize(nta); }
   }
   syncMessages(chat);
+  renderPinned(chat);
+  renderSchedBar(chat);
   if (S.infoOpen && document.getElementById('infoPanel')) openInfo(chat);
   if (S.focused && !S.showModal) markRead(chat);
 }
@@ -542,22 +804,58 @@ export function bindChatPane() {
       const it = suggest.items[suggest.index];
       const kind = suggest.kind;
       applySuggest(suggest.index);
-      if (kind === 'cmd' && e.key === 'Enter' && it && !it.key.endsWith(' ')) send();
+      if (kind === 'cmd' && e.key === 'Enter' && it && !it.snippet && !it.key.endsWith(' ')) send();
       return;
     }
-    if (e.key === 'Escape') { hideSuggest(); hideEmoji(); return; }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && ['b', 'i', 'e'].includes(e.key.toLowerCase())) {
+      e.preventDefault();
+      wrapSelection(e.target, { b: '**', i: '_', e: '`' }[e.key.toLowerCase()]);
+      return;
+    }
+    if (e.key === 'Escape') { hideSuggest(); hideEmoji(); if (view.replyTo || view.editing) cancelReply(); return; }
+    if (e.key === 'ArrowUp' && !e.target.value) {
+      const chat = getChat(view.chatId);
+      const last = chat && [...chat.messages].reverse().find((m) => m.from === 'me' && canEdit(chat, m));
+      if (last) { e.preventDefault(); startEdit(chat, last); }
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   });
   p.addEventListener('input', (e) => {
     if (e.target.id !== 'input') return;
     autosize(e.target);
     updateSuggest();
+    updateCounter();
   });
+  for (const ev of ['select', 'keyup', 'mouseup', 'focusout']) p.addEventListener(ev, (e) => { if (e.target.id === 'input') setTimeout(updateFmtBar, 0); });
   p.addEventListener('click', (e) => {
     const chat = getChat(view.chatId);
     if (!chat) return;
     const t = e.target;
     if (t.closest('#sendBtn')) return send();
+    const fmt = t.closest('[data-fmt]');
+    if (fmt) { const ta = document.getElementById('input'); wrapSelection(ta, FMT[fmt.dataset.fmt]); updateFmtBar(); return; }
+    const uns = t.closest('[data-unsched]');
+    if (uns) { cancelScheduled(chat, uns.dataset.unsched); renderSchedBar(chat); return; }
+    const cv = t.closest('.chart-box');
+    if (cv && cv.chartSpec) { chartViewer(cv.chartSpec); return; }
+    if (t.closest('[data-cancel-reply]')) return cancelReply();
+    if (t.closest('[data-unpin]')) { pinMessage(chat, null); renderPinned(chat); return; }
+    if (t.closest('#jumpBtn')) { const box = document.getElementById('messages'); box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' }); view.newBelow = 0; return; }
+    const jump = t.closest('[data-jump]');
+    if (jump) { jumpTo(jump.dataset.jump); return; }
+    const msgEl = t.closest('.msg[data-id]');
+    const msg = msgEl && findMessage(chat, msgEl.dataset.id);
+    const rx = t.closest('[data-react]');
+    if (rx && msg) { toggleReaction(chat, msg, rx.dataset.react); return; }
+    const act = t.closest('[data-act]');
+    if (act && msg) {
+      const r = act.getBoundingClientRect();
+      if (act.dataset.act === 'reply') startReply(chat, msg);
+      else if (act.dataset.act === 'react') reactPicker(chat, msg, r.left - 80, r.bottom + 4);
+      else messageMenu(chat, msg, r.left - 150, r.bottom + 4);
+      return;
+    }
     if (t.closest('#emojiBtn')) {
       const box = document.getElementById('emojiPicker');
       box.classList.toggle('hidden');
@@ -580,7 +878,7 @@ export function bindChatPane() {
       const it = suggest.items[+sg.dataset.i];
       const kind = suggest.kind;
       applySuggest(+sg.dataset.i);
-      if (kind === 'cmd' && it && !it.key.endsWith(' ')) send();
+      if (kind === 'cmd' && it && !it.snippet && !it.key.endsWith(' ')) send();
       return;
     }
     const cmd = t.closest('.cmd');
@@ -624,6 +922,25 @@ export function bindChatPane() {
       return;
     }
     if (!t.closest('#emojiPicker')) hideEmoji();
+  });
+  p.addEventListener('contextmenu', (e) => {
+    if (e.target.closest('#sendBtn')) {
+      const chat = getChat(view.chatId);
+      if (chat) { e.preventDefault(); scheduleMenu(chat, e.clientX - 200, e.clientY - 190); }
+      return;
+    }
+    const msgEl = e.target.closest('.msg[data-id]');
+    const chat = getChat(view.chatId);
+    const msg = chat && msgEl && findMessage(chat, msgEl.dataset.id);
+    if (!msg || window.getSelection()?.toString()) return;
+    e.preventDefault();
+    messageMenu(chat, msg, e.clientX, e.clientY);
+  });
+  p.addEventListener('dblclick', (e) => {
+    const msgEl = e.target.closest('.msg[data-id]');
+    const chat = getChat(view.chatId);
+    const msg = chat && msgEl && findMessage(chat, msgEl.dataset.id);
+    if (msg && chat.kind !== 'bot' && chat.kind !== 'manager' && !e.target.closest('a,button,table')) { window.getSelection()?.removeAllRanges(); startReply(chat, msg); }
   });
   document.getElementById('main').addEventListener('click', (e) => {
     if (e.target.closest('#askMentor')) {

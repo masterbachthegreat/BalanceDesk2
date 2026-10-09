@@ -73,6 +73,22 @@ To start over, use ☰ → *Reset game…* (or Settings → *Reset game…*). Th
   - Now and then (about once every day or two) a customer or Diane has to step away mid-conversation
     ("brb, meeting starting"). They read what you sent once they're back and acknowledge the break.
   - She runs on her own model (☰ → Settings → *Manager model*).
+- **Messenger features** (Telegram-like):
+  - Right-click a message (or hover it) to **reply** with a quote, **react**, **copy**, **pin**, or ask the mentor
+    about it. Double-click to reply. Your own messages can be **edited** (↑ in an empty box edits the last one) or
+    **deleted** for 15 minutes; if the customer already read it, they notice.
+  - The customer's question is pinned at the top of each chat. "Unread messages" divider, jump-to-latest button,
+    sticky dates, read times on hover (✓✓).
+  - **Folders** in the left rail (All, Customers, Work, Unread, VIP, Archive), **mute** chats (1 h / 8 h / forever),
+    unsent text kept as a **draft**, drag pinned chats to reorder, and search that finds individual messages.
+  - **Formatting:** select text or use Ctrl+B / Ctrl+I / Ctrl+E. **Saved replies:** type `/` (☰ → Saved replies).
+    **Scheduled send:** right-click ➤ (in 1 h, 3 h, tomorrow 09:00, or a time you pick), sent even if the app is
+    closed then.
+  - Your status (online / away / busy) in the bottom bar; Diane and the team see it. Alt+↑/↓ switches chats.
+  - If a customer is typing and you send another message, they read it at once, stop, and rethink their reply.
+- **Character photos:** ☰ → *Character photos folder* (`%APPDATA%\BalanceDesk\avatars`). Name a photo after someone
+  (`diane.jpg`, `priya.png`, `mentor.jpg`, `Margaret Ellis.jpg`) to give it to them; other photos are shared out
+  among characters without their own. Customers also show casual display names ("jess 🌻", "Tom K.").
 - **📖 Concept** (button in the chat header): a short beginner lesson on the idea behind the customer's question, with a worked example using different numbers.
 - **Ending a chat:** it ends when the customer is satisfied, when they give up, or when you close it.
   - The AI then grades your **answer (1–100)** and your **service (1–5★)**, and pays you.

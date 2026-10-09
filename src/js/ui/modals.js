@@ -132,6 +132,32 @@ export function settingsModal() {
   };
 }
 
+// ---------- saved replies ----------
+export const DEFAULT_SNIPPETS = [
+  { name: 'thanks', text: 'Thanks for your patience! Let me look into this for you.' },
+  { name: 'checking', text: 'Good question. Give me a moment to work through the numbers properly.' },
+  { name: 'anything else', text: 'Is there anything else I can help you with today?' },
+  { name: 'off shift', text: "Sorry, I'm off shift right now. I'll get back to you first thing tomorrow morning." },
+];
+
+export function snippetsModal() {
+  const p = S.profile;
+  p.snippets ||= DEFAULT_SNIPPETS.map((x) => ({ ...x }));
+  const row = (x, i) => `<div class="snip-row" data-i="${i}"><input class="snip-name" value="${escapeHtml(x.name)}" placeholder="name"><textarea class="snip-text" rows="2" placeholder="text">${escapeHtml(x.text)}</textarea><button class="icon-btn" data-del="${i}" title="Delete">🗑</button></div>`;
+  const m = openModal({
+    title: '💬 Saved replies',
+    body: `<div class="hint" style="margin-bottom:8px">Type <b>/</b> in a chat with a customer, Diane or the team to insert one.</div><div id="snipList">${p.snippets.map(row).join('')}</div><button class="btn small" id="snipAdd" style="margin-top:8px">＋ Add reply</button>`,
+    foot: '<button class="btn" data-cancel>Cancel</button><button class="btn primary" id="snipSave">Save</button>',
+    wide: true,
+  });
+  const $ = (q) => m.querySelector(q);
+  const collect = () => [...m.querySelectorAll('.snip-row')].map((r) => ({ name: r.querySelector('.snip-name').value.trim(), text: r.querySelector('.snip-text').value.trim() })).filter((x) => x.name && x.text);
+  $('[data-cancel]').onclick = () => closeModal();
+  $('#snipAdd').onclick = () => { $('#snipList').insertAdjacentHTML('beforeend', row({ name: '', text: '' }, Date.now())); };
+  $('#snipList').onclick = (e) => { const d = e.target.closest('[data-del]'); if (d) d.closest('.snip-row').remove(); };
+  $('#snipSave').onclick = () => { p.snippets = collect(); touchProfile(); closeModal(); toast('Saved replies updated', '', 'good'); };
+}
+
 // ---------- reset ----------
 export function resetModal() {
   const m = openModal({

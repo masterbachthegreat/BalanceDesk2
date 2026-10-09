@@ -22,6 +22,7 @@ export function openDrawer() {
     ['⚙', 'Settings', () => ui.openSettings()],
     ['📂', 'Open save folder', () => window.api.openDataFolder()],
     ['📷', 'Character photos folder', () => ui.openPhotos()],
+    ['💬', 'Saved replies', () => ui.openSnippets()],
     ['🧹', 'Reset game…', () => ui.openReset()],
   ];
   d.innerHTML = `<div class="drawer-head">${playerAvatar('sm')}<div class="dname">${playerNameHtml()}</div><div class="dtitle">${escapeHtml(playerTitle() || r.title)} · rank ${p.rank}</div><div class="dbal">${money(p.balance)}</div></div>
@@ -43,6 +44,5 @@ export function closeDrawer() {
 }
 
 export function bindDrawer() {
-  document.getElementById('menuBtn').onclick = openDrawer;
   document.getElementById('drawerBackdrop').onclick = closeDrawer;
 }

@@ -25,7 +25,7 @@ export function ping(kind = 'msg') {
     const o = audioCtx.createOscillator();
     const g = audioCtx.createGain();
     o.type = 'sine';
-    o.frequency.value = kind === 'money' ? 1046 : 740;
+    o.frequency.value = { money: 1046, boss: 880, team: 660, mentor: 620, bot: 520 }[kind] || 740;
     g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);

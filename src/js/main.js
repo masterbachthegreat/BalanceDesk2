@@ -15,12 +15,12 @@ import * as customers from './game/customers.js';
 import * as mentor from './game/mentor.js';
 import { loadPhotos, photoCount, shufflePhotos } from './ui/photos.js';
 import { ui } from './ui/registry.js';
-import { renderSidebar, renderStatusBar, bindSidebar } from './ui/sidebar.js';
-import { renderChatPane, updateChatPane, tickChatPane, bindChatPane, prefillInput } from './ui/chatview.js';
-import { chatContextMenu, bindContextMenu } from './ui/contextmenu.js';
-import { onboardingModal, settingsModal, profileModal, shopModal, closeModal, conceptModal, resetModal } from './ui/modals.js';
+import { renderSidebar, renderStatusBar, bindSidebar, isMuted } from './ui/sidebar.js';
+import { renderChatPane, updateChatPane, tickChatPane, bindChatPane, prefillInput, jumpToMessage } from './ui/chatview.js';
+import { chatContextMenu, bindContextMenu, showMenu } from './ui/contextmenu.js';
+import { onboardingModal, settingsModal, profileModal, shopModal, closeModal, conceptModal, resetModal, snippetsModal, DEFAULT_SNIPPETS } from './ui/modals.js';
 import { maybeMentorHint, reviewWithMentor } from './game/mentor.js';
-import { bindDrawer, closeDrawer } from './ui/drawer.js';
+import { bindDrawer, closeDrawer, openDrawer } from './ui/drawer.js';
 import { openCalculator, openNotepad } from './ui/floating.js';
 import { toast, ping } from './ui/toast.js';
 
@@ -47,6 +47,8 @@ function newProfile(name) {
     memo: { nextAt: null, sent: [] },
     world: {},
     payRaise: 0,
+    snippets: DEFAULT_SNIPPETS.map((x) => ({ ...x })),
+    presence: 'online',
     raiseAtChats: 0,
     recentScores: [],
     lastBossNag: 0,
@@ -117,10 +119,23 @@ function schedule() {
 }
 
 let lastUnread = -1;
+// Red unread badge for the Windows taskbar button.
+function badgeIcon(n) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e53935';
+  g.beginPath(); g.arc(16, 16, 15, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff';
+  g.font = `bold ${n > 9 ? 15 : 19}px Segoe UI, sans-serif`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(n > 99 ? '99+' : String(n), 16, 17);
+  return c.toDataURL('image/png');
+}
 function updateTitle() {
   const n = [...S.chats.values()].reduce((s, c) => s + (c.unread || 0), 0);
   document.title = (n ? `(${n}) ` : '') + 'BalanceDesk — Whiterock Support';
-  if (n !== lastUnread) { lastUnread = n; window.api.setUnread?.(n); }
+  if (n !== lastUnread) { lastUnread = n; window.api.setUnread?.(n, n ? badgeIcon(n) : null); }
 }
 
 function refresh(full = false) {
@@ -134,7 +149,7 @@ function refresh(full = false) {
 function openChat(id) {
   const chat = getChat(id);
   if (!chat) return;
-  if (chat.archived && !S.showArchived) S.showArchived = true;
+  if (chat.archived && S.folder !== 'archive') S.folder = 'archive';
   S.activeChatId = id;
   renderChatPane();
   renderSidebar();
@@ -156,7 +171,8 @@ function toggleDayNight() {
 Object.assign(ui, {
   openChat, refresh, askMentorAbout,
   showQueue: () => { openChat('bot'); handleBotInput('/queue'); }, toggleDayNight, chatContextMenu,
-  openSettings: settingsModal, openReset: resetModal,
+  showMenu, openSettings: settingsModal, openReset: resetModal, openDrawer, openSnippets: snippetsModal,
+  jumpToMessage: (id) => setTimeout(() => jumpToMessage(id), 50),
   openPhotos: () => {
     window.api.openAvatarFolder?.();
     botSay(`📷 **Character photos**: put pictures in the folder that just opened (${photoCount()} there now).\n• Name a file after someone to give it to them: \`diane.jpg\`, \`priya.png\`, \`mentor.jpg\`, \`Margaret Ellis.jpg\`\n• Any other photos are shared out: each character without their own photo gets a different one and keeps it.\nNew photos appear when you switch back to BalanceDesk.`, { buttons: [[{ label: '🔀 Shuffle shared photos', action: 'ui', value: 'shufflePhotos' }]] });
@@ -184,8 +200,8 @@ function tick() {
 // ---------- notifications ----------
 function onIncoming(chat) {
   const m = chat.messages[chat.messages.length - 1];
-  if (m?.silent) return;
-  if (S.settings.sound) ping();
+  if (m?.silent || isMuted(chat)) return;
+  if (S.settings.sound) ping(chat.kind);
   if (S.settings.notifications) window.api.flash();
   let title = null;
   let body = (m?.text || '').replace(/[*_`#>]/g, '').slice(0, 140);
@@ -246,6 +262,7 @@ async function boot() {
 
   window.api.onOpenChat?.((id) => openChat(id));
   on('photos', () => { renderSidebar(); renderChatPane(); });
+  on('net', () => renderSidebar());
   window.addEventListener('focus', () => { loadPhotos(); });
   window.addEventListener('focus', () => { S.focused = true; const c = getChat(S.activeChatId); if (c) markRead(c); });
   window.addEventListener('blur', () => { S.focused = false; });
@@ -253,6 +270,13 @@ async function boot() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeModal(); closeDrawer(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('search').focus(); }
+    if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { // previous / next chat in the list
+      e.preventDefault();
+      const ids = [...document.querySelectorAll('#chatList .chat-row[data-id]:not(.hit)')].map((r) => r.dataset.id);
+      const i = ids.indexOf(S.activeChatId);
+      const next = ids[(i + (e.key === 'ArrowDown' ? 1 : -1) + ids.length) % ids.length];
+      if (next) openChat(next);
+    }
   });
 
   refresh(true);

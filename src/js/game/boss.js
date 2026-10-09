@@ -12,7 +12,7 @@
 // more open to off-work talk and more likely to message you just to chat.
 import { S, cfg, rand, pick, touchChat, touchProfile } from '../core/state.js';
 import { waitWords, num, plural, lastSeenText } from '../core/format.js';
-import { addMessage, getChat, sysMessage, findChatByHandle, activeCustomerChats, customerChats, handle } from './chats.js';
+import { addMessage, getChat, sysMessage, findChatByHandle, activeCustomerChats, customerChats, handle, toggleReaction } from './chats.js';
 import { reasonText } from './transcript.js';
 import * as clock from './clock.js';
 import * as world from './world.js';
@@ -209,9 +209,8 @@ export function welcomeMessage() {
   });
 }
 
-export function onPlayerMessage(text) {
+export function onPlayerMessage(text, t = clock.now()) {
   const c = chat();
-  const t = clock.now();
   addMessage(c, { from: 'me', text, read: false, t });
   if (!c.replyAt) c.replyAt = replyTime(t);
   touchChat(c);
@@ -322,6 +321,7 @@ function contextNote(t, actions) {
     `Your professional view of their work: ${workView()}`,
     `Your personal friendship with them: ${friendshipView()}`,
     `You are ${onShift(t) ? 'on your shift, at your desk' : awake(t) ? 'off shift, on your phone (evening or weekend)' : 'up unusually late'}.`,
+    `The agent's messenger status: ${S.profile.presence || 'online'}.`,
     '',
     'SITUATION',
     contextText(t),
@@ -404,6 +404,7 @@ async function respond(t) {
     addMessage(c, { from: 'them', text: reply, t: at });
     const warmth = Math.max(-2, Math.min(2, Math.round(Number(j.warmth ?? j.tone) || 0)));
     bumpFriendship([-6, -3, 0.3, 1.5, 3][warmth + 2]);
+    if (warmth >= 1 && Math.random() < 0.3) toggleReaction(c, pending.at(-1), warmth >= 2 ? pick(['😂', '❤️']) : '👍', 'diane');
     if (warmth <= -2) bumpWork(-2); // rude to your manager: noted professionally too
     const allowed = new Set(actions.out.map(([k]) => k));
     if (j.action && j.action !== 'none' && allowed.has(j.action)) apply(j, at);

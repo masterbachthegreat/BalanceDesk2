@@ -105,3 +105,48 @@ export function findChatByHandle(token) {
   return list.find((c) => c.customer.name.toLowerCase().split(' ')[0] === t) ||
     list.find((c) => c.customer.name.toLowerCase().replace(/\s+/g, '') === t) || null;
 }
+
+// ---------- message actions (reply, react, edit, delete, pin) ----------
+export function findMessage(chat, id) { return chat.messages.find((m) => m.id === id) || null; }
+
+export function toggleReaction(chat, m, emoji, by = 'me') {
+  m.reactions ||= [];
+  const i = m.reactions.findIndex((r) => r.by === by);
+  if (i >= 0 && m.reactions[i].e === emoji) m.reactions.splice(i, 1);
+  else if (i >= 0) m.reactions[i].e = emoji;
+  else m.reactions.push({ e: emoji, by });
+  touchChat(chat);
+}
+
+export const EDIT_WINDOW_MS = 15 * 60000;
+export function canEdit(chat, m) {
+  return m.from === 'me' && !m.local && !m.after && chat.kind !== 'bot' && clock.now() - m.t < EDIT_WINDOW_MS;
+}
+
+export function editMessage(chat, m, text) {
+  if (!canEdit(chat, m) || !text.trim() || text === m.text) return false;
+  if (m.read) m.editedAfterRead = m.text; // the other side already saw the old version
+  m.text = text;
+  m.edited = true;
+  touchChat(chat);
+  return true;
+}
+
+export function deleteMessage(chat, m) {
+  if (!canEdit(chat, m)) return false;
+  if (m.read && chat.kind === 'customer') (chat.cs.deletedSeen ||= []).push(m.text);
+  chat.messages = chat.messages.filter((x) => x !== m);
+  if (chat.pinnedMsg === m.id) chat.pinnedMsg = null;
+  touchChat(chat);
+  return true;
+}
+
+export function pinMessage(chat, m) {
+  chat.pinnedMsg = chat.pinnedMsg === m?.id ? null : m?.id || null;
+  touchChat(chat);
+}
+
+export function quoteText(m, n = 90) {
+  const t = String(m?.text || '').replace(/[*_`#>]/g, '').replace(/\s+/g, ' ').trim();
+  return t.length > n ? t.slice(0, n - 1) + '…' : t;
+}

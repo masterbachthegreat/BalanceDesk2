@@ -7,7 +7,7 @@ export const S = {
   profile: null,       // the player's save (profile.json)
   chats: new Map(),    // id -> chat object (each saved as chats/<id>.json)
   activeChatId: null,
-  showArchived: false,
+  folder: 'all',       // chat-list folder: all | customers | work | unread | vip | archive
   search: '',
   focused: true,
 };

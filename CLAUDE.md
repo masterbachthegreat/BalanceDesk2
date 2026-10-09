@@ -33,7 +33,9 @@ stats and maths questions; OpenRouter LLMs play the customers (Haiku), grade ans
     - `mentor.js`: Sonnet, `@chatN` transcripts, chart blocks, unprompted hints after repeated pushbacks (`maybeMentorHint`), Review with mentor
     - `manager.js`, `progress.js`: ranks and promotion
     - `shop.js`, `questions.js` (pick by book order), `template.js` (randomised questions), `clock.js` (wall clock; `activeMs` counts app-open time; `skip()` for tests)
-  - `js/ui/`: sidebar, chatview (incremental message rendering), modals, contextmenu, drawer, floating (calculator, notepad), charts (Chart.js, vendored in `src/vendor`), markdown.
+  - `js/ui/`: sidebar (folder rail, search, mute, drafts, drag-reorder pins), chatview (incremental rendering with per-message signatures; reply/quote, reactions, edit/delete, pinned bar, unread divider, jump button, formatting, saved replies, scheduled send, chart viewer), modals, contextmenu (`showMenu` generic), drawer, floating (calculator, notepad), charts (Chart.js, vendored in `src/vendor`), markdown, photos (player's `avatars/` folder: files named after a character are theirs, others are a shared pool; `profile.photoMap`).
+  - Message fields: `replyTo`, `reactions [{e, by}]`, `edited`/`editedAfterRead`, `scheduled`; chat fields: `pinnedMsg`, `draft`, `mutedUntil` (-1 = forever), `pinOrder`, `scheduled [{id,text,at,replyTo}]` (`game/scheduled.js`, delivered in `world.tick`/`catchUp`).
+  - `game/names.js`: casual display names/@usernames for ordinary "First Last" personas (`chats.customerNames`); the AI always sees the full name.
   - Game modules reach UI only through `ui/registry.js`, which avoids import cycles.
 - `data/`: every tunable is JSON. See README for the table.
 - `scripts/`:
@@ -41,7 +43,7 @@ stats and maths questions; OpenRouter LLMs play the customers (Haiku), grade ans
   - `validate-data.mjs`: checks data, runs every template against the book's numbers, and samples 200 variants of each.
   - `build-personalities.py`: regenerates `data/personalities.json`.
   - `question-sources/`: Python sources that generate `data/questions/*.json`.
-- `tests/ui-test.mjs`: Playwright end-to-end test against the dev server with the mock LLM (85 checks; uses `__bd.clock.skip` and `__bd.world.catchUp` to simulate time away).
+- `tests/ui-test.mjs`: Playwright end-to-end test against the dev server with the mock LLM (100 checks; uses `__bd.clock.skip` and `__bd.world.catchUp` to simulate time away).
 
 ## Question pool
 

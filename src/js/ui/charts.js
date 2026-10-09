@@ -94,6 +94,8 @@ const live = new Set();
 export function renderChart(container, spec) {
   const box = document.createElement('div');
   box.className = 'chart-box';
+  box.chartSpec = spec; // for the big viewer (click a chart)
+  box.title = 'Click to enlarge';
   const canvas = document.createElement('canvas');
   box.appendChild(canvas);
   container.appendChild(box);

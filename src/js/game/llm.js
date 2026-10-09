@@ -1,9 +1,25 @@
 // Thin wrapper around window.api.llm plus robust JSON extraction.
 
+import { S } from '../core/state.js';
+import { emit } from '../core/bus.js';
+
+// "Connecting…" in the UI while OpenRouter can't be reached (like Telegram's header).
+function setNet(down) {
+  if (!!S.netDown === down) return;
+  S.netDown = down;
+  emit('net');
+}
+
 export async function llmCall({ role, category, system, messages, maxTokens, temperature, chatId }) {
   const msgs = system ? [{ role: 'system', content: system }, ...messages] : messages;
-  const r = await window.api.llm({ role, category, messages: msgs, maxTokens, temperature, chatId });
-  return r.text || '';
+  try {
+    const r = await window.api.llm({ role, category, messages: msgs, maxTokens, temperature, chatId });
+    setNet(false);
+    return r.text || '';
+  } catch (e) {
+    if (/Network error|timed out|fetch failed|ENOTFOUND|ECONN/i.test(e.message || '')) setNet(true);
+    throw e;
+  }
 }
 
 // Models sometimes wrap JSON in ```json fences or add chatter around it.

@@ -23,6 +23,7 @@ import { ui } from '../ui/registry.js';
 import * as boss from './boss.js';
 import * as team from './team.js';
 import { maybeDigest } from './mentor.js';
+import { deliverDue } from './scheduled.js';
 
 const DAY = 86400000;
 const HOUR = 3600000;
@@ -197,6 +198,7 @@ export function tick(dt) {
   w.lastSeen = now;
   const v = w.vacation;
   if (v && now >= v.end) endVacation(v.end);
+  deliverDue(now);
   boss.tick(now);
   team.tick(now);
   tickMemos(now);
@@ -219,6 +221,7 @@ export async function catchUp() {
   try {
     const v = w.vacation;
     if (v && now >= v.end) endVacation(v.end);
+    deliverDue(now); // scheduled messages go out at their own time
     if (!vacation()) {
       processArrivals(now, true);
       for (const c of activeCustomerChats()) advanceTimers(c, now);

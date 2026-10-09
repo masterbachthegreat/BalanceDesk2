@@ -147,13 +147,13 @@ try {
   await page.click(`.chat-row[data-id="${c2}"]`, { button: 'right' });
   await page.click('.ctx-item:has-text("Archive")');
   await page.waitForTimeout(200);
-  check((await page.locator('.archive-row').count()) === 1, 'archive folder appears');
+  check((await page.locator('[data-folder="archive"]').count()) === 1, 'archive folder in the rail');
   check((await page.locator(`#chatList .chat-row[data-id="${c2}"]`).count()) === 0, 'archived chat hidden from main list');
-  await page.click('.archive-row');
+  await page.click('[data-folder="archive"]');
   check((await page.locator(`#chatList .chat-row[data-id="${c2}"]`).count()) === 1, 'archived chat visible in folder');
   await page.click(`.chat-row[data-id="${c2}"]`, { button: 'right' });
   await page.click('.ctx-item:has-text("Unarchive")');
-  await page.click('.archive-row[data-action="back"]').catch(() => {});
+  await page.click('[data-folder="all"]');
   await page.waitForTimeout(200);
 
   console.log('Delete an active chat');
@@ -422,6 +422,71 @@ try {
   await bd((id) => { const { S, clock } = window.__bd; const cs = S.chats.get(id).cs; cs.away.until = clock.now(); cs.readAt = clock.now(); }, c12);
   await waitFor((id) => window.__bd.S.chats.get(id).status !== 'active' || window.__bd.S.chats.get(id).cs.turns >= 2, c12);
   check((await bd((id) => !window.__bd.S.chats.get(id).cs.away, c12)), 'back from the break, they carry on');
+
+  console.log('Messenger features');
+  await bd(() => { const { S } = window.__bd; S.profile.world.nextArrivalAt = Date.now() + 1e12; Object.assign(S.data.config.customer.think, { baseMs: [200, 400], perWordMs: 2, perNumberMs: 10, minMs: 300, maxMs: 800 }); S.data.config.customer.stepAway.chance = 0; });
+  const c13 = await newCustomer();
+  check((await page.locator('#pinnedBar .pb-text').count()) === 1, "the customer's question is pinned at the top");
+  const qId = await bd((id) => window.__bd.S.chats.get(id).pinnedMsg, c13);
+  await page.click(`.msg[data-id="${qId}"]`, { button: 'right' });
+  await page.click('.ctx-item:has-text("Reply")');
+  check((await page.locator('#replyBar:not(.hidden)').count()) === 1, 'reply bar shows the quoted message');
+  await send('Quoting your question so we are on the same page.');
+  const myReply = await bd((id) => window.__bd.S.chats.get(id).messages.filter((m) => m.from === 'me').at(-1), c13);
+  check(myReply.replyTo === qId && (await page.locator('.reply-quote').count()) >= 1, 'reply is linked to the quoted message');
+  await page.click(`.msg[data-id="${myReply.id}"]`, { button: 'right' });
+  await page.click('.ctx-reactions [data-rx="🔥"]');
+  await page.waitForTimeout(200);
+  check((await bd(([id, mid]) => window.__bd.S.chats.get(id).messages.find((m) => m.id === mid).reactions?.[0]?.e, [c13, myReply.id])) === '🔥', 'reactions on messages');
+  await page.click('#input');
+  await page.keyboard.press('ArrowUp');
+  await page.fill('#input', 'Quoting your question so we are on the same page (edited).');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(200);
+  const ed = await bd(([id, mid]) => window.__bd.S.chats.get(id).messages.find((m) => m.id === mid), [c13, myReply.id]);
+  check(ed.edited && /edited\)/.test(ed.text) && (await page.locator('.meta .edited').count()) >= 1, '↑ edits your last message, shown as "edited"');
+  // typing interrupt: customer is typing, you send another message, they stop and re-read
+  await bd((id) => { window.__bd.S.data.config.customer.think.minMs = 2500; window.__bd.S.data.config.customer.think.maxMs = 3000; window.__bd.S.chats.get(id).cs.readAt = window.__bd.clock.now(); }, c13);
+  await waitFor((id) => window.__bd.S.chats.get(id).cs.thinking, c13);
+  await waitFor((id) => window.__bd.S.chats.get(id).cs.typing, c13, 10000).catch(() => {});
+  await send('Oh and one more thing!');
+  await page.waitForTimeout(900);
+  const it = await bd((id) => { const c = window.__bd.S.chats.get(id); return { read: c.messages.filter((m) => m.from === 'me').at(-1).read, typing: c.cs.typing, thinking: c.cs.thinking }; }, c13);
+  check(it.read && (it.thinking || !it.typing), 'a message sent while they type is read at once and they rethink', JSON.stringify(it));
+  await bd(() => Object.assign(window.__bd.S.data.config.customer.think, { minMs: 300, maxMs: 800 }));
+  // drafts, mute, folders, search
+  await page.fill('#input', 'half-written answer');
+  await page.click('.chat-row[data-id="bot"]');
+  check((await page.locator(`.chat-row[data-id="${c13}"] .draft`).count()) === 1, 'unsent text is kept as a draft');
+  await page.click(`.chat-row[data-id="${c13}"]`, { button: 'right' });
+  await page.click('.ctx-item:has-text("Mute for 1 hour")');
+  await page.waitForTimeout(200);
+  check((await page.locator(`.chat-row[data-id="${c13}"] .pin[title="Muted"]`).count()) === 1, 'muted chats show 🔕');
+  await page.click('[data-folder="customers"]');
+  check((await page.locator('#chatList .chat-row[data-id="bot"]').count()) === 0 && (await page.locator(`#chatList .chat-row[data-id="${c13}"]`).count()) === 1, 'Customers folder shows only customers');
+  await page.click('[data-folder="all"]');
+  await page.fill('#search', 'same page');
+  await page.waitForTimeout(200);
+  check((await page.locator('#chatList .chat-row.hit mark').count()) >= 1, 'search finds messages and highlights them');
+  await page.click('#chatList .chat-row.hit');
+  await page.fill('#search', '');
+  await page.dispatchEvent('#search', 'input');
+  // scheduled message
+  await page.fill('#input', 'Following up as promised.');
+  await page.click('#sendBtn', { button: 'right' });
+  await page.click('.ctx-item:has-text("Send in 1 hour")');
+  check((await page.locator('#schedBar .sb-item').count()) === 1, 'messages can be scheduled');
+  await bd((id) => { const c = window.__bd.S.chats.get(id); c.scheduled[0].at = window.__bd.clock.now() - 1000; }, c13);
+  await waitFor((id) => window.__bd.S.chats.get(id).messages.some((m) => m.scheduled && /as promised/.test(m.text)), c13);
+  check(true, 'a scheduled message goes out at its time');
+  // saved replies
+  await page.fill('#input', '/than');
+  await page.waitForTimeout(150);
+  check((await page.locator('#suggest .item:has-text("thanks")').count()) === 1, 'saved replies appear on "/"');
+  await page.keyboard.press('Enter');
+  check(/Thanks for your patience/.test(await page.inputValue('#input')), 'choosing a saved reply inserts it');
+  await page.fill('#input', '');
+  check((await bd((id) => { const c = window.__bd.S.chats.get(id); return c.customer.display && c.customer.username && c.customer.username.startsWith('@'); }, c13)), 'customers have a casual display name and @username');
 
   console.log('Reset');
   await bd(() => window.__bd.ui.openReset());

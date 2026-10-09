@@ -5,7 +5,7 @@ import { escapeHtml } from '../core/format.js';
 function inline(s, opts) {
   s = s.replace(/`([^`]+)`/g, (m, c) => '<code>' + c + '</code>');
   s = s.replace(/\*\*([^*]+?)\*\*/g, '<b>$1</b>');
-  if (opts.full) {
+  if (opts.full || opts.italic) {
     s = s.replace(/(^|[\s(])_(\S(?:[^_]*?\S)?)_(?=[\s).,!?:;]|$)/g, '$1<i>$2</i>');
     s = s.replace(/(^|[\s(])\*(\S(?:[^*]*?\S)?)\*(?=[\s).,!?:;]|$)/g, '$1<i>$2</i>');
   }

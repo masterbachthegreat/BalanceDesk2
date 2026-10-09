@@ -28,7 +28,7 @@ contextBridge.exposeInMainWorld('api', {
   openExternal: (url) => call('openExternal', url),
   flash: () => call('flash'),
   notify: (n) => call('notify', n),
-  setUnread: (n) => call('setUnread', n),
+  setUnread: (n, icon) => call('setUnread', n, icon),
   onOpenChat: (cb) => ipcRenderer.on('bd:openChat', (_e, id) => cb(id)),
   isElectron: true,
 });

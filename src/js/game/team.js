@@ -10,7 +10,7 @@
 //   - If you warn the team about a customer, that's remembered (profile.team.flags).
 // State in profile.team.
 import { S, cfg, rand, pick, touchChat, touchProfile } from '../core/state.js';
-import { addMessage, getChat, sysMessage, findChatByHandle, customerChats, handle } from './chats.js';
+import { addMessage, getChat, sysMessage, findChatByHandle, customerChats, handle, toggleReaction } from './chats.js';
 import * as clock from './clock.js';
 import { llmCall, parseJSON, withRetry } from './llm.js';
 import * as boss from './boss.js';
@@ -185,9 +185,8 @@ Keep each message short and natural (work banter, a customer story, a quick ques
 }
 
 // ---------- you write in the channel ----------
-export function onPlayerMessage(text) {
+export function onPlayerMessage(text, t = clock.now()) {
   const c = chat();
-  const t = clock.now();
   addMessage(c, { from: 'me', text, read: true, t, handled: false });
   const T = teamState();
   if (!T.replyAt) {
@@ -226,7 +225,7 @@ Reply like real colleagues: short, in each person's voice. Usually only one or t
 Diane is ${dianeOn ? 'online' : 'offline'}; set "diane": true only if the message is addressed to her or really needs the manager.
 
 OUTPUT only JSON: {"replies": [{"who": "<coworker id>", "delaySec": <5-180>, "text": "<message>"}], "diane": <true|false>, "warnedAbout": [{"customer": "<@chatN or the customer's name, exactly as the agent wrote it>", "why": "<few words>"}]}`,
-    messages: [{ role: 'user', content: `Recent chat (oldest first):\n${recentLines(60)}\n\nNew from ${S.profile.name}:\n${said}` }],
+    messages: [{ role: 'user', content: `Recent chat (oldest first):\n${recentLines(60)}\n\n${S.profile.name}'s status: ${S.profile.presence || 'online'}.\nNew from ${S.profile.name}:\n${said}` }],
     maxTokens: 900,
     temperature: 0.8,
   }), 2, 1500).then(parseJSON);
@@ -249,6 +248,7 @@ OUTPUT only JSON: {"replies": [{"who": "<coworker id>", "delaySec": <5-180>, "te
     T.queue.sort((a, b) => a.at - b.at);
     for (const m of fresh) m.handled = true;
     T.replyTries = 0;
+    if (onDuty.length && Math.random() < 0.25) toggleReaction(c, fresh.at(-1), pick(['👍', '😂', '🔥', '💯']), pick(onDuty).id);
     touchProfile();
     if (j.diane && dianeOn) {
       const text = await boss.teamReply(recentLines(60));

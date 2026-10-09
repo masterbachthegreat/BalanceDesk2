@@ -104,7 +104,12 @@ const handlers = {
   openExternal: (url) => { if (/^https:\/\//.test(url)) shell.openExternal(url); },
   flash: () => { if (win && !win.isFocused()) win.flashFrame(true); },
   notify: (n) => notify(n || {}),
-  setUnread: (n) => { if (tray) tray.setToolTip(n ? `BalanceDesk: ${n} unread` : 'BalanceDesk'); },
+  setUnread: (n, icon) => {
+    if (tray) tray.setToolTip(n ? `BalanceDesk: ${n} unread` : 'BalanceDesk');
+    if (win && process.platform === 'win32') {
+      try { win.setOverlayIcon(icon ? nativeImage.createFromDataURL(icon) : null, n ? `${n} unread` : ''); } catch {}
+    }
+  },
   pickImage: async () => {
     const r = await dialog.showOpenDialog(win, {
       title: 'Choose a profile picture',

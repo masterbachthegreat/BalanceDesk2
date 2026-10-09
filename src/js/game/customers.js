@@ -9,7 +9,7 @@ import { S, cfg, rand, randInt, pick, clamp, touchChat, touchProfile } from '../
 import { ui } from '../ui/registry.js';
 import * as clock from './clock.js';
 import * as presence from './presence.js';
-import { newChat, addMessage, sysMessage, activeCustomerChats, removeChat } from './chats.js';
+import { newChat, addMessage, sysMessage, activeCustomerChats, removeChat, quoteText, toggleReaction } from './chats.js';
 import { pickQuestion } from './questions.js';
 import { pickPersona, colorFor } from './personas.js';
 import { llmCall, parseJSON, withRetry } from './llm.js';
@@ -271,7 +271,8 @@ function postOpeningQuestion(chat, t = clock.now()) {
   const cs = chat.cs;
   cs.openingPending = false;
   cs.typing = false;
-  addMessage(chat, { from: 'them', text: transform(personaOf(chat), chat.question.text), t });
+  const qm = addMessage(chat, { from: 'them', text: transform(personaOf(chat), chat.question.text), t });
+  chat.pinnedMsg ??= qm.id; // the customer's question stays pinned at the top
   const att = chat.question.attachment;
   if (att) addMessage(chat, { from: 'them', kind: 'file', text: '📎 ' + att.file, attachment: att, t: Math.min(clock.now(), t + 2000) });
   cs.lastCustomerAt = t;
@@ -281,14 +282,13 @@ function postOpeningQuestion(chat, t = clock.now()) {
 }
 
 // ---------- the player writes ----------
-export function onPlayerMessage(chat, text) {
+export function onPlayerMessage(chat, text, t = clock.now()) {
   if (chat.status !== 'active') {
     // the customer is gone; messages are stored but never read
-    addMessage(chat, { from: 'me', text, after: true, read: false });
+    addMessage(chat, { from: 'me', text, after: true, read: false, t });
     return;
   }
   const cs = chat.cs;
-  const t = clock.now();
   addMessage(chat, { from: 'me', text, read: false, t });
   if (cs.awaitingReply && cs.lastCustomerAt != null) {
     cs.latencies.push(t - cs.lastCustomerAt);
@@ -489,7 +489,12 @@ async function customerReads(chat, at) {
   comeOnline(chat, t);
   cs.lastCustomerAt = t;
   cs.awaitingReply = true;
-  if (out.status === 'satisfied') { finishConversation(chat, 'satisfied', t); return false; }
+  if (out.status === 'satisfied') {
+    const mine = [...chat.messages].reverse().find((m) => m.from === 'me' && !m.local);
+    if (mine && Math.random() < 0.6) toggleReaction(chat, mine, out.mood >= 2 ? '❤️' : '👍', 'them');
+    finishConversation(chat, 'satisfied', t);
+    return false;
+  }
   if (out.status === 'leaving') { finishConversation(chat, 'left', t); return false; }
   if (out.pushback) ui.maybeMentorHint?.(chat);
   if (cs.turns >= cs.maxTurns || cs.anger >= 100) {
@@ -614,9 +619,12 @@ OUTPUT: reply with ONLY a JSON object, nothing else:
 
   const lines = [];
   for (const m of chat.messages) {
-    if (m.from === 'them') lines.push('YOU: ' + m.text);
-    else if (m.from === 'me') lines.push('AGENT: ' + m.text);
+    const quoted = m.replyTo ? chat.messages.find((x) => x.id === m.replyTo) : null;
+    const q = quoted ? ` (replying to ${quoted.from === 'me' ? 'their own' : 'your'} message "${quoteText(quoted, 120)}")` : '';
+    if (m.from === 'them') lines.push('YOU' + q + ': ' + m.text);
+    else if (m.from === 'me' && !m.local) lines.push('AGENT' + q + (m.editedAfterRead ? ` (edited after you had read it; it used to say "${quoteText({ text: m.editedAfterRead }, 160)}")` : '') + ': ' + m.text);
   }
+  if (cs.deletedSeen?.length) lines.push(`(The agent deleted message(s) you had already read: ${cs.deletedSeen.map((x) => '"' + quoteText({ text: x }, 120) + '"').join(', ')}. You may react to that if it matters.)`);
   const user = 'The chat so far (oldest first):\n\n' + lines.join('\n\n') + `\n\nWrite your next message as ${c.name}. JSON only.`;
   return { system, user };
 }
