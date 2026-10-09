@@ -80,6 +80,13 @@ export function fill(str, env) {
   return str;
 }
 
+// Fill the cells of an attached table.
+export function fillAttachment(att, env) {
+  if (!att) return null;
+  const f = (x) => fill(String(x), env);
+  return { ...att, title: f(att.title), columns: att.columns.map(f), rows: att.rows.map((r) => r.map(f)), note: att.note ? f(att.note) : undefined };
+}
+
 // Turn a pool entry into a concrete question for one customer.
 export function instantiate(q, rng = Math.random) {
   const hasVars = q.vars && Object.keys(q.vars).length;
@@ -93,6 +100,7 @@ export function instantiate(q, rng = Math.random) {
     difficulty: q.difficulty || 1,
     text: hasVars ? fill(q.text, env) : q.text,
     solution: hasVars ? fill(q.solution, env) : q.solution,
+    attachment: q.attachment ? (hasVars ? fillAttachment(q.attachment, env) : q.attachment) : null,
     values: hasVars ? env : null,
   };
 }

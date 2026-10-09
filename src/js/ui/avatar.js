@@ -10,6 +10,7 @@ const SYSTEM = {
   mentor: { emoji: '🎓', color: '#8e6cd1' },
   manager: { emoji: '🏢', color: '#2e8b72' },
   boss: { emoji: '💼', color: '#c0794a' },
+  team: { emoji: '👥', color: '#5b8def' },
 };
 
 function initials(name) {

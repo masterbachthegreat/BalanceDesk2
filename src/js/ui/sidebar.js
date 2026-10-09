@@ -7,9 +7,10 @@ import { displayName } from '../game/chats.js';
 import * as clock from '../game/clock.js';
 import { openCount } from '../game/customers.js';
 import * as world from '../game/world.js';
+import * as team from '../game/team.js';
 import { ui } from './registry.js';
 
-const ORDER = { bot: 0, boss: 1, mentor: 2, manager: 3 };
+const ORDER = { bot: 0, boss: 1, team: 2, mentor: 3, manager: 4 };
 
 function sortChats(list) {
   return list.sort((a, b) => {
@@ -24,11 +25,12 @@ function isTyping(chat) {
 }
 
 function preview(chat) {
-  if (isTyping(chat)) return '<span class="typing">typing…</span>';
+  if (isTyping(chat)) return `<span class="typing">${chat.kind === 'team' && typeof chat.typing === 'string' ? escapeHtml(chat.typing) + ' is ' : ''}typing…</span>`;
   const m = [...chat.messages].reverse().find((x) => x.kind !== 'breakdown' && x.kind !== 'feedback');
   if (!m) return '';
   if (m.kind === 'payout') return '💸 ' + escapeHtml(m.text);
-  const prefix = m.from === 'me' ? '<span style="color:var(--accent)">You:</span> ' : '';
+  const sender = chat.kind === 'team' && m.from === 'them' ? team.member(m.who) : null;
+  const prefix = m.from === 'me' ? '<span style="color:var(--accent)">You:</span> ' : sender ? `<span style="color:${sender.color}">${escapeHtml(sender.name.split(' ')[0])}:</span> ` : '';
   return prefix + escapeHtml(plainPreview(m.text)).slice(0, 120);
 }
 

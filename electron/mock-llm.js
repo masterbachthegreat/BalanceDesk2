@@ -18,7 +18,7 @@ async function respond(req) {
       return JSON.stringify({ reply: 'Wow, okay. I am done here.', status: 'leaving', mood: -2 });
     }
     if (lastAgent.length > 90) {
-      return JSON.stringify({ reply: 'Ahh that makes sense now, thank you so much!', status: 'satisfied', mood: 2 });
+      return JSON.stringify({ messages: ['Ahh that makes sense now', 'thank you so much!'], status: 'satisfied', mood: 2 });
     }
     return JSON.stringify({ reply: "Hmm, I don't get it.", status: 'continue', mood: 0, pushback: true });
   }
@@ -53,6 +53,20 @@ async function respond(req) {
     };
     const a = pickAct();
     return JSON.stringify({ reply: a.action === 'none' ? 'Noted. Keep up the good work.' : 'Sure, done.', ...a, warmth });
+  }
+
+  if (req.category === 'team') {
+    const sys = req.messages[0]?.content || '';
+    const ids = [...sys.matchAll(/id "(\w+)"/g)].map((m) => m[1]);
+    if (/next 12 hours/.test(sys)) {
+      const must = (text.split('MUST include these events:')[1] || '').split('\n').filter((l) => l.startsWith('- '));
+      const msgs = must.map((l, i) => ({ who: (/id "(\w+)"/.exec(l) || [])[1] || ids[0], minute: 5 + i, text: /thanks/i.test(l) ? 'thanks for the heads-up about that customer, you were right!' : /warns/i.test(l) ? 'heads up team, just had a really difficult customer' : 'mock team chatter' }));
+      if (!msgs.length && ids.length) msgs.push({ who: ids[0], minute: 3, text: 'morning all, coffee number two already' });
+      return JSON.stringify({ messages: msgs });
+    }
+    const said = text.split('\nNew from ').pop() || '';
+    const warned = /difficult|careful|watch out|heads up/i.test(said) ? [...said.matchAll(/@chat\d+/g)].map((m) => ({ customer: m[0], why: 'difficult' })) : [];
+    return JSON.stringify({ replies: ids.length ? [{ who: ids[0], delaySec: 5, text: warned.length ? 'noted, thanks for the warning!' : 'ha, fair enough' }] : [], diane: /diane/i.test(said), warnedAbout: warned });
   }
 
   if (req.category === 'concept') {

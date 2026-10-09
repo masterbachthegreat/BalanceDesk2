@@ -86,10 +86,14 @@ export function settingsModal() {
         <div class="hint">Get a key at <a href="#" id="stLink" style="color:var(--link)">openrouter.ai/keys</a>. Stored only on this computer.</div></div>
       <div class="field"><label>Customer model (writes customer replies)</label><input type="text" id="stCust" value="${escapeHtml(s.customerModel)}"></div>
       <div class="field"><label>Smart model (grading, mentor, concept lessons)</label><input type="text" id="stSmart" value="${escapeHtml(s.smartModel)}"></div>
-      <div class="field"><label>Manager model (Diane)</label><input type="text" id="stBoss" value="${escapeHtml(s.bossModel || s.smartModel)}">
+      <div class="field"><label>Manager model (Diane, in her chat and the team channel)</label><input type="text" id="stBoss" value="${escapeHtml(s.bossModel || s.smartModel)}"></div>
+      <div class="field"><label>Team model (your four coworkers' replies)</label><input type="text" id="stTeam" value="${escapeHtml(s.teamModel || s.smartModel)}">
         <div class="hint">OpenRouter model ids, e.g. anthropic/claude-haiku-5.5 and anthropic/claude-sonnet-5.5.</div></div>
       <label class="check"><input type="checkbox" id="stSound" ${s.sound ? 'checked' : ''}> Sound when a message arrives</label>
       <label class="check"><input type="checkbox" id="stFlash" ${s.notifications ? 'checked' : ''}> Flash the taskbar when a customer writes</label>
+      <label class="check"><input type="checkbox" id="stNotif" ${s.desktopNotifications !== false ? 'checked' : ''}> Windows notifications for new messages (when BalanceDesk isn't in front)</label>
+      ${window.api.isElectron ? `<label class="check"><input type="checkbox" id="stTray" ${s.closeToTray !== false ? 'checked' : ''}> Keep running in the tray when I close the window</label>
+      <label class="check"><input type="checkbox" id="stBoot" ${s.startWithWindows ? 'checked' : ''}> Start with Windows (in the tray)</label>` : ''}
       <div id="stResult"></div>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" id="stTest">Test connection</button><button class="btn small" id="stFolder">Open save folder</button><button class="btn small danger" id="stReset" style="margin-left:auto">Reset game…</button></div>`,
     foot: '<button class="btn" data-cancel>Cancel</button><button class="btn primary" id="stSave">Save</button>',
@@ -106,8 +110,11 @@ export function settingsModal() {
       customerModel: $('#stCust').value.trim() || s.customerModel,
       smartModel: $('#stSmart').value.trim() || s.smartModel,
       bossModel: $('#stBoss').value.trim() || s.bossModel || s.smartModel,
+      teamModel: $('#stTeam').value.trim() || s.teamModel || s.smartModel,
       sound: $('#stSound').checked,
       notifications: $('#stFlash').checked,
+      desktopNotifications: $('#stNotif').checked,
+      ...($('#stTray') ? { closeToTray: $('#stTray').checked, startWithWindows: $('#stBoot').checked } : {}),
     });
     emit('settings');
   };

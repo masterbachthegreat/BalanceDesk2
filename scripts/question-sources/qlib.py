@@ -26,10 +26,15 @@ def Q(id, ch, topic, text, solution, kind='theory', diff=1, vars=None, compute=N
     return d
 
 def write(rank, title, fname, qs):
+    from attachments import ATTACH
     ids = [q['id'] for q in qs]
     assert len(ids) == len(set(ids)), 'dup ids'
     for q in qs:
         q['rank'] = rank
+        if q['id'] in ATTACH:
+            text, att = ATTACH[q['id']]
+            q['text'] = t(text)
+            q['attachment'] = att
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, fname), 'w') as f:
         json.dump({'rank': rank, 'title': title, 'source': 'Exercises and worked solutions from "Economies, Accounts and Money" (Integrated Edition), rewritten as customer questions.', 'questions': [{k: v for k, v in q.items() if k != 'rank'} for q in qs]}, f, indent=1, ensure_ascii=False)

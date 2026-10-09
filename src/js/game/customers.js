@@ -14,6 +14,8 @@ import { pickQuestion } from './questions.js';
 import { pickPersona, colorFor } from './personas.js';
 import { llmCall, parseJSON, withRetry } from './llm.js';
 import { finishConversation, gradeAndPay } from './results.js';
+import { questionText } from './transcript.js';
+import { noteArrival } from './team.js';
 import * as shop from './shop.js';
 
 const inflight = new Set(); // chats whose events are being processed (LLM call running)
@@ -62,8 +64,23 @@ export function ambientPresence(dt, now = clock.now()) {
     const cs = chat.cs;
     if (cs.mode === 'live' || cs.readAt != null || cs.typing || cs.thinking || inflight.has(chat.id) || isOnline(chat, now)) continue;
     const r = presence.checkRate(personaOf(chat), now);
-    if (r > 0 && Math.random() < 1 - Math.exp(-r * dt / 3600000)) { comeOnline(chat, now, false); touchChat(chat); }
+    if (r > 0 && Math.random() < 1 - Math.exp(-r * dt / 3600000)) {
+      comeOnline(chat, now, false);
+      maybePoke(chat, now);
+      touchChat(chat);
+    }
   }
+}
+
+// Impatient customers (and VIPs) who pop online and are still waiting sometimes send a "??".
+function maybePoke(chat, t) {
+  const cs = chat.cs;
+  const P = cfg().customer.poke;
+  if (cs.waitingSince == null || cs.nudged || cs.poked === cs.waitingSince || t - cs.waitingSince < P.afterMs) return;
+  const eager = chat.customer.patience === 'low' || chat.customer.vip;
+  if (Math.random() >= (eager ? P.chance : P.chance / 4)) return;
+  cs.poked = cs.waitingSince;
+  addMessage(chat, { from: 'them', text: transform(personaOf(chat), pick(P.texts)), kind: 'poke', t });
 }
 
 // After the app was closed: when did each waiting customer last pop online?
@@ -115,6 +132,53 @@ export function speedUpReads(dt) {
   }
 }
 
+// ---------- returning customers ----------
+// Someone you've helped before (not too recently) writes in again; they remember how it went.
+function returningCustomer(at) {
+  const R = cfg().returning;
+  if (Math.random() >= R.chance) return null;
+  const busy = new Set(activeCustomerChats().map((c) => c.customer.personaId));
+  const last = new Map();
+  for (const c of S.chats.values()) {
+    if (c.kind !== 'customer' || c.deleted || c.status !== 'ended' || !c.result || c.endReason === 'transferred') continue;
+    const k = c.customer.personaId;
+    if (!last.has(k) || last.get(k).endedAt < c.endedAt) last.set(k, c);
+  }
+  const options = [...last.values()].filter((c) => !busy.has(c.customer.personaId) && at - c.endedAt >= R.minDaysAgo * 86400000);
+  if (!options.length) return null;
+  const prev = pick(options);
+  const persona = S.data.personalities.find((x) => x.id === prev.customer.personaId);
+  if (!persona) return null;
+  const count = [...S.chats.values()].filter((c) => c.kind === 'customer' && c.customer.personaId === persona.id && c.status === 'ended').length;
+  return {
+    persona,
+    info: {
+      prevChat: prev.id, prevSeq: prev.seq, topic: prev.question.topic, at: prev.endedAt, count,
+      reason: prev.endReason, stars: prev.result.stars, score: prev.result.missed ? null : prev.result.aiScore, missed: !!prev.result.missed,
+    },
+  };
+}
+
+function returningGreeting(info) {
+  const topic = info.topic.toLowerCase();
+  if (info.missed) return pick([`Hello again. I wrote to you about ${topic} last time and never heard back.`, `Hi. Trying again… last time nobody answered me.`]);
+  if (info.stars >= cfg().returning.loyalStars) return pick([`Hi again! You helped me with ${topic} last time, so I asked for you.`, `Hello, it's me again! Your answer on ${topic} was a lifesaver.`, `Hey, back again! You were great with my ${topic} question.`]);
+  if (info.stars <= 2) return pick([`Hi. We spoke before, about ${topic}. That didn't go great.`, `Hello again. Hoping this goes better than last time.`]);
+  return pick([`Hi again, we talked about ${topic} a while ago.`, `Hello! I've got another one for you.`]);
+}
+
+function historyNote(chat) {
+  const r = chat.returning;
+  if (!r) return '';
+  const date = new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+  let feel;
+  if (r.missed) feel = 'The agent never replied to you that time, so you are a bit annoyed and want to see if they show up this time.';
+  else if (r.stars >= cfg().returning.loyalStars) feel = 'It went really well, so you like and trust this agent and are friendly from the start.';
+  else if (r.stars <= 2) feel = 'It went badly, so you start out a little skeptical of this agent.';
+  else feel = 'It was okay.';
+  return `\nHISTORY WITH THIS AGENT: you have chatted with this same agent ${r.count > 1 ? r.count + ' times' : 'once'} before. Last time (${date}) you asked about ${r.topic}; ${r.missed ? 'they never answered' : 'you would rate that service ' + r.stars + '/5'}. ${feel} You may mention it briefly and naturally, but focus on your new question.\n`;
+}
+
 // ---------- arrival ----------
 export function spawnCustomer(opts = {}) {
   const p = S.profile;
@@ -123,8 +187,10 @@ export function spawnCustomer(opts = {}) {
   const rush = !!opts.rush;
   let vip = opts.vip ?? Math.random() < cfg().vipChance + shop.effectSum('vipChance');
   if (p.vipNext) { vip = true; p.vipNext = false; }
-  const persona = pickPersona(vip, rush ? null : at);
   const question = pickQuestion(p.rank, vip);
+  const back = !rush && !question.retryOf ? returningCustomer(at) : null;
+  const persona = back?.persona || pickPersona(vip, rush ? null : at, question.retryOf?.personaId);
+  if (back) S.profile.recentPersonas = [persona.id, ...(S.profile.recentPersonas || [])].slice(0, 30);
   p.counters.chatSeq += 1;
   const chat = newChat('customer', {
     seq: p.counters.chatSeq,
@@ -146,12 +212,13 @@ export function spawnCustomer(opts = {}) {
       emoji: persona.emoji || null,
     },
     question,
+    returning: back?.info || null,
     cs: {
       mode: rush ? 'live' : 'async',
       turns: 0,
       followUps: 0,
       pushbacks: 0,
-      anger: 0,
+      anger: back && back.info.stars <= 2 ? cfg().returning.angerStart : 0,
       vipGrace: persona.vip ? randInt(C.meter.vipGrace[0], C.meter.vipGrace[1]) : null,
       hintsGiven: 0,
       mood: 0,
@@ -167,6 +234,7 @@ export function spawnCustomer(opts = {}) {
       typing: false,
       thinking: false,
       lastCustomerAt: null,
+      poked: null,
       awaitingReply: false,
       latencies: [],
       openingPending: false,
@@ -174,8 +242,9 @@ export function spawnCustomer(opts = {}) {
     emojiPacksUsed: [],
   });
   comeOnline(chat, at);
+  if (!rush) noteArrival(chat);
   touchProfile();
-  const greeting = transform(persona, pick(persona.greetings || ['Hi!']));
+  const greeting = transform(persona, back ? returningGreeting(back.info) : pick(persona.greetings || ['Hi!']));
   addMessage(chat, { from: 'them', text: greeting, t: at });
   if (at >= clock.now() - 10000) {
     // happening right now: greeting, typing…, then the question
@@ -195,6 +264,8 @@ function postOpeningQuestion(chat, t = clock.now()) {
   cs.openingPending = false;
   cs.typing = false;
   addMessage(chat, { from: 'them', text: transform(personaOf(chat), chat.question.text), t });
+  const att = chat.question.attachment;
+  if (att) addMessage(chat, { from: 'them', kind: 'file', text: '📎 ' + att.file, attachment: att, t: Math.min(clock.now(), t + 2000) });
   cs.lastCustomerAt = t;
   cs.awaitingReply = true;
   if (cs.readAt == null) setWaiting(chat, t);
@@ -346,7 +417,7 @@ async function customerReads(chat, at) {
       const started = performance.now();
       out = await call;
       if (gone()) return false;
-      const typingMs = clamp(out.reply.length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
+      const typingMs = clamp(out.messages[0].length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
       const remaining = typingMs - (performance.now() - started);
       if (remaining > 0) await sleep(remaining);
       if (gone()) return false;
@@ -354,7 +425,7 @@ async function customerReads(chat, at) {
     } else {
       out = await call;
       if (gone()) return false;
-      out.t = thinkEnd + clamp(out.reply.length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
+      out.t = thinkEnd + clamp(out.messages[0].length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
       if (out.t > clock.now()) out.t = clock.now();
     }
   } catch (e) {
@@ -363,7 +434,7 @@ async function customerReads(chat, at) {
     if (!gone()) sysMessage(chat, '⚠ Couldn\'t get the customer\'s reply: ' + e.message, { kind: 'error', retry: 'customer' });
     return false;
   }
-  const t = out.t;
+  let t = out.t;
   cs.typing = false;
   cs.thinking = false;
   cs.turns += 1;
@@ -371,7 +442,21 @@ async function customerReads(chat, at) {
   if (out.followUp) cs.followUps += 1;
   if (out.pushback) cs.pushbacks = (cs.pushbacks || 0) + 1;
   raiseAnger(chat, out);
-  addMessage(chat, { from: 'them', text: transform(personaOf(chat), out.reply), t });
+  const live = clock.now() - t < 5000;
+  for (let i = 0; i < out.messages.length; i++) {
+    if (i > 0) { // the next bubble: a short burst of typing
+      const ms = clamp(out.messages[i].length * C.typingMsPerChar, 800, 6000);
+      if (live) {
+        cs.typing = true;
+        touchChat(chat);
+        await sleep(ms);
+        cs.typing = false;
+        if (gone()) return false;
+        t = clock.now();
+      } else t = Math.min(clock.now(), t + ms);
+    }
+    addMessage(chat, { from: 'them', text: transform(personaOf(chat), out.messages[i]), t });
+  }
   comeOnline(chat, t);
   cs.lastCustomerAt = t;
   cs.awaitingReply = true;
@@ -436,9 +521,9 @@ WHO YOU ARE
 Name: ${c.name}
 About you: ${c.bio}
 How you write: ${c.style}
-${c.vip ? 'You are a VIP client: you expect precise, professional, complete answers and you notice sloppiness.\n' : ''}
+${c.vip ? 'You are a VIP client: you expect precise, professional, complete answers and you notice sloppiness.\n' : ''}${historyNote(chat)}
 YOUR QUESTION (you already sent it):
-"""${q.text}"""
+"""${questionText(q)}"""
 
 HIDDEN ANSWER KEY - you do NOT actually know this. Never quote it, never reveal its numbers or wording, never hint at the right answer. Use it only privately to judge whether the agent is right:
 """${q.solution}"""
@@ -450,11 +535,12 @@ HOW TO BEHAVE
 - If the agent asks you something, answer sensibly (you may invent harmless personal details, but do not change the numbers in your question).
 - Once everything is answered correctly and clearly you may ask up to ${c.curiosity} short related follow-up question(s) (a "why" or "what if") before being satisfied. Follow-ups asked so far: ${cs.followUps}. Judge the follow-up answers the same way.
 - If the agent is rude, spams, writes nonsense or ignores you, get annoyed; you may leave.
+- Like people on messengers, you sometimes split a reply into 2-3 short separate bubbles instead of one (roughly 1 reply in 4; more often if your style is chatty, never if you write formally). Rarely, make a small typo and fix it in the next bubble with an asterisk (e.g. "*interest"), only if that fits how you write.
 - ${toneGuide(chat)}
 - This is your reply number ${turn} of at most ${cs.maxTurns}.${last || (cs.anger || 0) >= 85 ? ' This is your LAST reply: you must now either be satisfied (only if the agent really got it right) or leave.' : ''}
 
 OUTPUT: reply with ONLY a JSON object, nothing else:
-{"reply": "<your chat message>", "status": "continue" | "satisfied" | "leaving", "mood": <integer -2..2>, "followUp": <true if this reply asks a new follow-up question>, "pushback": <true if you are NOT accepting the agent's latest answer because it is wrong, incomplete or unclear>}
+{"messages": ["<your chat message>", "<optional 2nd bubble>", "<optional 3rd bubble>"], "status": "continue" | "satisfied" | "leaving", "mood": <integer -2..2>, "followUp": <true if this reply asks a new follow-up question>, "pushback": <true if you are NOT accepting the agent's latest answer because it is wrong, incomplete or unclear>}
 "satisfied" = your question is resolved and the reply is a short thanks/goodbye. "leaving" = you give up on this agent and the reply is your parting message. Mood: -2 furious ... 2 delighted.`;
 
   const lines = [];
@@ -478,10 +564,12 @@ async function customerReply(chat) {
     chatId: chat.id,
   });
   const j = parseJSON(text);
-  const reply = String(j.reply || '').trim();
-  if (!reply) throw new Error('Customer reply was empty');
+  let messages = Array.isArray(j.messages) ? j.messages : [j.reply];
+  messages = messages.map((x) => String(x ?? '').trim()).filter(Boolean).slice(0, 3);
+  if (!messages.length) throw new Error('Customer reply was empty');
+  const reply = messages.join(' ');
   const status = ['continue', 'satisfied', 'leaving'].includes(j.status) ? j.status : 'continue';
-  return { reply, status, mood: clamp(Math.round(Number(j.mood) || 0), -2, 2), followUp: !!j.followUp, pushback: !!j.pushback && status !== 'satisfied' };
+  return { reply, messages, status, mood: clamp(Math.round(Number(j.mood) || 0), -2, 2), followUp: !!j.followUp, pushback: !!j.pushback && status !== 'satisfied' };
 }
 
 export function retryCustomer(chat) {
@@ -504,7 +592,7 @@ export function deleteChat(chat) {
 }
 
 // Your boss takes a chat off your hands: it ends without pay or grading.
-export function transferChat(chat) {
+export function transferChat(chat, toName = null) {
   if (chat.status !== 'active') return false;
   const cs = chat.cs;
   chat.status = 'ended';
@@ -512,7 +600,7 @@ export function transferChat(chat) {
   chat.endReason = 'transferred';
   cs.typing = false;
   cs.readAt = cs.nudgeAt = cs.leaveAt = cs.waitingSince = null;
-  sysMessage(chat, '↪ Transferred to a colleague by your manager — no pay, no rating');
+  sysMessage(chat, `↪ Transferred to ${toName || 'a colleague'} by your manager. No pay, no rating`);
   touchChat(chat);
   return true;
 }

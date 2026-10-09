@@ -1,5 +1,6 @@
 // "📖 Concept" explainer for a customer's question: a short beginner lesson that
 // teaches the idea without solving the customer's exact numbers. Cached per chat.
+import { questionText } from './transcript.js';
 import { touchChat } from '../core/state.js';
 import { llmCall } from './llm.js';
 
@@ -27,7 +28,7 @@ export function getConcept(chat) {
     role: 'smart',
     category: 'concept',
     system: SYSTEM,
-    messages: [{ role: 'user', content: `Topic: ${q.topic}\n\nThe customer's question (do not solve it):\n${q.text}\n\nAnswer key, for your accuracy only (do not reveal it):\n${q.solution}` }],
+    messages: [{ role: 'user', content: `Topic: ${q.topic}\n\nThe customer's question (do not solve it):\n${questionText(q)}\n\nAnswer key, for your accuracy only (do not reveal it):\n${q.solution}` }],
     maxTokens: 900,
     temperature: 0.4,
     chatId: chat.id,

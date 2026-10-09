@@ -9,6 +9,7 @@ import * as clock from '../game/clock.js';
 import * as shop from '../game/shop.js';
 import { onPlayerMessage, retryCustomer, isOnline, lastSeen } from '../game/customers.js';
 import * as boss from '../game/boss.js';
+import * as team from '../game/team.js';
 import { gradeAndPay } from '../game/results.js';
 import { handleBotInput, handleChatCommand, COMMANDS, CHAT_COMMANDS } from '../game/bot.js';
 import { sendToMentor, retryMentor } from '../game/mentor.js';
@@ -27,6 +28,7 @@ function subtitle(chat) {
   if (chat.kind === 'manager') return { text: 'channel · official announcements', cls: '' };
   if (chat.kind === 'mentor') return chat.typing ? { text: 'typing…', cls: 'online' } : { text: 'your mentor · online', cls: 'online' };
   if (chat.kind === 'boss') return boss.presenceText();
+  if (chat.kind === 'team') return team.presenceText();
   if (chat.status === 'active') {
     if (chat.cs.typing) return { text: 'typing…', cls: 'online' };
     const vip = chat.customer.vip ? ' · VIP client' : '';
@@ -90,6 +92,7 @@ function payoutCard(chat) {
       <div><div class="pc-big pc-pay">${money(r.payout.total)}</div><div class="pc-label">paid</div></div>
     </div>
     ${r.grade?.summary ? `<div style="font-size:13px;margin-top:6px">${escapeHtml(r.grade.summary)}</div>` : ''}
+    ${chat.question.retryOf ? `<div style="font-size:13px;margin-top:6px">↻ Second chance: last time ${chat.question.retryOf.lastScore == null ? 'you never answered' : chat.question.retryOf.lastScore + '/100'}, now ${r.aiScore}/100${r.aiScore >= cfg().secondChance.belowScore ? ' 🎉' : ' (it will come back again)'}</div>` : ''}
     <div style="margin-top:8px"><button class="btn small" data-review="${chat.id}">🎓 Review with mentor</button></div>
     <div class="pc-hint">Type <span class="cmd" data-cmd="/payout">/payout</span> for the pay breakdown · <span class="cmd" data-cmd="/feedback">/feedback</span> for grader notes</div>
   </div>`;
@@ -108,6 +111,16 @@ function breakdownCard(chat) {
   </div>`;
 }
 
+function reviewCard(r) {
+  const cls = /Exceeds/.test(r.rating) ? 'good' : /Below/.test(r.rating) ? 'bad' : '';
+  return `<div class="payout-card" style="text-align:left">
+    <div class="pc-title" style="text-align:center">${escapeHtml(r.title)}</div>
+    <div class="review-rating ${cls}">${escapeHtml(r.rating)}</div>
+    <table class="breakdown">${r.rows.map(([a, v]) => `<tr><td>${escapeHtml(a)}</td><td>${escapeHtml(v)}</td></tr>`).join('')}</table>
+    <div class="pc-hint" style="text-align:center">${escapeHtml(r.outcome[0].toUpperCase() + r.outcome.slice(1))}</div>
+  </div>`;
+}
+
 function feedbackCard(chat) {
   const g = chat.result.grade || {};
   const list = (arr) => (arr && arr.length ? '<ul style="margin:4px 0;padding-left:18px">' + arr.map((x) => `<li>${escapeHtml(x)}</li>`).join('') + '</ul>' : '<div style="color:var(--muted)">—</div>');
@@ -120,12 +133,23 @@ function feedbackCard(chat) {
   </div>`;
 }
 
+// A file the customer sent: name, size-ish line and the table itself.
+function fileCard(a) {
+  const ext = (a.file.split('.').pop() || '').toLowerCase();
+  const icon = ext === 'csv' ? '📄' : '📊';
+  const head = a.columns.map((c) => `<th>${escapeHtml(c)}</th>`).join('');
+  const body = a.rows.map((r) => `<tr>${r.map((c, i) => `<td${i && /^[-−$£€]?[\d.,]+%?$/.test(c) ? ' class="num"' : ''}>${escapeHtml(c)}</td>`).join('')}</tr>`).join('');
+  return `<div class="file-card"><div class="fc-head"><span class="fc-icon">${icon}</span><div><div class="fc-name">${escapeHtml(a.file)}</div><div class="fc-sub">${escapeHtml(a.title)} · ${a.rows.length} rows</div></div></div>
+    <div class="fc-table"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>${a.note ? `<div class="fc-note">${escapeHtml(a.note)}</div>` : ''}</div>`;
+}
+
 function messageEl(chat, m) {
   const el = document.createElement('div');
   if (m.from === 'sys') {
     if (m.kind === 'payout') el.innerHTML = payoutCard(chat);
     else if (m.kind === 'breakdown' && chat.result) el.innerHTML = breakdownCard(chat);
     else if (m.kind === 'feedback' && chat.result) el.innerHTML = feedbackCard(chat);
+    else if (m.kind === 'review' && m.review) el.innerHTML = reviewCard(m.review);
     else {
       el.innerHTML = `<div class="service ${m.kind === 'error' ? 'error' : ''}">${escapeHtml(m.text)}${m.retry ? ` <button data-retry="${m.retry}">Retry</button>` : ''}</div>`;
     }
@@ -134,7 +158,7 @@ function messageEl(chat, m) {
   }
   const out = m.from === 'me';
   el.className = 'msg ' + (out ? 'out' : 'in') + (isOnlyEmoji(m.text) ? ' big-emoji' : '');
-  el.dataset.from = m.from;
+  el.dataset.from = chat.kind === 'team' && !out ? 'm-' + (m.who || '?') : m.from;
   const col = document.createElement('div');
   col.style.cssText = 'display:flex;flex-direction:column;min-width:0;max-width:100%';
   const bubble = document.createElement('div');
@@ -142,7 +166,17 @@ function messageEl(chat, m) {
   const full = !out && chat.kind !== 'customer';
   const text = document.createElement('div');
   text.className = 'text';
-  if (chat.kind === 'mentor' && !out) {
+  const sender = chat.kind === 'team' && !out ? team.member(m.who) : null;
+  if (sender) {
+    const nm = document.createElement('div');
+    nm.className = 'sender';
+    nm.style.color = sender.color;
+    nm.textContent = sender.name + (sender.id === 'diane' ? ' · manager' : '');
+    bubble.appendChild(nm);
+  }
+  if (m.kind === 'file' && m.attachment) {
+    text.innerHTML = fileCard(m.attachment);
+  } else if (chat.kind === 'mentor' && !out) {
     for (const part of splitCharts(m.text)) {
       if (part.type === 'text') {
         const d = document.createElement('div');
@@ -151,7 +185,7 @@ function messageEl(chat, m) {
       } else renderChart(text, part.json);
     }
   } else {
-    text.innerHTML = renderMarkdown(m.text, { full, commands: chat.kind === 'bot', mentions: chat.kind === 'mentor' || chat.kind === 'boss' });
+    text.innerHTML = renderMarkdown(m.text, { full, commands: chat.kind === 'bot', mentions: chat.kind === 'mentor' || chat.kind === 'boss' || chat.kind === 'team' });
   }
   if (m.charts) for (const spec of m.charts) renderChart(text, spec);
   bubble.appendChild(text);
@@ -260,7 +294,8 @@ function composerHtml(chat) {
   if (chat.kind === 'customer' && chat.status !== 'active') note = '<div class="composer-note">This conversation has ended — the customer won\'t see new messages. Try /payout or /feedback.</div>';
   if (chat.kind === 'mentor') note = '<div class="composer-note">Mention a chat with @ (e.g. @chat3) and the mentor reads the whole conversation.</div>';
   if (chat.kind === 'boss') note = `<div class="composer-note">Diane is at her desk ${boss.shiftText()} and answers fastest then. Ask for a rush, a lighter or heavier day, time off, a transfer (@chat3) or a raise, or just chat.</div>`;
-  const placeholder = chat.kind === 'bot' ? 'Type a command, e.g. /help' : chat.kind === 'mentor' ? 'Ask your mentor…' : chat.kind === 'boss' ? 'Message Diane…' : chat.status === 'active' ? 'Write a message…' : 'Message (the customer has left)';
+  if (chat.kind === 'team') note = '<div class="composer-note">Your remote team. Coworkers on shift answer; mention a customer (e.g. @chat3) to warn everyone about them.</div>';
+  const placeholder = chat.kind === 'bot' ? 'Type a command, e.g. /help' : chat.kind === 'mentor' ? 'Ask your mentor…' : chat.kind === 'boss' ? 'Message Diane…' : chat.kind === 'team' ? 'Message #support-team…' : chat.status === 'active' ? 'Write a message…' : 'Message (the customer has left)';
   const emojiBtn = chat.kind === 'bot' ? '' : '<button class="icon-btn" id="emojiBtn" title="Emoji">😊</button>';
   return `<div class="composer">${note}<div class="composer-inner">${emojiBtn}
     <textarea id="input" rows="1" placeholder="${placeholder}" spellcheck="true"></textarea>
@@ -287,6 +322,7 @@ function send() {
   if (chat.kind === 'bot') handleBotInput(text);
   else if (chat.kind === 'mentor') sendToMentor(text);
   else if (chat.kind === 'boss') boss.onPlayerMessage(text);
+  else if (chat.kind === 'team') team.onPlayerMessage(text);
   else if (chat.kind === 'customer') {
     if (text.startsWith('/') && handleChatCommand(chat, text)) return;
     onPlayerMessage(chat, text);
@@ -314,7 +350,7 @@ function updateSuggest() {
     kind = 'cmd';
     const list = chat.kind === 'bot' ? COMMANDS : CHAT_COMMANDS;
     items = list.filter((c) => c.cmd.startsWith(cm[1].toLowerCase())).map((c) => ({ key: '/' + c.cmd + (c.args ? ' ' : ''), label: '/' + c.cmd, desc: (c.args ? c.args + ' — ' : '') + c.desc }));
-  } else if (mm && (chat.kind === 'mentor' || chat.kind === 'boss')) {
+  } else if (mm && (chat.kind === 'mentor' || chat.kind === 'boss' || chat.kind === 'team')) {
     kind = 'mention';
     const q = mm[2].toLowerCase();
     items = customerChats().sort((a, b) => b.lastAt - a.lastAt)
@@ -375,6 +411,7 @@ function infoHtml(chat) {
       bot: 'Your desk assistant. Type /help for commands: balance, stats, rank, shop, spendings and more.',
       mentor: 'A senior analyst who coaches you. Ask about any concept, get graphs, or mention a chat (@chat3) so the mentor can read it.',
       manager: 'Official memos from Whiterock management. Some memos come with pay bonuses.',
+      team: `Your remote team: ${team.members().map((m) => `<b>${escapeHtml(m.name)}</b> (${escapeHtml(m.role)}, ${m.hours[0]}:00–${m.hours[1]}:00)`).join(', ')}, Diane and you. Online now: ${team.onlineMembers().join(', ') || 'nobody'}. They chat through the day, warn each other about difficult customers, and answer when you write here.`,
       boss: `Diane Whitfield, Head of Client Services: your manager (the whole team works remotely). She's at her desk ${boss.shiftText()} (your time) and replies within minutes then; evenings and weekends she answers when she checks her phone. Ask her for a rush shift (the next few customers right away), a lighter or heavier day, time off, to hand a chat to a colleague, or a raise when your numbers are good. Or just talk to her.`,
     }[chat.kind];
     return `<div class="ip-top">${chatAvatar(chat, 'lg')}<h3>${escapeHtml(chat.title)}</h3></div><div class="ip-val">${about}</div>`;
@@ -386,6 +423,15 @@ function infoHtml(chat) {
     <div class="ip-sec">Traits</div><div class="ip-val">Reads ${c.read} · patience ${c.patience}</div>
     <div class="ip-sec">Local time</div><div class="ip-val">${localTimeOf(chat)}</div>
     <div class="ip-sec">Started</div><div class="ip-val">${new Date(chat.createdAt).toLocaleString('en-GB')}</div>`;
+  if (chat.returning) {
+    const r = chat.returning;
+    h += `<div class="ip-sec">Returning customer</div><div class="ip-val">Last chat ${r.prevSeq ? '@chat' + r.prevSeq : ''} on ${new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}: ${escapeHtml(r.topic)} · ${r.missed ? 'never answered' : starsText(r.stars)}</div>`;
+  }
+  if (chat.warnedBy) h += `<div class="ip-sec">⚠ Heads-up</div><div class="ip-val">${escapeHtml(chat.warnedBy)} warned the team about this customer.</div>`;
+  if (q.retryOf) {
+    const r = q.retryOf;
+    h += `<div class="ip-sec">↻ Second chance</div><div class="ip-val">You had this question on ${new Date(r.lastAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} (@chat${r.lastChat}): ${r.lastScore == null ? 'never answered' : r.lastScore + '/100'}. New customer${q.values ? ', new numbers' : ''}.</div>`;
+  }
   if (chat.status === 'active') {
     h += `<div class="ip-sec">Customer replies</div><div class="ip-val">${chat.cs.turns} so far (gives up after about ${chat.cs.maxTurns})</div>`;
   } else {

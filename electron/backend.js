@@ -13,8 +13,12 @@ const DEFAULT_SETTINGS = {
   customerModel: 'anthropic/claude-haiku-5.5',
   smartModel: 'anthropic/claude-sonnet-5.5',
   bossModel: 'anthropic/claude-sonnet-5.5',
+  teamModel: 'anthropic/claude-sonnet-5.5',
   sound: true,
   notifications: true,
+  desktopNotifications: true,
+  closeToTray: true,
+  startWithWindows: false,
 };
 
 let dataDir = '';      // where saves live (userData/save)
@@ -55,6 +59,7 @@ function readGameData() {
     personalities: readJSON(path.join(d, 'personalities.json'), []),
     shop: readJSON(path.join(d, 'shop.json'), []),
     memos: readJSON(path.join(d, 'memos.json'), []),
+    team: readJSON(path.join(d, 'team.json'), []),
     questions: [],
   };
   const qdir = path.join(d, 'questions');
@@ -135,10 +140,10 @@ function usageAdd(rec) {
 }
 
 // ---------- LLM ----------
-// req: { role: 'customer' | 'smart' | 'boss', category: string, messages, maxTokens, temperature, chatId }
+// req: { role: 'customer' | 'smart' | 'boss' | 'team', category: string, messages, maxTokens, temperature, chatId }
 async function llm(req) {
   const settings = loadSettingsRaw();
-  const model = req.role === 'customer' ? settings.customerModel : req.role === 'boss' ? settings.bossModel || settings.smartModel : settings.smartModel;
+  const model = req.role === 'customer' ? settings.customerModel : req.role === 'boss' ? settings.bossModel || settings.smartModel : req.role === 'team' ? settings.teamModel || settings.smartModel : settings.smartModel;
   const started = Date.now();
 
   if (mock.enabled()) {

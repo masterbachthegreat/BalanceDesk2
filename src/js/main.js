@@ -10,6 +10,9 @@ import { botSay, handleBotInput } from './game/bot.js';
 import { triggerMemo } from './game/manager.js';
 import * as world from './game/world.js';
 import * as boss from './game/boss.js';
+import * as team from './game/team.js';
+import * as customers from './game/customers.js';
+import * as mentor from './game/mentor.js';
 import { ui } from './ui/registry.js';
 import { renderSidebar, renderStatusBar, bindSidebar } from './ui/sidebar.js';
 import { renderChatPane, updateChatPane, tickChatPane, bindChatPane, prefillInput } from './ui/chatview.js';
@@ -76,6 +79,7 @@ function ensureSystemChats() {
   if (!getChat('mentor')) newChat('mentor', { id: 'mentor', title: 'Mentor' });
   if (!getChat('manager')) newChat('manager', { id: 'manager', title: 'Whiterock Management' });
   if (!getChat('boss')) newChat('boss', { id: 'boss', title: boss.BOSS.name });
+  if (!getChat('team')) newChat('team', { id: 'team', title: '#support-team' });
 }
 
 function welcome() {
@@ -92,6 +96,7 @@ function welcome() {
   });
   triggerMemo('welcome');
   boss.welcomeMessage();
+  team.welcome();
 }
 
 // ---------- rendering (batched) ----------
@@ -110,9 +115,11 @@ function schedule() {
   });
 }
 
+let lastUnread = -1;
 function updateTitle() {
   const n = [...S.chats.values()].reduce((s, c) => s + (c.unread || 0), 0);
   document.title = (n ? `(${n}) ` : '') + 'BalanceDesk — Whiterock Support';
+  if (n !== lastUnread) { lastUnread = n; window.api.setUnread?.(n); }
 }
 
 function refresh(full = false) {
@@ -170,16 +177,23 @@ function tick() {
 
 // ---------- notifications ----------
 function onIncoming(chat) {
-  if (S.settings.sound && !chat.messages[chat.messages.length - 1]?.silent) ping();
+  const m = chat.messages[chat.messages.length - 1];
+  if (m?.silent) return;
+  if (S.settings.sound) ping();
   if (S.settings.notifications) window.api.flash();
-  if (S.activeChatId !== chat.id && chat.kind === 'customer') {
-    const m = chat.messages[chat.messages.length - 1];
+  let title = null;
+  let body = (m?.text || '').replace(/[*_`#>]/g, '').slice(0, 140);
+  let kind = '';
+  if (chat.kind === 'customer') {
     const first = chat.messages.filter((x) => x.from === 'them').length === 1;
-    toast(first ? `New customer: ${chat.customer.name}${chat.customer.vip ? ' 👑' : ''}` : chat.customer.name, (m?.text || '').slice(0, 90), first ? 'good' : '', () => openChat(chat.id));
-  } else if (S.activeChatId !== chat.id && chat.kind === 'boss') {
-    const m = chat.messages[chat.messages.length - 1];
-    toast('💼 Diane', (m?.text || '').slice(0, 90), '', () => openChat('boss'));
-  }
+    title = first ? `New customer: ${chat.customer.name}${chat.customer.vip ? ' 👑' : ''}` : chat.customer.name;
+    kind = first ? 'good' : '';
+  } else if (chat.kind === 'boss') title = '💼 Diane';
+  else if (chat.kind === 'team') { title = '👥 #support-team'; body = `${team.member(m?.who)?.name.split(' ')[0] || ''}: ${body}`; }
+  else if (chat.kind === 'mentor' && m?.kind === 'digest') title = '📅 Your weekly digest';
+  if (!title) return;
+  if (S.activeChatId !== chat.id) toast(title, body.slice(0, 90), kind, () => openChat(chat.id));
+  if (S.settings.desktopNotifications !== false && !m?.silent && (!document.hasFocus() || document.hidden)) window.api.notify({ title, body, chatId: chat.id });
 }
 
 // ---------- boot ----------
@@ -223,6 +237,7 @@ async function boot() {
   on('purchase', () => { pending.status = true; schedule(); });
   on('modalClosed', () => { const c = getChat(S.activeChatId); if (c) markRead(c); });
 
+  window.api.onOpenChat?.((id) => openChat(id));
   window.addEventListener('focus', () => { S.focused = true; const c = getChat(S.activeChatId); if (c) markRead(c); });
   window.addEventListener('blur', () => { S.focused = false; });
   window.addEventListener('beforeunload', () => flushAll());
@@ -242,10 +257,11 @@ async function boot() {
     openChat('bot');
   } else {
     boss.welcomeMessage();
+    team.welcome();
     resumeAfterLoad();
     openChat(S.profile.lastOpenChat && getChat(S.profile.lastOpenChat) ? S.profile.lastOpenChat : 'bot');
   }
-  window.__bd = { S, spawnCustomer, clock, world, boss, ui }; // handy for debugging in DevTools (and used by tests)
+  window.__bd = { S, spawnCustomer, clock, world, boss, team, customers, mentor, ui }; // handy for debugging in DevTools (and used by tests)
   const caught = world.catchUp(); // replays the time the app was closed (world.tick waits for it)
   setInterval(tick, 500);
   setInterval(() => { S.profile.lastOpenChat = S.activeChatId; }, 5000);

@@ -3,7 +3,7 @@ import { S, touchChat, uid } from '../core/state.js';
 import { emit } from '../core/bus.js';
 import * as clock from './clock.js';
 
-export const SYSTEM_CHATS = ['bot', 'mentor', 'manager', 'boss'];
+export const SYSTEM_CHATS = ['bot', 'mentor', 'manager', 'boss', 'team'];
 
 export function getChat(id) { return S.chats.get(id); }
 

@@ -1311,7 +1311,7 @@
    "topic": "Concentration and merger screening",
    "kind": "calc",
    "difficulty": 1,
-   "text": "A market has five firms with shares {s1}, {s2}, {s3}, {s4} and {s5}%. What are CR4 and the HHI? The two smallest firms want to merge. How much does the HHI rise, and would the merger be presumed anti-competitive under the 2023 U.S. guidelines (HHI > 1,800 and increase > 100)?",
+   "text": "The market shares are in the attached file. What are CR4 and the HHI? The two smallest firms want to merge. How much does the HHI rise, and would the merger be presumed anti-competitive under the 2023 U.S. guidelines (HHI > 1,800 and increase > 100)?",
    "solution": "CR4 = {=s1+s2+s3+s4}. HHI = {h}. Merger raises HHI by 2 × {s4} × {s5} = {=2*s4*s5} to {=h+2*s4*s5}. {?h+2*s4*s5>1800 && 2*s4*s5>100|Highly concentrated with an increase above 100: presumed to lessen competition substantially.|Not presumed anti-competitive by these thresholds.}",
    "vars": {
     "s1": {
@@ -1354,6 +1354,36 @@
      "s5": 10,
      "h": 2450
     }
+   },
+   "attachment": {
+    "file": "market_shares.csv",
+    "title": "Market shares",
+    "columns": [
+     "Firm",
+     "Share"
+    ],
+    "rows": [
+     [
+      "Firm 1",
+      "{s1}%"
+     ],
+     [
+      "Firm 2",
+      "{s2}%"
+     ],
+     [
+      "Firm 3",
+      "{s3}%"
+     ],
+     [
+      "Firm 4",
+      "{s4}%"
+     ],
+     [
+      "Firm 5",
+      "{s5}%"
+     ]
+    ]
    }
   },
   {

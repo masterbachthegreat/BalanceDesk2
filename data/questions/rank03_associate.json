@@ -593,8 +593,90 @@
    "topic": "Preparing financial statements",
    "kind": "calc",
    "difficulty": 3,
-   "text": "Our café, Harbour Coffee, had this balance sheet on 31 January: cash 45,000, receivables 3,000, inventory 2,000, equipment 29,500; loan 20,000, payables 4,000, interest payable 100, share capital 50,000, retained earnings 5,400. In February we: sold drinks for 20,000 cash using supplies that cost 7,000; bought supplies for 9,000 on credit; collected the 3,000 the office owed us; paid the supplier 10,000; paid wages of 7,000; recorded depreciation of 500; and accrued another 100 of interest (none paid). What's the 28 February balance sheet, February's income statement, and operating cash flow?",
-   "solution": "Income statement: revenue 20,000 − COGS 7,000 − wages 7,000 − depreciation 500 − interest 100 = net income 5,400. Balance sheet: cash 51,000; receivables 0; inventory 4,000; equipment 29,000 → assets 84,000. Payables 3,000, interest payable 200, loan 20,000, share capital 50,000, retained earnings 10,800 → 84,000. Operating cash flow 6,000 (direct: 23,000 received − 10,000 suppliers − 7,000 wages; indirect: 5,400 + 500 + 3,000 − 2,000 − 1,000 + 100)."
+   "text": "Our café, Harbour Coffee: I've attached our 31 January balance sheet and the list of what happened in February. Could you put together the 28 February balance sheet, February's income statement, and the operating cash flow?",
+   "solution": "Income statement: revenue 20,000 − COGS 7,000 − wages 7,000 − depreciation 500 − interest 100 = net income 5,400. Balance sheet: cash 51,000; receivables 0; inventory 4,000; equipment 29,000 → assets 84,000. Payables 3,000, interest payable 200, loan 20,000, share capital 50,000, retained earnings 10,800 → 84,000. Operating cash flow 6,000 (direct: 23,000 received − 10,000 suppliers − 7,000 wages; indirect: 5,400 + 500 + 3,000 − 2,000 − 1,000 + 100).",
+   "attachment": {
+    "file": "harbour_coffee_feb.xlsx",
+    "title": "Harbour Coffee: balance sheet 31 Jan and February transactions",
+    "columns": [
+     "Item",
+     "Amount"
+    ],
+    "rows": [
+     [
+      "Cash",
+      "45,000"
+     ],
+     [
+      "Receivables (owed by the office upstairs)",
+      "3,000"
+     ],
+     [
+      "Inventory (supplies)",
+      "2,000"
+     ],
+     [
+      "Equipment",
+      "29,500"
+     ],
+     [
+      "Loan",
+      "20,000"
+     ],
+     [
+      "Payables",
+      "4,000"
+     ],
+     [
+      "Interest payable",
+      "100"
+     ],
+     [
+      "Share capital",
+      "50,000"
+     ],
+     [
+      "Retained earnings",
+      "5,400"
+     ],
+     [
+      "— February —",
+      ""
+     ],
+     [
+      "Drinks sold for cash",
+      "20,000"
+     ],
+     [
+      "…using supplies that cost",
+      "7,000"
+     ],
+     [
+      "Supplies bought on credit",
+      "9,000"
+     ],
+     [
+      "Cash collected from the office",
+      "3,000"
+     ],
+     [
+      "Paid to supplier",
+      "10,000"
+     ],
+     [
+      "Wages paid",
+      "7,000"
+     ],
+     [
+      "Depreciation",
+      "500"
+     ],
+     [
+      "Interest accrued (not paid)",
+      "100"
+     ]
+    ]
+   }
   },
   {
    "id": "c10-e03",
@@ -737,7 +819,7 @@
    "topic": "Laspeyres, Paasche and Fisher indexes",
    "kind": "calc",
    "difficulty": 2,
-   "text": "My household's purchases. Base period: bread 100 loaves at 2.00, 1 phone at 500, 12 months' rent at 800. Current period: 95 loaves at 2.20, 1.2 phones at {ph}, 12 months' rent at 840. What are the Laspeyres, Paasche and Fisher price indexes?",
+   "text": "Attached is what my household bought in the base period and now. What are the Laspeyres, Paasche and Fisher price indexes?",
    "solution": "Base basket: at base prices 10,300; at current prices 220 + {ph} + 10,080 = {cb} → Laspeyres = {L:4}. Current basket: at current prices 209 + {=1.2*ph} + 10,080 = {cc}; at base prices 190 + 600 + 9,600 = 10,390 → Paasche = {P:4}. Fisher = √(L × P) = {=sqrt(L*P):4}. Laspeyres ignores substitution toward goods that got cheaper, so it is usually higher.",
    "vars": {
     "ph": {
@@ -763,6 +845,40 @@
      "L": 1.0437,
      "P": 1.0423
     }
+   },
+   "attachment": {
+    "file": "household_spending.csv",
+    "title": "Household purchases",
+    "columns": [
+     "Item",
+     "Base qty",
+     "Base price",
+     "Current qty",
+     "Current price"
+    ],
+    "rows": [
+     [
+      "Bread (loaves)",
+      "100",
+      "2.00",
+      "95",
+      "2.20"
+     ],
+     [
+      "Phone",
+      "1",
+      "500",
+      "1.2",
+      "{ph}"
+     ],
+     [
+      "Rent (months)",
+      "12",
+      "800",
+      "12",
+      "840"
+     ]
+    ]
    }
   },
   {
@@ -780,8 +896,35 @@
    "topic": "Base-year bias in real GDP",
    "kind": "calc",
    "difficulty": 3,
-   "text": "An economy produces apples and computers. Year 1: 100 apples at 1, 10 computers at 100. Year 2: 110 apples at 1.2, 15 computers at 80. Using year 1 as the base, what's real GDP growth and the GDP deflator for year 2? Why would a chain-weighted measure give a different answer?",
-   "solution": "Nominal GDP: 1,100 → 1,332. Real GDP in year 2 at year-1 prices = 110 + 1,500 = 1,610: growth 46.4%. Deflator = 1,332/1,610 = 0.827, implying −17.3% inflation — computers' price fell, and valuing year-2 output at year-1's high computer prices inflates real GDP. Chain-weighting (Fisher quantity index, growth 45.6%) gives a deflator of (1,332/1,100)/1.4557 = 0.832, about −16.8%. The base year changes measured real growth and inflation."
+   "text": "A toy economy for my macro class (data attached). Using year 1 as the base, what's real GDP growth and the GDP deflator for year 2? Why would a chain-weighted measure give a different answer?",
+   "solution": "Nominal GDP: 1,100 → 1,332. Real GDP in year 2 at year-1 prices = 110 + 1,500 = 1,610: growth 46.4%. Deflator = 1,332/1,610 = 0.827, implying −17.3% inflation — computers' price fell, and valuing year-2 output at year-1's high computer prices inflates real GDP. Chain-weighting (Fisher quantity index, growth 45.6%) gives a deflator of (1,332/1,100)/1.4557 = 0.832, about −16.8%. The base year changes measured real growth and inflation.",
+   "attachment": {
+    "file": "apples_computers.csv",
+    "title": "Output and prices",
+    "columns": [
+     "Good",
+     "Y1 quantity",
+     "Y1 price",
+     "Y2 quantity",
+     "Y2 price"
+    ],
+    "rows": [
+     [
+      "Apples",
+      "100",
+      "1",
+      "110",
+      "1.2"
+     ],
+     [
+      "Computers",
+      "10",
+      "100",
+      "15",
+      "80"
+     ]
+    ]
+   }
   },
   {
    "id": "c10-e10",
@@ -885,8 +1028,49 @@
    "topic": "Three approaches to GDP",
    "kind": "calc",
    "difficulty": 1,
-   "text": "A bread chain: a farm grows wheat worth 100 (wages 60, profit 40, no purchased inputs); a mill turns it into flour worth 250 (wages 100, profit 50); a bakery makes bread worth 400 (wages 110, profit 40). A machine-maker builds an oven worth 50 for the bakery (wages 30, profit 20, no inputs). Households buy all the bread. What's GDP by the production, income and expenditure approaches?",
-   "solution": "Production (value added): farm 100 + mill 150 + bakery 150 + machine-maker 50 = 450. Income: wages 300 + profits 150 = 450. Expenditure: consumption (bread) 400 + investment (oven) 50 = 450. Summing gross outputs (800) would double-count intermediate inputs."
+   "text": "Here's a little bread supply chain (table attached); households buy all the bread, and the oven goes to the bakery. What's GDP by the production, income and expenditure approaches?",
+   "solution": "Production (value added): farm 100 + mill 150 + bakery 150 + machine-maker 50 = 450. Income: wages 300 + profits 150 = 450. Expenditure: consumption (bread) 400 + investment (oven) 50 = 450. Summing gross outputs (800) would double-count intermediate inputs.",
+   "attachment": {
+    "file": "bread_chain.csv",
+    "title": "Who produces what",
+    "columns": [
+     "Producer",
+     "Output",
+     "Wages",
+     "Profit",
+     "Inputs bought"
+    ],
+    "rows": [
+     [
+      "Farm (wheat)",
+      "100",
+      "60",
+      "40",
+      "—"
+     ],
+     [
+      "Mill (flour)",
+      "250",
+      "100",
+      "50",
+      "wheat"
+     ],
+     [
+      "Bakery (bread)",
+      "400",
+      "110",
+      "40",
+      "flour"
+     ],
+     [
+      "Machine-maker (oven for the bakery)",
+      "50",
+      "30",
+      "20",
+      "—"
+     ]
+    ]
+   }
   }
  ]
 }

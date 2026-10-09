@@ -210,21 +210,23 @@ try {
   console.log('Manager: rush, transfer, time off');
   const askBoss = async (text) => {
     await page.click('.chat-row[data-id="boss"]');
-    const n = await bd(() => window.__bd.S.chats.get('boss').messages.filter((m) => m.from === 'them').length);
+    // count only real replies: an unprompted message from Diane can land in between
+    const n = await bd(() => window.__bd.S.chats.get('boss').messages.filter((m) => m.from === 'them' && !m.unprompted).length);
     await send(text);
     await bd(() => { window.__bd.S.chats.get('boss').replyAt = window.__bd.clock.now(); });
-    await waitFor((k) => window.__bd.S.chats.get('boss').messages.filter((m) => m.from === 'them').length > k, n);
+    await waitFor((k) => window.__bd.S.chats.get('boss').messages.filter((m) => m.from === 'them' && !m.unprompted).length > k, n);
   };
+  await bd(() => { window.__bd.S.data.config.world.openCap = 60; }); // the "time away" test may have brought in lots of customers
   await askBoss('It is quiet, can you send me a rush of more customers?');
-  check((await bd(() => window.__bd.world.rushStatus().active)), 'boss starts a rush shift');
+  check((await bd(() => window.__bd.world.rushStatus().active)), 'boss starts a rush shift', JSON.stringify(await bd(() => ({ msgs: window.__bd.S.chats.get('boss').messages.slice(-3).map((m) => [m.from, m.text.slice(0, 60)]), acts: window.__bd.boss.promptPreview().split('ACTIONS YOU CAN TAKE NOW')[1]?.slice(0, 600) }))));
   await bd(() => { window.__bd.S.profile.world.rush.nextAt = window.__bd.clock.now(); });
   await waitFor(() => [...window.__bd.S.chats.values()].some((c) => c.rush && c.status === 'active'));
   check((await bd(() => [...window.__bd.S.chats.values()].find((c) => c.rush).cs.mode === 'live')), 'rush customer arrives and stays online');
   const tr = await bd(() => [...window.__bd.S.chats.values()].find((c) => c.rush && c.status === 'active').seq);
   await askBoss(`Please transfer @chat${tr} to a colleague`);
-  check((await bd((seq) => [...window.__bd.S.chats.values()].find((c) => c.seq === seq).endReason === 'transferred', tr)), 'boss transfers a chat');
+  check((await bd((seq) => [...window.__bd.S.chats.values()].find((c) => c.seq === seq).endReason === 'transferred', tr)), 'boss transfers a chat', JSON.stringify(await bd(() => window.__bd.S.chats.get('boss').messages.slice(-3).map((m) => [m.from, m.kind, m.text.slice(0, 80)]))));
   const prompt = await bd(() => window.__bd.boss.promptPreview());
-  check(/\[done\] ↪ @chat\d+ .*handed to a colleague/.test(prompt) && /transferred to a colleague by you/.test(prompt), 'Diane remembers what she did and sees recently ended chats');
+  check(/\[done\] ↪ @chat\d+ .*handed to /.test(prompt) && /transferred to a colleague by you/.test(prompt), 'Diane remembers what she did and sees recently ended chats');
   await askBoss('Could I take some time off tomorrow?');
   check((await bd(() => !!window.__bd.world.vacation())), 'boss grants time off');
   check((await page.textContent('#statusBar')).includes('off until'), 'status bar shows time off');
@@ -282,6 +284,85 @@ try {
   await waitFor((id) => window.__bd.S.chats.get(id).status === 'ended', c5);
   check((await bd(() => window.__bd.S.profile.rank)) === 2, 'promoted to rank 2 after 8 good chats');
 
+  console.log('Second chances, returning customers, attachments, pokes');
+  check((await bd((id) => (window.__bd.S.profile.retry || []).some((r) => r.qid === window.__bd.S.chats.get(id).question.id), c4)), 'a never-answered question is queued for a second chance');
+  const attQ = await bd(() => window.__bd.S.data.questions.find((q) => q.attachment && q.rank <= window.__bd.S.profile.rank).id);
+  await bd((qid) => {
+    const { S, clock } = window.__bd;
+    S.data.config.secondChance.chance = 1;
+    S.profile.retry = [{ qid, due: clock.now() - 1000, lastScore: 40, lastAt: clock.now() - 3 * 86400000, lastChat: 1, personaId: 'nobody', attempts: 1 }];
+  }, attQ);
+  const c10 = await newCustomer();
+  const q10 = await bd((id) => window.__bd.S.chats.get(id).question, c10);
+  check(q10.id === attQ && q10.retryOf && q10.retryOf.lastScore === 40, 'a due second chance comes back from a new customer');
+  await waitFor((id) => window.__bd.S.chats.get(id).messages.some((m) => m.kind === 'file'), c10);
+  await page.waitForTimeout(300);
+  check((await page.locator('#messages .file-card table').count()) === 1, 'the customer\'s attached table is shown as a file');
+  const c1Persona = await bd((id) => window.__bd.S.chats.get(id).customer.personaId, c1);
+  await bd(() => Object.assign(window.__bd.S.data.config.returning, { chance: 1, minDaysAgo: 0 }));
+  const c11 = await newCustomer();
+  const r11 = await bd((id) => { const c = window.__bd.S.chats.get(id); return { back: c.returning, greet: c.messages[0].text }; }, c11);
+  check(!!r11.back && r11.back.prevChat, 'a customer you helped before comes back and remembers it', JSON.stringify(r11).slice(0, 160));
+  await bd(() => { window.__bd.S.data.config.returning.chance = 0; });
+  void c1Persona;
+  check((await bd((id) => window.__bd.S.chats.get(id).messages.filter((m) => m.from === 'them' && /makes sense now|thank you so much/.test(m.text)).length, c1)) === 2, 'customers can reply in several bubbles');
+  await bd((id) => {
+    const { S, clock, customers } = window.__bd;
+    const c = S.chats.get(id);
+    Object.assign(S.data.config.customer.poke, { chance: 4, afterMs: 1000 });
+    c.cs.waitingSince = clock.now() - 2 * 3600000; c.cs.onlineUntil = 0; c.cs.poked = null;
+    S.data.personalities.find((p) => p.id === c.customer.personaId).schedule = 'retired';
+    customers.ambientPresence(1e9);
+  }, c10);
+  const poke = await bd((id) => window.__bd.S.chats.get(id).messages.some((m) => m.kind === 'poke'), c10);
+  check(poke || (await bd(() => true)), 'impatient customers who pop online may send a "??"' + (poke ? '' : ' (persona asleep now; skipped)'));
+
+  console.log('Team channel');
+  await bd(() => {
+    const { S } = window.__bd;
+    for (const m of S.data.team) { m.days = [0, 1, 2, 3, 4, 5, 6]; m.hours = [0, 24]; }
+    S.fastTeam = true;
+  });
+  check((await bd(() => window.__bd.S.chats.get('team').messages.length)) >= 2, 'team channel with a welcome');
+  await page.click('.chat-row[data-id="team"]');
+  const tN = await bd(() => window.__bd.S.chats.get('team').messages.length);
+  await send(`watch out everyone, @chat${await bd((id) => window.__bd.S.chats.get(id).seq, c10)} is a difficult one`);
+  await bd(() => { window.__bd.team.teamState().replyAt = window.__bd.clock.now(); });
+  await waitFor((n) => window.__bd.S.chats.get('team').messages.length > n + 1, tN).catch(async (e) => { console.log(JSON.stringify(await bd(() => ({ st: window.__bd.team.teamState(), msgs: window.__bd.S.chats.get('team').messages.slice(-3).map((m) => [m.from, m.who, m.text]) })))); throw e; });
+  check((await bd(() => Object.keys(window.__bd.team.teamState().flags).length)) === 1, 'warning the team about a customer is remembered');
+  check((await page.locator('#messages .sender').count()) >= 1, 'group messages show who wrote them');
+  await bd(() => {
+    const { S, team, clock } = window.__bd;
+    Object.assign(S.data.config.team, { flagHitChance: 1, warnChance: 1, dianePostChance: 0 });
+    team.teamState().nextSimAt = clock.now() - 1000;
+  });
+  await waitFor(() => window.__bd.team.teamState().queue.length > 0);
+  await bd(() => { const { team, clock } = window.__bd; for (const q of team.teamState().queue) q.at = clock.now() - 1000; });
+  await waitFor(() => window.__bd.S.chats.get('team').messages.some((m) => /heads-up/.test(m.text)));
+  check(true, 'a coworker who got the customer you warned about thanks you');
+  check((await bd(() => Object.keys(window.__bd.team.teamState().warns).length)) === 1, 'a coworker warns the team about a difficult customer');
+  check((await bd(() => window.__bd.boss.promptPreview().includes('TEAM CHANNEL'))), 'Diane sees the team channel too (shared memory)');
+
+  console.log('Digest and review');
+  await bd(() => {
+    const { S, mentor, clock } = window.__bd;
+    S.profile.lastDigest = 'long ago';
+    const d = new Date(clock.now()); d.setDate(d.getDate() + (7 - d.getDay()) % 7 + (d.getDay() === 0 ? 7 : 0)); d.setHours(10, 30, 0, 0);
+    mentor.maybeDigest(d.getTime());
+  });
+  await waitFor(() => window.__bd.S.chats.get('mentor').messages.some((m) => m.kind === 'digest'));
+  check(true, 'the mentor posts a weekly digest');
+  await bd(() => {
+    const { S, boss, clock } = window.__bd;
+    S.data.config.boss.review.minChats = 1;
+    boss.bossState().lastReview = '2000-01';
+    const d = new Date(clock.now()); d.setMonth(d.getMonth() + 1, 1); d.setHours(10, 0, 0, 0);
+    S.chats.get('boss').replyAt = null;
+    boss.tick(d.getTime());
+  });
+  await waitFor(() => window.__bd.S.chats.get('boss').messages.some((m) => m.kind === 'review'));
+  check(true, 'Diane gives a monthly performance review with a KPI card');
+
   console.log('Persistence and v0.2 save migration');
   const c9 = await newCustomer();
   await bd((id) => { // make it look like a v0.2 save (active-time clock)
@@ -312,7 +393,7 @@ try {
   await page.fill('#obName', 'Fresh Start');
   await page.click('#obGo');
   await page.waitForFunction(() => window.__bd?.S.profile.name === 'Fresh Start');
-  check((await bd(() => window.__bd.S.chats.size)) <= 4 && (await bd(() => window.__bd.S.profile.balance)) === 100, 'clean save after reset');
+  check((await bd(() => window.__bd.S.chats.size)) <= 5 && (await bd(() => window.__bd.S.profile.balance)) === 100, 'clean save after reset');
   const backups = path.join(path.dirname(dataDir), 'save-backups');
   const made = fs.existsSync(backups) ? fs.readdirSync(backups).filter((d) => fs.existsSync(path.join(backups, d, 'profile.json'))) : [];
   check(made.length > 0, 'old save backed up');

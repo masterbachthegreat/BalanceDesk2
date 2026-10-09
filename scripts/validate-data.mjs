@@ -44,6 +44,10 @@ for (const it of D.shop) {
 }
 
 // memos
+for (const m of D.team || []) {
+  if (!m.id || !m.name || !m.role || !m.bio || !m.style || !Array.isArray(m.days) || !Array.isArray(m.hours) || m.hours.length !== 2) err('bad team member ' + JSON.stringify(m).slice(0, 80));
+}
+if ((D.team || []).length < 1) err('data/team.json: no coworkers');
 for (const m of D.memos) if (!m.id || !m.trigger || !m.title || !m.text) err('bad memo ' + JSON.stringify(m).slice(0, 80));
 
 // questions
@@ -58,8 +62,15 @@ for (const q of D.questions) {
   if (!ranks.has(q.rank)) err(`${where}: unknown rank ${q.rank}`);
   else if (!ranks.get(q.rank).chapters.includes(q.chapter)) warn(`${where}: chapter ${q.chapter} not in rank ${q.rank}`);
   if (!q.text || !q.solution || !q.topic) err(`${where}: missing text/solution/topic`);
+  if (q.attachment) {
+    const a = q.attachment;
+    if (!a.file || !a.title || !Array.isArray(a.columns) || !Array.isArray(a.rows)) err(`${where}: attachment needs file, title, columns, rows`);
+    else if (a.rows.some((r) => r.length !== a.columns.length)) err(`${where}: attachment row length doesn't match columns`);
+    if (!/attach/i.test(q.text)) warn(`${where}: has an attachment but the text doesn't mention it`);
+  }
+  const attText = (a) => (a ? [a.title, ...a.columns, ...a.rows.flat(), a.note || ''].join(' ') : '');
   if (!q.vars) {
-    if (/\{[=?]?[A-Za-z_][^{}]*\}/.test(q.text + q.solution)) warn(`${where}: has {placeholders} but no vars`);
+    if (/\{[=?]?[A-Za-z_][^{}]*\}/.test(q.text + q.solution + attText(q.attachment))) warn(`${where}: has {placeholders} but no vars`);
     continue;
   }
   try {
@@ -75,7 +86,7 @@ for (const q of D.questions) {
       const inst = instantiate(q);
       for (const [k, v] of Object.entries(inst.values)) if (typeof v === 'number' && !Number.isFinite(v)) throw new Error(`${k} is ${v}`);
       for (const c of q.constraints || []) if (!evaluate(c, inst.values)) throw new Error('constraint never satisfied: ' + c);
-      if (/\{[=?]?[A-Za-z_][^{}]*\}/.test(inst.text + inst.solution)) throw new Error('unfilled placeholder');
+      if (/\{[=?]?[A-Za-z_][^{}]*\}/.test(inst.text + inst.solution + attText(inst.attachment))) throw new Error('unfilled placeholder');
       // a non-zero value must not be shown as 0 because of too few decimals
       for (const m of (q.text + ' ' + q.solution).matchAll(/\{(=?)([^{}?|]+?)(?::([a-z0-9]+))?\}/gi)) {
         const v = m[1] ? evaluate(m[2], inst.values) : inst.values[m[2].trim()];

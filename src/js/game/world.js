@@ -21,6 +21,8 @@ import { tickMemos } from './manager.js';
 import { botSay } from './bot.js';
 import { ui } from '../ui/registry.js';
 import * as boss from './boss.js';
+import * as team from './team.js';
+import { maybeDigest } from './mentor.js';
 
 const DAY = 86400000;
 const HOUR = 3600000;
@@ -196,7 +198,9 @@ export function tick(dt) {
   const v = w.vacation;
   if (v && now >= v.end) endVacation(v.end);
   boss.tick(now);
+  team.tick(now);
   tickMemos(now);
+  maybeDigest(now);
   if (vacation()) return;
   speedUpReads(dt);
   ambientPresence(dt, now);

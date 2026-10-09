@@ -1,6 +1,6 @@
 // Sonnet grades a finished chat: answer quality (1-100) and service stars (1-5).
 import { llmCall, parseJSON } from './llm.js';
-import { messageLines, reasonText } from './transcript.js';
+import { messageLines, reasonText, questionText } from './transcript.js';
 import { clamp, cfg } from '../core/state.js';
 import { durationWords, waitWords } from '../core/format.js';
 
@@ -27,7 +27,7 @@ export async function gradeChat(chat) {
   const user = [
     `Customer: ${chat.customer.name}${chat.customer.vip ? ' (VIP client — high standards)' : ''}`,
     `Topic: ${q.topic}`,
-    `Customer's question:\n${q.text}`,
+    `Customer's question:\n${questionText(q)}`,
     `Reference solution:\n${q.solution}`,
     `How the chat ended: ${reasonText(chat.endReason)}.`,
     `Agent's average reply time: ${lat === null ? 'n/a' : durationWords(lat)}; the customer had to chase the agent ${cs.nudges || 0} time(s). ${chat.rush ? 'This was a rush-shift live chat: the customer expected replies within minutes.' : `This is an asynchronous messenger: replies within ${waitWords(cfg().world.idealReplyMs)} are normal and good service, so only count slowness against "stars" if the customer had to chase the agent.`}`,

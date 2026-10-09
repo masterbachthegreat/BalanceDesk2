@@ -219,8 +219,39 @@
    "topic": "Capital rationing",
    "kind": "calc",
    "difficulty": 1,
-   "text": "With a budget of 700, which projects should we choose? A (cost 300, NPV 60), B (cost 400, NPV 90), C (cost 350, NPV 80), D (cost 250, NPV 45). Projects can't be split.",
-   "solution": "Feasible combinations within 700: A+B (NPV 150), A+C (140), A+D (105), B+D (135), C+D (125); B+C costs 750; no triple fits. Best: A and B, NPV 150. (Ranking by NPV per unit of cost alone can mislead with indivisible projects.)"
+   "text": "We have a budget of 700 for the projects in the attached list, and projects can't be split. Which should we choose?",
+   "solution": "Feasible combinations within 700: A+B (NPV 150), A+C (140), A+D (105), B+D (135), C+D (125); B+C costs 750; no triple fits. Best: A and B, NPV 150. (Ranking by NPV per unit of cost alone can mislead with indivisible projects.)",
+   "attachment": {
+    "file": "project_shortlist.csv",
+    "title": "Candidate projects",
+    "columns": [
+     "Project",
+     "Cost",
+     "NPV"
+    ],
+    "rows": [
+     [
+      "A",
+      "300",
+      "60"
+     ],
+     [
+      "B",
+      "400",
+      "90"
+     ],
+     [
+      "C",
+      "350",
+      "80"
+     ],
+     [
+      "D",
+      "250",
+      "45"
+     ]
+    ]
+   }
   },
   {
    "id": "c32-e07",
@@ -1011,8 +1042,38 @@
    "topic": "Sharpe, Treynor and Jensen's alpha",
    "kind": "calc",
    "difficulty": 2,
-   "text": "The market returned 10% (s.d. 16%) and r_f = 3%. Fund X returned 12% with s.d. 20% and beta 1.4; fund Y returned 9% with s.d. 12% and beta 0.7. What are each fund's Sharpe ratio, alpha and Treynor ratio? Which would you prefer as your only investment, and which as a small addition to a diversified portfolio?",
-   "solution": "Sharpe: X 0.45, Y 0.50, market 0.44. Alpha: X 12 − (3 + 1.4 × 7) = −0.8%; Y 9 − (3 + 0.7 × 7) = +1.1%. Treynor: X 6.4, Y 8.6, market 7. Only investment → compare Sharpe: Y. Small addition → alpha/Treynor: Y again; X's high return is more than explained by its beta."
+   "text": "I'm comparing two funds (numbers attached; the risk-free rate was 3%). What are each fund's Sharpe ratio, alpha and Treynor ratio? Which would you prefer as your only investment, and which as a small addition to a diversified portfolio?",
+   "solution": "Sharpe: X 0.45, Y 0.50, market 0.44. Alpha: X 12 − (3 + 1.4 × 7) = −0.8%; Y 9 − (3 + 0.7 × 7) = +1.1%. Treynor: X 6.4, Y 8.6, market 7. Only investment → compare Sharpe: Y. Small addition → alpha/Treynor: Y again; X's high return is more than explained by its beta.",
+   "attachment": {
+    "file": "fund_comparison.xlsx",
+    "title": "Last year",
+    "columns": [
+     "",
+     "Return",
+     "Std dev",
+     "Beta"
+    ],
+    "rows": [
+     [
+      "Market",
+      "10%",
+      "16%",
+      "1.0"
+     ],
+     [
+      "Fund X",
+      "12%",
+      "20%",
+      "1.4"
+     ],
+     [
+      "Fund Y",
+      "9%",
+      "12%",
+      "0.7"
+     ]
+    ]
+   }
   },
   {
    "id": "c34-e09",
@@ -1813,7 +1874,7 @@
    "topic": "DCF valuation",
    "kind": "calc",
    "difficulty": 2,
-   "text": "Free cash flow to the firm is forecast at {f1}, {f2} and {f3} in years 1–3, then growing at {g}% a year. WACC is {w}%, net debt {nd}, and there are {n} shares. What's the terminal value, enterprise value, equity value per share, and the share of EV from the terminal value?",
+   "text": "I've attached our DCF inputs. What's the terminal value, enterprise value, equity value per share, and the share of EV from the terminal value?",
    "solution": "TV₃ = {f3} × {=1+g/100:2}/({=w/100:2} − {=g/100:2}) = {tv:2}. EV = {f1}/{=1+w/100:2} + {f2}/{=1+w/100:2}² + ({f3} + {tv:2})/{=1+w/100:2}³ = {ev:2}. Equity {=ev-nd:2} → {=(ev-nd)/n:2} per share. The terminal value contributes {=tv/(1+w/100)^3:2}, {=tv/(1+w/100)^3/ev*100:0}% of EV — most of the value sits in the assumptions about the far future.",
    "vars": {
     "f1": {
@@ -1870,6 +1931,44 @@
      "tv": 412,
      "ev": 373.54
     }
+   },
+   "attachment": {
+    "file": "dcf_inputs.xlsx",
+    "title": "DCF inputs",
+    "columns": [
+     "Input",
+     "Value"
+    ],
+    "rows": [
+     [
+      "FCFF year 1",
+      "{f1}"
+     ],
+     [
+      "FCFF year 2",
+      "{f2}"
+     ],
+     [
+      "FCFF year 3",
+      "{f3}"
+     ],
+     [
+      "Growth after year 3",
+      "{g}%"
+     ],
+     [
+      "WACC",
+      "{w}%"
+     ],
+     [
+      "Net debt",
+      "{nd}"
+     ],
+     [
+      "Shares",
+      "{n}"
+     ]
+    ]
    }
   },
   {
@@ -1999,7 +2098,7 @@
    "topic": "Valuation by comparables",
    "kind": "calc",
    "difficulty": 1,
-   "text": "Five peers trade at EV/EBITDA of 6.5, 7.5, 8, 9 and 15. Our target has EBITDA of {e} and net debt of {nd}. What's its equity value using the median and the mean? Which would you use, and what would you investigate?",
+   "text": "The peer multiples are attached. Our target has EBITDA of {e} and net debt of {nd}. What's its equity value using the median and the mean? Which would you use, and what would you investigate?",
    "solution": "Median 8: EV {=8*e}, equity {=8*e-nd}. Mean 9.2: EV {=9.2*e:0}, equity {=9.2*e-nd:0}. Use the median, but investigate the peer at 15 (different mix, a bid in its price, depressed EBITDA?) and whether the target resembles it.",
    "vars": {
     "e": {
@@ -2020,6 +2119,36 @@
      "nd": 90
     },
     "expect": {}
+   },
+   "attachment": {
+    "file": "peer_multiples.csv",
+    "title": "Peers",
+    "columns": [
+     "Peer",
+     "EV/EBITDA"
+    ],
+    "rows": [
+     [
+      "Peer 1",
+      "6.5"
+     ],
+     [
+      "Peer 2",
+      "7.5"
+     ],
+     [
+      "Peer 3",
+      "8"
+     ],
+     [
+      "Peer 4",
+      "9"
+     ],
+     [
+      "Peer 5",
+      "15"
+     ]
+    ]
    }
   },
   {

@@ -12,6 +12,19 @@ const REASONS = {
 };
 export const reasonText = (r) => REASONS[r] || r || 'unknown';
 
+// An attached table as plain text (for prompts and transcripts).
+export function attachmentText(a) {
+  if (!a) return '';
+  const lines = [`[Attached file "${a.file}": ${a.title}]`, a.columns.join(' | '), ...a.rows.map((r) => r.join(' | '))];
+  if (a.note) lines.push(a.note);
+  return lines.join('\n');
+}
+
+// The customer's question including any attached file.
+export function questionText(q) {
+  return q.attachment ? q.text + '\n' + attachmentText(q.attachment) : q.text;
+}
+
 function ts(t) {
   return new Date(t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
@@ -23,7 +36,7 @@ export function messageLines(chat) {
       if (m.kind === 'payout' || m.kind === 'breakdown' || m.kind === 'feedback' || m.kind === 'error') continue;
       out.push(`[${ts(m.t)}] (system) ${m.text}`);
     } else if (m.from === 'them') {
-      out.push(`[${ts(m.t)}] CUSTOMER: ${m.text}`);
+      out.push(`[${ts(m.t)}] CUSTOMER: ${m.kind === 'file' ? attachmentText(m.attachment) : m.text}`);
     } else {
       out.push(`[${ts(m.t)}] AGENT${m.after ? ' (after the chat had ended — customer did not see it)' : ''}: ${m.text}`);
     }
@@ -38,7 +51,7 @@ export function fullTranscript(chat) {
     `=== CHAT TRANSCRIPT ${handle(chat)} ===`,
     `Customer: ${c.name}${c.vip ? ' (VIP client)' : ''} — ${c.bio}`,
     `Topic: ${q.topic} (book chapter ${q.chapter}, rank ${q.rank})`,
-    `Customer's question: ${q.text}`,
+    `Customer's question: ${questionText(q)}`,
     `Reference solution (Whiterock answer key): ${q.solution}`,
   ];
   if (chat.status === 'active') head.push('Status: ACTIVE — the conversation is still going on.');

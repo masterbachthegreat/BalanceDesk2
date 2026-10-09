@@ -52,6 +52,12 @@ export function computePayout(chat, grade, modifiers = S.profile.modifiers) {
     lines.push({ label: 'VIP client', why: 'VIP customers pay more', mult: P.vipMultiplier });
   }
 
+  const R = cfg().returning;
+  if (chat.returning && !chat.returning.missed && chat.returning.stars >= R.loyalStars) {
+    amount *= R.loyaltyMult;
+    lines.push({ label: 'Loyal customer', why: `Came back after a ${chat.returning.stars}★ chat with you`, mult: R.loyaltyMult });
+  }
+
   const quality = clamp(grade.score / 100, 0.01, 1);
   amount *= quality;
   lines.push({ label: 'Answer quality', why: `AI score ${grade.score}/100`, mult: quality });

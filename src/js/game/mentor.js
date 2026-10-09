@@ -6,6 +6,7 @@ import { fullTranscript } from './transcript.js';
 import { llmCall } from './llm.js';
 import { rankInfo } from './progress.js';
 import { num } from '../core/format.js';
+import * as clock from './clock.js';
 
 const SYSTEM = `You are the Mentor at Whiterock, a financial-services firm: a senior analyst who coaches a junior support agent. You are warm, direct and precise. You teach economics, finance, accounting, statistics and mathematics, and you help the agent handle customer chats better (accuracy, structure, tone).
 
@@ -161,4 +162,56 @@ export async function maybeMentorHint(chat) {
 
 export function reviewWithMentor(chat) {
   return sendToMentor(`${handle(chat)} Can you walk me through the correct answer step by step, and show me where I went wrong?`);
+}
+
+// ---------- the Sunday digest ----------
+// Every Sunday morning the mentor sums up your week: what went well, which book chapters to
+// revisit, and one practice problem. If the app was closed then, it's posted on the next launch
+// (timestamped Sunday) as long as that's within a few days.
+function lastDigestTime(now) {
+  const D = cfg().mentor.digest;
+  const d = new Date(now);
+  d.setHours(D.hour, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() - D.weekday + 7) % 7));
+  if (d.getTime() > now) d.setDate(d.getDate() - 7);
+  return d.getTime();
+}
+
+let digesting = false;
+
+export async function maybeDigest(now = clock.now()) {
+  const p = S.profile;
+  if (digesting || !p || !S.settings?.hasKey) return;
+  const at = lastDigestTime(now);
+  const key = new Date(at).toDateString();
+  if (p.lastDigest === key) return;
+  if (!p.lastDigest) { p.lastDigest = key; return; } // nothing to sum up before your first week
+  p.lastDigest = key;
+  if (now - at > cfg().mentor.digest.maxLateDays * 86400000) return;
+  const week = [...S.chats.values()].filter((c) => c.kind === 'customer' && c.status === 'ended' && c.result && c.endedAt > at - 7 * 86400000 && c.endedAt <= at);
+  if (!week.length) return;
+  digesting = true;
+  const chat = getChat('mentor');
+  try {
+    const lines = week.sort((a, b) => a.endedAt - b.endedAt).map((c) => `- ${handle(c)} ch.${c.question.chapter} ${c.question.topic}: ${c.result.missed ? 'never answered' : `${c.result.aiScore}/100, ${c.result.stars}★`}${c.question.retryOf ? ' (second chance)' : ''}${c.result.grade?.issues?.length ? ' — issues: ' + c.result.grade.issues.slice(0, 2).join('; ') : ''}`);
+    const ch = {};
+    for (const c of week) if (!c.result.missed) (ch[c.question.chapter] ||= { topic: c.question.topic, xs: [] }).xs.push(c.result.aiScore);
+    const weak = Object.entries(ch).map(([k, v]) => ({ k, topic: v.topic, avg: v.xs.reduce((s, x) => s + x, 0) / v.xs.length })).filter((x) => x.avg < 70).sort((a, b) => a.avg - b.avg);
+    const text = await llmCall({
+      role: 'smart',
+      category: 'mentor',
+      system: SYSTEM + '\n\n' + playerSummary(),
+      messages: [{ role: 'user', content: `Write my Sunday digest for the past week. Chats:\n${lines.join('\n')}\n\nChapters averaging under 70: ${weak.length ? weak.map((w) => `ch.${w.k} (${w.topic}, avg ${Math.round(w.avg)})`).join(', ') : 'none'}.\n\nFormat (markdown, short and warm): a title line "📅 Your week", then **What went well**, **What to revisit** (name the book chapters by number and what to reread in them, from *Economies, Accounts and Money*), and **Practice problem**: one fresh problem on my weakest area with concrete numbers, no solution; tell me to reply here with my answer and you'll check it.` }],
+      maxTokens: cfg().mentor.maxTokens,
+      temperature: 0.5,
+    });
+    addMessage(chat, { from: 'them', text: text.trim(), kind: 'digest', t: Math.min(now, Math.max(at, chat.messages.at(-1)?.t || 0)) });
+    emit('mentorDigest', chat);
+  } catch (e) {
+    console.warn('digest failed', e);
+    p.lastDigest = null;
+  } finally {
+    digesting = false;
+    touchChat(chat);
+  }
 }

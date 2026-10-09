@@ -183,8 +183,58 @@
    "topic": "Income shares and percentile ratios",
    "kind": "calc",
    "difficulty": 1,
-   "text": "In a group of ten people, incomes are 5, 8, 10, 12, 15, 18, 20, 25, 37 and 50. What share of total income goes to the top 10% and the top 20%, and what's the 90/10 ratio (using the ninth and first values)?",
-   "solution": "Total income 200. Top 10% (one person): 50/200 = 25%. Top 20%: 87/200 = 43.5%. P90/P10 = 37/5 = 7.4."
+   "text": "I've attached the incomes of a group of ten people. What share of total income goes to the top 10% and the top 20%, and what's the 90/10 ratio (using the ninth and first values)?",
+   "solution": "Total income 200. Top 10% (one person): 50/200 = 25%. Top 20%: 87/200 = 43.5%. P90/P10 = 37/5 = 7.4.",
+   "attachment": {
+    "file": "incomes.csv",
+    "title": "Incomes (thousands)",
+    "columns": [
+     "Person",
+     "Income"
+    ],
+    "rows": [
+     [
+      "1",
+      "5"
+     ],
+     [
+      "2",
+      "8"
+     ],
+     [
+      "3",
+      "10"
+     ],
+     [
+      "4",
+      "12"
+     ],
+     [
+      "5",
+      "15"
+     ],
+     [
+      "6",
+      "18"
+     ],
+     [
+      "7",
+      "20"
+     ],
+     [
+      "8",
+      "25"
+     ],
+     [
+      "9",
+      "37"
+     ],
+     [
+      "10",
+      "50"
+     ]
+    ]
+   }
   },
   {
    "id": "c11-e09",
@@ -1004,8 +1054,38 @@
    "topic": "Sample correlation",
    "kind": "calc",
    "difficulty": 1,
-   "text": "What's the sample correlation between x = (1, 2, 3, 4, 5) and y = (2, 4, 5, 4, 5)?",
-   "solution": "x̄ = 3, ȳ = 4; Σ(x − x̄)(y − ȳ) = 6; Σ(x − x̄)² = 10; Σ(y − ȳ)² = 6. r = 6/√60 = 0.775."
+   "text": "What's the sample correlation between x and y in the attached data?",
+   "solution": "x̄ = 3, ȳ = 4; Σ(x − x̄)(y − ȳ) = 6; Σ(x − x̄)² = 10; Σ(y − ȳ)² = 6. r = 6/√60 = 0.775.",
+   "attachment": {
+    "file": "xy.csv",
+    "title": "Paired observations",
+    "columns": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "2",
+      "4"
+     ],
+     [
+      "3",
+      "5"
+     ],
+     [
+      "4",
+      "4"
+     ],
+     [
+      "5",
+      "5"
+     ]
+    ]
+   }
   },
   {
    "id": "c14-e03",
@@ -1180,8 +1260,38 @@
    "topic": "Portfolio variance in matrix form",
    "kind": "calc",
    "difficulty": 2,
-   "text": "Weights (0.5, 0.3, 0.2), expected returns (8, 6, 4)%, volatilities (20, 15, 5)%, correlation 0.5 between assets 1 and 2 and zero otherwise. What are the portfolio's expected return and volatility?",
-   "solution": "Expected return 0.5 × 8 + 0.3 × 6 + 0.2 × 4 = 6.6%. Variance = 0.25 × 0.04 + 0.09 × 0.0225 + 0.04 × 0.0025 + 2 × 0.5 × 0.3 × 0.5 × 0.2 × 0.15 = 0.016625; volatility 12.9%."
+   "text": "My portfolio is in the attached sheet. The correlation is 0.5 between assets 1 and 2 and zero otherwise. What are the portfolio's expected return and volatility?",
+   "solution": "Expected return 0.5 × 8 + 0.3 × 6 + 0.2 × 4 = 6.6%. Variance = 0.25 × 0.04 + 0.09 × 0.0225 + 0.04 × 0.0025 + 2 × 0.5 × 0.3 × 0.5 × 0.2 × 0.15 = 0.016625; volatility 12.9%.",
+   "attachment": {
+    "file": "portfolio.xlsx",
+    "title": "Portfolio",
+    "columns": [
+     "Asset",
+     "Weight",
+     "Expected return",
+     "Volatility"
+    ],
+    "rows": [
+     [
+      "1",
+      "0.5",
+      "8%",
+      "20%"
+     ],
+     [
+      "2",
+      "0.3",
+      "6%",
+      "15%"
+     ],
+     [
+      "3",
+      "0.2",
+      "4%",
+      "5%"
+     ]
+    ]
+   }
   },
   {
    "id": "c14-e08",

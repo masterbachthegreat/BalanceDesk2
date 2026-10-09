@@ -25,5 +25,8 @@ contextBridge.exposeInMainWorld('api', {
   openDataFolder: () => call('openDataFolder'),
   openExternal: (url) => call('openExternal', url),
   flash: () => call('flash'),
+  notify: (n) => call('notify', n),
+  setUnread: (n) => call('setUnread', n),
+  onOpenChat: (cb) => ipcRenderer.on('bd:openChat', (_e, id) => cb(id)),
   isElectron: true,
 });

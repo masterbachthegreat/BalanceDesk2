@@ -146,8 +146,49 @@
    "topic": "The full accounting cycle",
    "kind": "calc",
    "difficulty": 3,
-   "text": "My design studio started on 1 March. During March: (1) owners invested 40,000 cash; (2) we bought computers for 12,000 cash (3-year life, no residual); (3) paid 3,000 for three months' rent in advance; (4) billed clients 25,000, of which 15,000 was received in cash; (5) paid staff 9,000; (6) got a 400 phone bill, unpaid at month end. What's March's profit (ignore tax) and our 31 March balance sheet?",
-   "solution": "Adjustments: depreciation 12,000/36 ≈ 333; rent expense 1,000. Profit = 25,000 − 9,000 − 1,000 − 400 − 333 = 14,267. Balance sheet: cash 31,000; receivables 10,000; prepaid rent 2,000; computers 11,667 → assets 54,667. Payables 400; share capital 40,000; retained earnings 14,267 → 54,667."
+   "text": "My design studio started on 1 March; I've attached everything that happened during March. The computers have a 3-year life with no residual value. What's March's profit (ignore tax) and our 31 March balance sheet?",
+   "solution": "Adjustments: depreciation 12,000/36 ≈ 333; rent expense 1,000. Profit = 25,000 − 9,000 − 1,000 − 400 − 333 = 14,267. Balance sheet: cash 31,000; receivables 10,000; prepaid rent 2,000; computers 11,667 → assets 54,667. Payables 400; share capital 40,000; retained earnings 14,267 → 54,667.",
+   "attachment": {
+    "file": "studio_march.xlsx",
+    "title": "March transactions",
+    "columns": [
+     "#",
+     "What happened",
+     "Amount"
+    ],
+    "rows": [
+     [
+      "1",
+      "Owners invested cash",
+      "40,000"
+     ],
+     [
+      "2",
+      "Bought computers for cash",
+      "12,000"
+     ],
+     [
+      "3",
+      "Paid three months of rent in advance",
+      "3,000"
+     ],
+     [
+      "4",
+      "Billed clients (15,000 received in cash)",
+      "25,000"
+     ],
+     [
+      "5",
+      "Paid staff",
+      "9,000"
+     ],
+     [
+      "6",
+      "Phone bill received, unpaid at month end",
+      "400"
+     ]
+    ]
+   }
   },
   {
    "id": "c27-e07",
@@ -349,7 +390,7 @@
    "topic": "Inventory cost formulas: FIFO, average, LIFO",
    "kind": "calc",
    "difficulty": 2,
-   "text": "Opening inventory is 50 units at {c0}. Purchases: 150 at {c1}, then 100 at {c2}. Sales: 220 units at {p}. What are cost of goods sold, ending inventory and gross profit under FIFO, weighted average and (periodic) LIFO? What's the LIFO reserve?",
+   "text": "Our inventory movements are in the attached sheet. What are cost of goods sold, ending inventory and gross profit under FIFO, weighted average and (periodic) LIFO? What's the LIFO reserve?",
    "solution": "Goods available 300 units costing {tot}; revenue {=220*p}. FIFO: COGS {fifo}, ending 80 × {c2} = {=80*c2}, gross profit {=220*p-fifo}. Average: {=tot/300:3}/unit → COGS {=220*tot/300:2}, ending {=80*tot/300:2}, GP {=220*p-220*tot/300:2}. LIFO: COGS {lifo}, ending 30 × {c1} + 50 × {c0} = {=30*c1+50*c0}, GP {=220*p-lifo}. LIFO reserve = {=80*c2} − {=30*c1+50*c0} = {=80*c2-30*c1-50*c0}.",
    "vars": {
     "c0": {
@@ -392,6 +433,37 @@
      "fifo": 4800,
      "lifo": 5140
     }
+   },
+   "attachment": {
+    "file": "inventory_movements.xlsx",
+    "title": "Inventory",
+    "columns": [
+     "Event",
+     "Units",
+     "Price per unit"
+    ],
+    "rows": [
+     [
+      "Opening inventory",
+      "50",
+      "{c0}"
+     ],
+     [
+      "Purchase 1",
+      "150",
+      "{c1}"
+     ],
+     [
+      "Purchase 2",
+      "100",
+      "{c2}"
+     ],
+     [
+      "Sales",
+      "220",
+      "{p}"
+     ]
+    ]
    }
   },
   {
@@ -508,7 +580,7 @@
    "topic": "Cash conversion cycle",
    "kind": "calc",
    "difficulty": 2,
-   "text": "Firm X has revenue 1,200,000, COGS 800,000, inventory {ix}, receivables {rx} and payables {px}. Firm Y has the same revenue and COGS but inventory 40,000, receivables 20,000 and payables 140,000. What's each firm's cash conversion cycle? If each grows revenue 10% with unchanged ratios, how much extra working capital does each need?",
+   "text": "I've attached figures for two firms. What's each firm's cash conversion cycle? If each grows revenue 10% with unchanged ratios, how much extra working capital does each need?",
    "solution": "X: DIO = {ix}/800,000 × 365 = {=ix/800000*365:1}; DSO = {=rx/1200000*365:1}; DPO = {=px/800000*365:1}; CCC = {=ix/800000*365+rx/1200000*365-px/800000*365:1} days. Y: DIO 18.3, DSO 6.1, DPO 63.9 → CCC −39.5 days. Working capital: X {=ix+rx-px}, Y −80,000. With 10% growth X needs {=(ix+rx-px)/10} more; Y releases 8,000 (to −88,000).",
    "vars": {
     "ix": {
@@ -539,6 +611,42 @@
     "expect": {
      "w": 250000
     }
+   },
+   "attachment": {
+    "file": "firms_xy.xlsx",
+    "title": "Two firms",
+    "columns": [
+     "",
+     "Firm X",
+     "Firm Y"
+    ],
+    "rows": [
+     [
+      "Revenue",
+      "1,200,000",
+      "1,200,000"
+     ],
+     [
+      "COGS",
+      "800,000",
+      "800,000"
+     ],
+     [
+      "Inventory",
+      "{ix}",
+      "40,000"
+     ],
+     [
+      "Receivables",
+      "{rx}",
+      "20,000"
+     ],
+     [
+      "Payables",
+      "{px}",
+      "140,000"
+     ]
+    ]
    }
   },
   {
@@ -653,8 +761,46 @@
    "topic": "Units-of-production depreciation",
    "kind": "calc",
    "difficulty": 1,
-   "text": "Equipment costs 60,000, residual value 6,000, expected output 27,000 units (9,000, 8,000, 6,000 and 4,000 in successive years). What's the units-of-production depreciation schedule?",
-   "solution": "Rate = 54,000/27,000 = 2 per unit. Charges 18,000, 16,000, 12,000, 8,000; book values 42,000, 26,000, 14,000, 6,000."
+   "text": "Details of our new equipment are attached. What's the units-of-production depreciation schedule?",
+   "solution": "Rate = 54,000/27,000 = 2 per unit. Charges 18,000, 16,000, 12,000, 8,000; book values 42,000, 26,000, 14,000, 6,000.",
+   "attachment": {
+    "file": "equipment.xlsx",
+    "title": "Equipment",
+    "columns": [
+     "Item",
+     "Value"
+    ],
+    "rows": [
+     [
+      "Cost",
+      "60,000"
+     ],
+     [
+      "Residual value",
+      "6,000"
+     ],
+     [
+      "Expected total output (units)",
+      "27,000"
+     ],
+     [
+      "Year 1 output",
+      "9,000"
+     ],
+     [
+      "Year 2 output",
+      "8,000"
+     ],
+     [
+      "Year 3 output",
+      "6,000"
+     ],
+     [
+      "Year 4 output",
+      "4,000"
+     ]
+    ]
+   }
   },
   {
    "id": "c29-e03",
@@ -1080,8 +1226,44 @@
    "topic": "Deferred tax liabilities",
    "kind": "calc",
    "difficulty": 3,
-   "text": "We bought equipment for 100,000: for accounting, straight-line over 5 years (20,000 a year); for tax, 40,000 in year 1 then 15,000 a year for four years. Profit before depreciation is 150,000 a year; tax rate 25%. In year 2 the deferred tax liability was 3,750. What's the deferred tax liability at the end of years 3, 4 and 5, and the tax expense each year?",
-   "solution": "Year 3: carrying amount 40,000 vs tax base 30,000 → DTL 2,500 (down 1,250). Year 4: 20,000 vs 15,000 → DTL 1,250. Year 5: 0. Each year current tax 33,750 (taxable profit 135,000) and deferred tax −1,250 → tax expense 32,500 = 25% of accounting profit 130,000."
+   "text": "We bought equipment for 100,000; the accounting and tax depreciation are in the attached sheet. Profit before depreciation is 150,000 a year and the tax rate is 25%. In year 2 the deferred tax liability was 3,750. What's the deferred tax liability at the end of years 3, 4 and 5, and the tax expense each year?",
+   "solution": "Year 3: carrying amount 40,000 vs tax base 30,000 → DTL 2,500 (down 1,250). Year 4: 20,000 vs 15,000 → DTL 1,250. Year 5: 0. Each year current tax 33,750 (taxable profit 135,000) and deferred tax −1,250 → tax expense 32,500 = 25% of accounting profit 130,000.",
+   "attachment": {
+    "file": "depreciation_book_vs_tax.xlsx",
+    "title": "Depreciation",
+    "columns": [
+     "Year",
+     "Accounting (straight-line)",
+     "Tax"
+    ],
+    "rows": [
+     [
+      "1",
+      "20,000",
+      "40,000"
+     ],
+     [
+      "2",
+      "20,000",
+      "15,000"
+     ],
+     [
+      "3",
+      "20,000",
+      "15,000"
+     ],
+     [
+      "4",
+      "20,000",
+      "15,000"
+     ],
+     [
+      "5",
+      "20,000",
+      "15,000"
+     ]
+    ]
+   }
   },
   {
    "id": "c30-e06",
@@ -1667,7 +1849,7 @@
    "topic": "Activity-based costing",
    "kind": "calc",
    "difficulty": 2,
-   "text": "Our factory makes Standard (10,000 units, batches of 1,000, 20,000 machine hours, 10 set-ups) and Custom (1,000 units, batches of 50, 5,000 machine hours, 20 set-ups). Overhead 400,000: 250,000 machine-related, 150,000 set-ups. Custom sells for {p} with direct costs of 40 per unit. Is it profitable under traditional allocation (all overhead on machine hours)? Under ABC? What do you recommend?",
+   "text": "Our product and overhead data are attached. Custom sells for {p} with direct costs of 40 per unit. Is it profitable under traditional allocation (all overhead on machine hours)? Under ABC? What do you recommend?",
    "solution": "Traditional: 16/hour → Custom overhead 80/unit, cost 120 → margin {=p-120}. ABC: machine 10/hour + set-ups 5,000 each → Custom overhead 150/unit, cost 190 → margin {=p-190} per unit ({=(p-190)*1000} a year). Recommend repricing Custom, cutting set-up costs (bigger batches, faster changeovers), or dropping it — after checking which overheads would actually be avoided.",
    "vars": {
     "p": {
@@ -1685,6 +1867,38 @@
      "p": 120
     },
     "expect": {}
+   },
+   "attachment": {
+    "file": "products_overhead.xlsx",
+    "title": "Products and overhead",
+    "columns": [
+     "",
+     "Standard",
+     "Custom"
+    ],
+    "rows": [
+     [
+      "Units",
+      "10,000",
+      "1,000"
+     ],
+     [
+      "Batch size",
+      "1,000",
+      "50"
+     ],
+     [
+      "Machine hours",
+      "20,000",
+      "5,000"
+     ],
+     [
+      "Set-ups",
+      "10",
+      "20"
+     ]
+    ],
+    "note": "Overhead 400,000: 250,000 machine-related, 150,000 set-up-related."
    }
   },
   {

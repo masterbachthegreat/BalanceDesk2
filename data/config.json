@@ -65,6 +65,20 @@
       ],
       "vipPushback": 40,
       "rudeAt": 60
+    },
+    "_poke": "While you keep them waiting, impatient customers (low patience, VIPs; others a quarter as often) who pop online after afterMs sometimes send a short poke. No pay penalty, unlike a real chase.",
+    "poke": {
+      "afterMs": 7200000,
+      "chance": 0.35,
+      "texts": [
+        "??",
+        "hello?",
+        "any news?",
+        "still there?",
+        "any update on this?",
+        "😅?",
+        "hi, just checking you got my message"
+      ]
     }
   },
   "pay": {
@@ -132,7 +146,13 @@
     "autoHints": true,
     "_autoHints": "Mentor messages you a hint when a customer has pushed back hintAfterPushbacks times in one chat (at most maxHintsPerChat per chat).",
     "hintAfterPushbacks": 2,
-    "maxHintsPerChat": 2
+    "maxHintsPerChat": 2,
+    "_digest": "Sunday digest from the mentor: weekday (0 = Sunday) and hour, your local time. Skipped if the app stays closed more than maxLateDays after.",
+    "digest": {
+      "weekday": 0,
+      "hour": 10,
+      "maxLateDays": 3
+    }
   },
   "grading": {
     "maxTokens": 900
@@ -262,6 +282,54 @@
         600000,
         5400000
       ]
+    },
+    "review": {
+      "_readme": "Monthly performance review on Diane's first shift of the month, for the previous month (needs minChats finished). 'exceeds' pays bonusChats x your base pay; two 'below' months in a row cost one raise step.",
+      "minChats": 5,
+      "exceeds": {
+        "avgScore": 80,
+        "avgStars": 4,
+        "maxMissedRate": 0.1
+      },
+      "meets": {
+        "avgScore": 65,
+        "maxMissedRate": 0.25
+      },
+      "bonusChats": 5
     }
+  },
+  "secondChance": {
+    "_readme": "Questions you scored below belowScore on (or never answered) come back afterDays later from a different customer (chance = how likely a due one is picked for a new customer).",
+    "belowScore": 60,
+    "afterDays": [
+      2,
+      5
+    ],
+    "chance": 0.6,
+    "maxAttempts": 3
+  },
+  "returning": {
+    "_readme": "Chance that a new customer is someone you've helped before (at least minDaysAgo since their last chat). Loyal customers (last chat >= loyalStars) pay loyaltyMult; unhappy ones start out annoyed (angerStart).",
+    "chance": 0.2,
+    "minDaysAgo": 3,
+    "loyalStars": 4,
+    "loyaltyMult": 1.1,
+    "angerStart": 20
+  },
+  "team": {
+    "_readme": "#support-team channel. Every simEveryMs the cheap customer model simulates the next 12 hours of team chatter (about messagesPer12h messages). Warnings about difficult customers go both ways; a coworker who gets a customer you warned about thanks you.",
+    "simEveryMs": 43200000,
+    "messagesPer12h": 3.5,
+    "warnChance": 0.3,
+    "warnBoostMs": 172800000,
+    "warnWeight": 6,
+    "flagHitChance": 0.35,
+    "flagKeepDays": 7,
+    "dianePostChance": 0.2,
+    "replyDelayMs": [
+      20000,
+      180000
+    ],
+    "maxReplies": 2
   }
 }

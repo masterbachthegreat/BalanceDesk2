@@ -20,7 +20,10 @@ import { lognormal } from './presence.js';
 import { transferChat, openCount } from './customers.js';
 import { llmCall, parseJSON, withRetry } from './llm.js';
 import { rankInfo } from './progress.js';
+import { botSay } from './bot.js';
+import { money } from '../core/format.js';
 import { emit } from '../core/bus.js';
+import * as team from './team.js';
 
 export const BOSS = { name: 'Diane Whitfield', role: 'Head of Client Services' };
 const MIN = 60000;
@@ -323,6 +326,8 @@ function contextNote(t, actions) {
     'SITUATION',
     contextText(t),
   ];
+  const tl = getChat('team') ? team.recentLines(30) : '';
+  if (tl) lines.push('', 'TEAM CHANNEL #support-team (group chat with the agent and four coworkers; you are a member). Recent messages:', tl);
   if (actions) {
     lines.push('', 'ACTIONS YOU CAN TAKE NOW (at most one; only if the agent asked for it or it clearly fits):');
     for (const [k, v] of actions.out) lines.push(`- "${k}": ${v}`);
@@ -440,10 +445,12 @@ function apply(j, t) {
     case 'transfer': {
       const target = j.chat ? findChatByHandle(String(j.chat)) : null;
       if (!target || target.status !== 'active') { sysMessage(c, '↪ No open chat matched, so nothing was transferred.', { t }); break; }
-      transferChat(target);
+      const taker = team.pickTaker(t);
+      transferChat(target, taker?.name);
+      target.transferredTo = taker?.id || null;
       world.countTransfer();
       bumpWork(-1);
-      sysMessage(c, `↪ ${handle(target)} (${target.customer.name}) was handed to a colleague. No pay or rating for that one.`, { t });
+      sysMessage(c, `↪ ${handle(target)} (${target.customer.name}) was handed to ${taker ? taker.name : 'a colleague'}. No pay or rating for that one.`, { t });
       break;
     }
     case 'raise': {
@@ -472,6 +479,7 @@ const REASONS = {
   highStreak: () => 'The agent has had a run of excellent chats lately. Tell them, briefly.',
   lowStreak: () => 'The agent\'s last few chats went badly (low ratings). Check in supportively; you might suggest the mentor, the 📖 Concept button, or a lighter day.',
   firstVip: () => 'The agent just handled their first VIP client. A short remark about VIPs (they pay well and notice everything).',
+  review: (e) => `It's the agent's monthly performance review for ${e.month}. The KPIs and the outcome were decided by HR rules: rating "${e.rating}"; ${e.outcome}. KPIs: ${e.kpiText}. Write the review message: 3-6 sentences, honest and specific about the numbers, in a tone that fits both your views of them (a friend still gets the honest version). Mention the outcome. A KPI card is shown under your message, so don't list every number.`,
   missedMany: () => 'Several customers gave up today before the agent ever replied. Raise it, in a way that fits both your views of them; offer a lighter day if they seem swamped.',
   backlog: (e) => `Several customers have been waiting over 12 hours (${e.detail}). Ask the agent to get to them; offer to lighten the load or move one to a colleague.`,
   casual: () => 'No work reason: you are messaging because you like talking to them. Pick up something personal from earlier in your conversation if there is one (ask how it went), or share something small from your day (remote-work life, Ledger, cooking, a book). Keep it light and short. No work assignments.',
@@ -531,12 +539,12 @@ function proactive(now) {
   if (world.vacation() || c.replyAt) return false;
   const recent = c.messages.length ? c.messages[c.messages.length - 1].t : 0;
   // things that happened
-  b.events = b.events.filter((e) => now - e.at < 86400000);
+  b.events = b.events.filter((e) => e.kind === 'review' || now - e.at < 86400000);
   for (const e of b.events) {
-    const T = WORK_KINDS.has(e.kind) ? workTime(e.at) : chatTime(e.at);
+    const T = WORK_KINDS.has(e.kind) || e.kind === 'review' ? workTime(e.at) : chatTime(e.at);
     if (T > now) { e.at = T; continue; }
     b.events = b.events.filter((x) => x !== e);
-    ping(e.kind, Math.min(now, Math.max(T, recent + MIN)), e);
+    ping(e.kind, Math.min(now, Math.max(T, recent + MIN)), e, e.fallback || null).then(() => { if (e.card) sysMessage(chat(), e.card.title, { kind: 'review', review: e.card, t: clock.now() }); });
     return true;
   }
   // a backlog of customers waiting over 12 hours
@@ -562,6 +570,97 @@ function proactive(now) {
   return true;
 }
 
+// ---------- the team channel (same memory as your private chat) ----------
+const TEAM_NOTE = 'You are writing in the TEAM CHANNEL #support-team, visible to the agent and four coworkers (Priya, Marcus, Sofia, Ken), not in your private chat. Keep it short and team-appropriate; don\'t bring up private matters from your one-to-one chat unless the agent raised them here.';
+
+export async function teamReply(teamLines) {
+  const t = clock.now();
+  try {
+    const final = contextNote(t, null) + `\n\n${TEAM_NOTE}\nThe agent just wrote in the channel and it needs you. Channel so far:\n${teamLines}\n\nOUTPUT: {"reply": "<your message in the channel>"}`;
+    const raw = await withRetry(() => llmCall({ role: 'boss', category: 'boss', system: SYSTEM, messages: buildMessages(final), maxTokens: 300, temperature: 0.7 }), 2, 1500);
+    comeOnline(clock.now());
+    return String(parseJSON(raw).reply || '').trim();
+  } catch (e) {
+    console.warn('Diane team reply failed', e);
+    return '';
+  }
+}
+
+export async function teamPost(teamLines, at) {
+  try {
+    const final = contextNote(at, null) + `\n\n${TEAM_NOTE}\nWrite one unprompted team-wide post: a short manager note (a thank-you to the team, a heads-up about volumes, a reminder, a bit of encouragement, or light banter). Channel so far:\n${teamLines}\n\nOUTPUT: {"reply": "<your message>"}`;
+    const raw = await withRetry(() => llmCall({ role: 'boss', category: 'boss', system: SYSTEM, messages: buildMessages(final), maxTokens: 250, temperature: 0.85 }), 2, 1500);
+    return String(parseJSON(raw).reply || '').trim();
+  } catch (e) {
+    console.warn('Diane team post failed', e);
+    return '';
+  }
+}
+
+// ---------- monthly performance review ----------
+const monthKey = (t) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+
+function monthKpis(key) {
+  const p = S.profile;
+  const days = Object.entries(p.days || {}).filter(([k]) => k.startsWith(key)).map(([, v]) => v);
+  const sum = (f) => days.reduce((s, d) => s + (d[f] || 0), 0);
+  const chats = sum('chats');
+  const ended = customerChats().filter((c) => c.endedAt && monthKey(c.endedAt) === key && c.result && !c.result.missed);
+  const lat = ended.flatMap((c) => c.cs.latencies || []);
+  return {
+    chats, missed: sum('missed'), arrivals: sum('arrivals'), earned: sum('earned'),
+    avgScore: chats ? sum('scoreSum') / chats : 0, avgStars: chats ? sum('starsSum') / chats : 0,
+    avgReplyMs: lat.length ? lat.reduce((s, x) => s + x, 0) / lat.length : null,
+    chased: ended.reduce((s, c) => s + (c.cs.nudges || 0), 0), vips: ended.filter((c) => c.customer.vip).length,
+  };
+}
+
+function maybeReview(now) {
+  const b = bossState();
+  const p = S.profile;
+  const thisMonth = monthKey(now);
+  if (b.lastReview === thisMonth) return;
+  if (!b.lastReview) { b.lastReview = thisMonth; return; } // your first (partial) month isn't reviewed
+  b.lastReview = thisMonth;
+  const d = new Date(now); d.setDate(0); // last day of the previous month
+  const prev = monthKey(d.getTime());
+  const monthName = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const R = cfg().boss.review;
+  const k = monthKpis(prev);
+  if (k.chats < R.minChats) return;
+  const missedRate = k.missed / Math.max(1, k.chats + k.missed);
+  let rating, outcome;
+  if (k.avgScore >= R.exceeds.avgScore && k.avgStars >= R.exceeds.avgStars && missedRate <= R.exceeds.maxMissedRate) {
+    const bonus = Math.round(rankInfo(p.rank).basePay * R.bonusChats);
+    p.balance += bonus; p.lifetimeEarned += bonus;
+    rating = 'Exceeds expectations'; outcome = `a performance bonus of ${money(bonus)} has been paid`;
+    bumpWork(5); b.belowStreak = 0;
+    botSay(`🏆 Performance bonus from Diane: **${money(bonus, { plus: true })}**\nBalance: **${money(p.balance)}**`, { silent: true });
+  } else if (k.avgScore >= R.meets.avgScore && missedRate <= R.meets.maxMissedRate) {
+    rating = 'Meets expectations'; outcome = 'no change to pay; keep it up';
+    bumpWork(1); b.belowStreak = 0;
+  } else {
+    b.belowStreak = (b.belowStreak || 0) + 1;
+    rating = 'Below expectations';
+    if (b.belowStreak >= 2 && (p.payRaise || 0) > 0) {
+      p.payRaise = Math.max(0, p.payRaise - cfg().boss.raise.step);
+      outcome = `second month in a row below expectations, so one raise step was removed (now +${Math.round(p.payRaise * 100)}%)`;
+    } else outcome = b.belowStreak >= 2 ? 'second month in a row below expectations: a formal improvement plan' : 'an informal improvement plan for next month: clear targets, and the mentor is there to help';
+    bumpWork(-4);
+  }
+  const rows = [
+    ['Chats finished', String(k.chats)], ['Average answer score', `${Math.round(k.avgScore)}/100`], ['Average service', `${k.avgStars.toFixed(2)}★`],
+    ['Customers who gave up before a reply', `${k.missed} (${Math.round(missedRate * 100)}%)`], ['Average reply time', k.avgReplyMs == null ? '—' : waitWords(k.avgReplyMs)],
+    ['Times a customer chased you', String(k.chased)], ['VIP clients served', String(k.vips)], ['Earned', money(k.earned)],
+  ];
+  const card = { title: `📋 Performance review · ${monthName}`, rating, outcome, rows };
+  const kpiText = rows.map(([a, v]) => `${a}: ${v}`).join('; ');
+  b.events = b.events.filter((e) => e.kind !== 'review');
+  b.events.push({ kind: 'review', at: now, month: monthName, rating, outcome, kpiText, card,
+    fallback: `${p.name}, your review for ${monthName}: ${rating}. ${outcome[0].toUpperCase() + outcome.slice(1)}. Details below.` });
+  touchProfile();
+}
+
 // ---------- the clock ----------
 export function tick(now = clock.now()) {
   const c = chat();
@@ -573,6 +672,7 @@ export function tick(now = clock.now()) {
     respond(Math.max(t, now - 6 * HOUR));
     return;
   }
+  if (onShift(now)) maybeReview(now);
   proactive(now);
 }
 

@@ -29,6 +29,9 @@
     openDataFolder: () => call('dataDir').then((d) => alert('Save folder: ' + d)),
     openExternal: (url) => window.open(url, '_blank'),
     flash: async () => {},
+    notify: async () => {},
+    setUnread: async () => {},
+    onOpenChat: () => {},
     pickImage: () => new Promise((resolve) => {
       const inp = document.createElement('input');
       inp.type = 'file';
