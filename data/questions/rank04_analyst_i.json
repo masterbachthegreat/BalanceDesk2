@@ -1,0 +1,1599 @@
+{
+ "rank": 4,
+ "title": "Analyst I",
+ "source": "Exercises and worked solutions from \"Economies, Accounts and Money\" (Integrated Edition), rewritten as customer questions.",
+ "questions": [
+  {
+   "id": "c11-e01",
+   "chapter": 11,
+   "topic": "Types of data sets",
+   "kind": "theory",
+   "difficulty": 1,
+   "text": "Is each of these cross-sectional, time series or panel data, and what are the units? (a) Germany's monthly unemployment rate since 1991; (b) the 2023 annual reports of all firms in Malaysia's KLCI index; (c) the credit scores of the same 5,000 borrowers measured every quarter for three years.",
+   "solution": "(a) Time series — the unit is Germany, observed monthly. (b) Cross-section — units are firms. (c) Panel — units are borrowers, observed quarterly."
+  },
+  {
+   "id": "c11-e02",
+   "chapter": 11,
+   "topic": "Estimands and representativeness",
+   "kind": "theory",
+   "difficulty": 2,
+   "text": "Our bank wants to know how likely it is that loans to small restaurants will default. We have records of every restaurant loan we made in the past five years. What exactly should we be estimating, and why might our records not represent the loans we'll make next year?",
+   "solution": "Estimand: the probability that a loan of the kind the bank will make to small restaurants next year defaults within a stated horizon (e.g. two years). The records may not be representative because (i) lending standards or the applicant pool may change; (ii) the past five years had particular conditions (pandemic, boom) that may not recur; (iii) recent loans haven't had time to default, so default rates computed from them are too low."
+  },
+  {
+   "id": "c11-e03",
+   "chapter": 11,
+   "topic": "Survivorship bias",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A fund database shows the ten-year returns of the 200 equity funds that exist today: they averaged {a}% a year. Fifty other funds closed during the period, averaging {b}% while open. Why does {a}% overstate what I could have expected from picking a fund ten years ago?",
+   "solution": "Ten years ago you could have picked any of the 250 funds, including those that later closed (usually for poor performance). Including them — crudely, 0.8 × {a} + 0.2 × {b} = {=0.8*a+0.2*b:2}% — shows the size of the survivorship bias: the database only shows the winners that survived.",
+   "vars": {
+    "a": {
+     "min": 6,
+     "max": 10,
+     "step": 0.5
+    },
+    "b": {
+     "min": -2,
+     "max": 3,
+     "step": 0.5
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "a": 7.5,
+     "b": 2
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c11-e04",
+   "chapter": 11,
+   "topic": "Survey weights",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A survey sampled {ns} small firms and {nl} large firms, but large firms are only {pl}% of all firms. Mean employment growth was {gs}% among small firms and {gl}% among large ones. What's the unweighted mean growth and the properly weighted mean across firms? What would I weight by to get employment growth for the whole economy?",
+   "solution": "Unweighted: ({ns} × {gs} + {nl} × {gl})/{=ns+nl} = {=(ns*gs+nl*gl)/(ns+nl):2}%. Weighted by population shares: {=1-pl/100:2} × {gs} + {=pl/100:2} × {gl} = {=(1-pl/100)*gs+pl/100*gl:2}%. For aggregate employment growth, weight each firm by its initial employment — large firms employ many workers, so that figure would be much closer to {gl}%.",
+   "vars": {
+    "ns": {
+     "min": 300,
+     "max": 500,
+     "step": 50
+    },
+    "nl": {
+     "min": 80,
+     "max": 150,
+     "step": 10
+    },
+    "pl": {
+     "min": 3,
+     "max": 10,
+     "step": 1
+    },
+    "gs": {
+     "min": 0,
+     "max": 2,
+     "step": 0.5
+    },
+    "gl": {
+     "min": 3,
+     "max": 7,
+     "step": 1
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "ns": 400,
+     "nl": 100,
+     "pl": 5,
+     "gs": 1,
+     "gl": 6
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c11-e05",
+   "chapter": 11,
+   "topic": "Mean, median, quartiles and outliers",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "For the data 4, 7, 7, 9, 12, 15, 30: what are the mean, median, mode, quartiles (halves rule, excluding the median), IQR and sample standard deviation? Is anything an outlier by the 1.5 × IQR rule?",
+   "solution": "Mean 84/7 = 12; median 9; mode 7. Q1 = median of (4, 7, 7) = 7; Q3 = median of (12, 15, 30) = 15; IQR = 8. Squared deviations sum to 456, s² = 456/6 = 76, s = 8.72. Upper fence 15 + 12 = 27, so 30 is an outlier."
+  },
+  {
+   "id": "c11-e06",
+   "chapter": 11,
+   "topic": "z-scores",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Firm A has a return on assets of {a}% in an industry with mean {ma}% and standard deviation {sa}%. Firm B has ROA of {b}% in an industry with mean {mb}% and standard deviation {sb}%. Which is more exceptional relative to its industry?",
+   "solution": "z_A = ({a} − {ma})/{sa} = {za:2}; z_B = ({b} − {mb})/{sb} = {zb:2}. Firm {?za>zb|A|B} is more exceptional relative to its industry (raw ROA isn't comparable across industries with different spreads).",
+   "vars": {
+    "a": {
+     "min": 7,
+     "max": 12,
+     "step": 1
+    },
+    "ma": {
+     "min": 4,
+     "max": 6,
+     "step": 1
+    },
+    "sa": {
+     "min": 1,
+     "max": 3,
+     "step": 1
+    },
+    "b": {
+     "min": 12,
+     "max": 18,
+     "step": 1
+    },
+    "mb": {
+     "min": 9,
+     "max": 11,
+     "step": 1
+    },
+    "sb": {
+     "min": 2,
+     "max": 5,
+     "step": 1
+    }
+   },
+   "compute": {
+    "za": "(a-ma)/sa",
+    "zb": "(b-mb)/sb"
+   },
+   "constraints": [
+    "abs((a-ma)/sa-(b-mb)/sb)>0.2"
+   ],
+   "check": {
+    "vars": {
+     "a": 9,
+     "ma": 5,
+     "sa": 2,
+     "b": 14,
+     "mb": 10,
+     "sb": 4
+    },
+    "expect": {
+     "za": 2,
+     "zb": 1
+    }
+   }
+  },
+  {
+   "id": "c11-e07",
+   "chapter": 11,
+   "topic": "Mean or median?",
+   "kind": "theory",
+   "difficulty": 1,
+   "text": "Should I use the mean or the median for each of these, and why? (a) the typical house price in a city; (b) total household spending in a country; (c) the typical time to find a job after a layoff.",
+   "solution": "(a) Median — house prices are right-skewed. (b) Mean (or the total itself) — the total equals the mean times the number of households. (c) Median — durations are right-skewed, with a few very long spells."
+  },
+  {
+   "id": "c11-e08",
+   "chapter": 11,
+   "topic": "Income shares and percentile ratios",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "In a group of ten people, incomes are 5, 8, 10, 12, 15, 18, 20, 25, 37 and 50. What share of total income goes to the top 10% and the top 20%, and what's the 90/10 ratio (using the ninth and first values)?",
+   "solution": "Total income 200. Top 10% (one person): 50/200 = 25%. Top 20%: 87/200 = 43.5%. P90/P10 = 37/5 = 7.4."
+  },
+  {
+   "id": "c11-e09",
+   "chapter": 11,
+   "topic": "Missing data (MCAR, MAR, MNAR)",
+   "kind": "theory",
+   "difficulty": 2,
+   "text": "In our household finance survey, 30% of households refuse to report their wealth. Can you give an example of MCAR, MAR and MNAR here, and how each would affect a mean-wealth estimate computed from respondents only?",
+   "solution": "MCAR: a random batch of forms was lost — no bias, just less precision. MAR: older households decline more often and age is observed — the respondents-only mean is biased if wealth varies with age, but reweighting by age fixes it. MNAR: the wealthiest decline because of their wealth — the mean is understated, and correcting it needs assumptions or outside data (e.g. tax records)."
+  },
+  {
+   "id": "c11-e10",
+   "chapter": 11,
+   "topic": "Misleading charts",
+   "kind": "theory",
+   "difficulty": 1,
+   "text": "Two charts in our annual report: one shows our share price rising from 98 to 102 over a month, with the vertical axis running from 97 to 103. The other shows our cumulative number of customers since founding. What impression might each give, and how should we redraw them honestly?",
+   "solution": "The truncated axis makes a 4% rise look like a surge — use a meaningful baseline or show percentage changes. A cumulative chart can only rise, hiding any slowdown or customer losses — plot customers at each date (a stock) or new customers per period (a flow) instead."
+  },
+  {
+   "id": "c12-e01",
+   "chapter": 12,
+   "topic": "Addition rule",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "In our region {e}% of firms export, {i}% import and {b}% do both. What share export or import? What share do neither?",
+   "solution": "P(E ∪ I) = {e} + {i} − {b} = {=e+i-b}%; neither: {=100-e-i+b}%.",
+   "vars": {
+    "e": {
+     "min": 20,
+     "max": 40,
+     "step": 1
+    },
+    "i": {
+     "min": 15,
+     "max": 35,
+     "step": 1
+    },
+    "b": {
+     "min": 5,
+     "max": 15,
+     "step": 1
+    }
+   },
+   "compute": {},
+   "constraints": [
+    "b<min(e,i)"
+   ],
+   "check": {
+    "vars": {
+     "e": 30,
+     "i": 20,
+     "b": 12
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c12-e02",
+   "chapter": 12,
+   "topic": "Counting: permutations and combinations",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "(a) How many ways can an analyst rank {k} of {n} funds in order? (b) How many committees of {c} can be chosen from {d} directors? (c) What's the probability that a random committee of {c} includes both of two particular directors?",
+   "solution": "(a) P({n}, {k}) = {=perm(n,k)}. (b) C({d}, {c}) = {=comb(d,c)}. (c) Committees with both: choose the other {=c-2} from {=d-2}: C({=d-2}, {=c-2}) = {=comb(d-2,c-2)}; probability {=comb(d-2,c-2)}/{=comb(d,c)} = {=comb(d-2,c-2)/comb(d,c):4}.",
+   "vars": {
+    "n": {
+     "min": 8,
+     "max": 15,
+     "step": 1
+    },
+    "k": {
+     "min": 3,
+     "max": 5,
+     "step": 1
+    },
+    "d": {
+     "min": 7,
+     "max": 12,
+     "step": 1
+    },
+    "c": {
+     "min": 3,
+     "max": 5,
+     "step": 1
+    }
+   },
+   "compute": {
+    "pr": "comb(d-2,c-2)/comb(d,c)"
+   },
+   "constraints": [
+    "c<d"
+   ],
+   "check": {
+    "vars": {
+     "n": 12,
+     "k": 5,
+     "d": 9,
+     "c": 4
+    },
+    "expect": {
+     "pr": 0.16667
+    }
+   }
+  },
+  {
+   "id": "c12-e03",
+   "chapter": 12,
+   "topic": "Conditional probability from a two-way table",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Of {N} small-business loans, {c} were to firms with collateral and {dc} of those defaulted. Of the rest (no collateral), {dn} defaulted. What are P(default), P(default | collateral) and P(collateral | default)? Are default and collateral independent?",
+   "solution": "P(D) = {=dc+dn}/{N} = {=(dc+dn)/N:3}; P(D | C) = {dc}/{c} = {=dc/c:3}; P(C | D) = {dc}/{=dc+dn} = {=dc/(dc+dn):3}. Not independent: P(D | C) ≠ P(D).",
+   "vars": {
+    "N": {
+     "choices": [
+      400,
+      500,
+      600
+     ]
+    },
+    "c": {
+     "min": 150,
+     "max": 250,
+     "step": 50
+    },
+    "dc": {
+     "min": 5,
+     "max": 15,
+     "step": 1
+    },
+    "dn": {
+     "min": 30,
+     "max": 60,
+     "step": 5
+    }
+   },
+   "compute": {},
+   "constraints": [
+    "dc/c<(dc+dn)/N-0.01"
+   ],
+   "check": {
+    "vars": {
+     "N": 500,
+     "c": 200,
+     "dc": 10,
+     "dn": 45
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c12-e04",
+   "chapter": 12,
+   "topic": "Independence and redundancy",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Our payment system has {k} independent servers, each available {a}% of the time, and it works if at least one is up. What's the probability the whole system is down? And what if the servers share a building, so that whenever one fails they all fail together with probability 0.5%?",
+   "solution": "Independent: ({=1-a/100:3})^{k} = {=(1-a/100)^k:s3}. With a common failure mode, simultaneous failure has probability of at least 0.005 × P(one fails) ≈ {=1-a/100:3} × 0.005 = {=(1-a/100)*0.005:s3} — vastly larger. Redundancy only protects against independent failures.",
+   "vars": {
+    "k": {
+     "min": 3,
+     "max": 6,
+     "step": 1
+    },
+    "a": {
+     "choices": [
+      98,
+      99,
+      99.5
+     ]
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "k": 5,
+     "a": 99
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c12-e05",
+   "chapter": 12,
+   "topic": "Law of total probability",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Next year the economy is in recession with probability {p}. Our sales fall with probability {a} in a recession and {b} otherwise. What's the probability our sales fall?",
+   "solution": "P(fall) = {a} × {p} + {b} × {=1-p:2} = {=a*p+b*(1-p):4}.",
+   "vars": {
+    "p": {
+     "min": 0.1,
+     "max": 0.3,
+     "step": 0.05
+    },
+    "a": {
+     "min": 0.5,
+     "max": 0.9,
+     "step": 0.1
+    },
+    "b": {
+     "min": 0.1,
+     "max": 0.3,
+     "step": 0.05
+    }
+   },
+   "compute": {
+    "r": "a*p+b*(1-p)"
+   },
+   "check": {
+    "vars": {
+     "p": 0.15,
+     "a": 0.7,
+     "b": 0.2
+    },
+    "expect": {
+     "r": 0.275
+    }
+   }
+  },
+  {
+   "id": "c12-e06",
+   "chapter": 12,
+   "topic": "Bayes' rule",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A leading indicator signals \"recession\" in {h}% of the years that precede a recession and in {f}% of the years that don't. Recessions follow {p}% of years. If the indicator signals, what's the probability of a recession?",
+   "solution": "P(R | S) = {=h/100} × {=p/100}/({=h/100} × {=p/100} + {=f/100} × {=1-p/100}) = {post:3}.",
+   "vars": {
+    "h": {
+     "min": 60,
+     "max": 90,
+     "step": 5
+    },
+    "f": {
+     "min": 5,
+     "max": 20,
+     "step": 5
+    },
+    "p": {
+     "min": 10,
+     "max": 30,
+     "step": 5
+    }
+   },
+   "compute": {
+    "post": "(h/100*p/100)/(h/100*p/100+f/100*(1-p/100))"
+   },
+   "check": {
+    "vars": {
+     "h": 70,
+     "f": 10,
+     "p": 20
+    },
+    "expect": {
+     "post": 0.636
+    }
+   }
+  },
+  {
+   "id": "c12-e07",
+   "chapter": 12,
+   "topic": "Base rates: fraud detection",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "One card transaction in {n} is fraudulent. Our detection system flags {s}% of fraudulent transactions and {fp}% of legitimate ones. What proportion of flagged transactions are actually fraudulent? What would we need to change to get that up to one half?",
+   "solution": "P(fraud | flag) = {=s/100} × (1/{n})/({=s/100} × (1/{n}) + {=fp/100} × (1 − 1/{n})) = {=s/100/n/(s/100/n+fp/100*(1-1/n))*100:1}%. To reach one half the false-positive rate must fall to about {=s/100/n*100:3}% (roughly the true-positive mass), or the system must be applied only to transactions with a much higher base rate of fraud.",
+   "vars": {
+    "n": {
+     "choices": [
+      500,
+      1000,
+      2000
+     ]
+    },
+    "s": {
+     "min": 90,
+     "max": 99,
+     "step": 1
+    },
+    "fp": {
+     "min": 1,
+     "max": 5,
+     "step": 1
+    }
+   },
+   "compute": {
+    "pp": "s/100/n/(s/100/n+fp/100*(1-1/n))"
+   },
+   "check": {
+    "vars": {
+     "n": 1000,
+     "s": 95,
+     "fp": 2
+    },
+    "expect": {
+     "pp": 0.0454
+    }
+   }
+  },
+  {
+   "id": "c12-e08",
+   "chapter": 12,
+   "topic": "Bayesian updating with odds",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "I think there's a {p}% chance a company will cut its dividend. It just announced a delay in its results, which happens with probability {a} before dividend cuts and {b} otherwise. Using odds, what's the updated probability? Then a second, independent warning sign with likelihood ratio 2 appears. What's the probability now?",
+   "solution": "Prior odds {=p/(100-p):3}; likelihood ratio {a}/{b} = {=a/b:2}; posterior odds {=p/(100-p)*a/b:3} → probability {=p/(100-p)*a/b/(1+p/(100-p)*a/b)*100:1}%. Second sign: odds {=2*p/(100-p)*a/b:3} → probability {=2*p/(100-p)*a/b/(1+2*p/(100-p)*a/b)*100:1}%.",
+   "vars": {
+    "p": {
+     "min": 15,
+     "max": 40,
+     "step": 5
+    },
+    "a": {
+     "min": 0.4,
+     "max": 0.8,
+     "step": 0.1
+    },
+    "b": {
+     "min": 0.1,
+     "max": 0.25,
+     "step": 0.05
+    }
+   },
+   "compute": {
+    "o": "p/(100-p)*a/b"
+   },
+   "check": {
+    "vars": {
+     "p": 25,
+     "a": 0.6,
+     "b": 0.15
+    },
+    "expect": {
+     "o": 1.3333
+    }
+   }
+  },
+  {
+   "id": "c12-e09",
+   "chapter": 12,
+   "topic": "The prosecutor's fallacy",
+   "kind": "theory",
+   "difficulty": 2,
+   "text": "Our auditor says: \"Only 1% of honest firms have revenue patterns like this one's, so there's a 99% chance this firm is committing fraud.\" What's wrong with that, and what extra information would we need?",
+   "solution": "It confuses P(pattern | honest) = 0.01 with P(honest | pattern). You need the base rate of fraud and the probability of the pattern among fraudulent firms. E.g. if 1 firm in 500 commits fraud and 50% of frauds show the pattern, P(fraud | pattern) = 0.001/(0.001 + 0.01 × 0.998) ≈ 9%."
+  },
+  {
+   "id": "c12-e10",
+   "chapter": 12,
+   "topic": "Correlated defaults",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A structured bond pays off unless both of two loans default. Each loan defaults with probability {p}. What's the probability of loss if defaults are independent? If instead the probability the second defaults given that the first does is {q}, what's the probability of loss? How many times riskier is that?",
+   "solution": "Independent: {p}² = {=p^2:5}. Correlated: {p} × {q} = {=p*q:4} — {=q/p:1} times riskier. Ratings that assumed independence would badly understate the risk.",
+   "vars": {
+    "p": {
+     "choices": [
+      0.02,
+      0.05,
+      0.1
+     ]
+    },
+    "q": {
+     "choices": [
+      0.3,
+      0.5,
+      0.7
+     ]
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "p": 0.05,
+     "q": 0.5
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c13-e01",
+   "chapter": 13,
+   "topic": "Expectation and variance",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A payoff X is 0 with probability {p0}, {a} with probability {pa}, and {b} with the remaining probability. What are E[X], Var(X) and the standard deviation?",
+   "solution": "E[X] = {pa} × {a} + {=1-p0-pa:2} × {b} = {m:2}. E[X²] = {=pa*a^2+(1-p0-pa)*b^2:2}. Var = E[X²] − E[X]² = {v:2}; σ = {=sqrt(v):2}.",
+   "vars": {
+    "p0": {
+     "choices": [
+      0.4,
+      0.5,
+      0.6
+     ]
+    },
+    "pa": {
+     "choices": [
+      0.2,
+      0.3
+     ]
+    },
+    "a": {
+     "min": 50,
+     "max": 150,
+     "step": 50
+    },
+    "b": {
+     "min": 200,
+     "max": 300,
+     "step": 50
+    }
+   },
+   "compute": {
+    "m": "pa*a+(1-p0-pa)*b",
+    "v": "pa*a^2+(1-p0-pa)*b^2-(pa*a+(1-p0-pa)*b)^2"
+   },
+   "constraints": [
+    "1-p0-pa>0"
+   ],
+   "check": {
+    "vars": {
+     "p0": 0.5,
+     "pa": 0.3,
+     "a": 100,
+     "b": 200
+    },
+    "expect": {
+     "m": 70,
+     "v": 6100
+    }
+   }
+  },
+  {
+   "id": "c13-e02",
+   "chapter": 13,
+   "topic": "Linear transformations of random variables",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Our profit is Π = {a}Q − {b}, where Q is random with mean {m} and standard deviation {s}. What are the mean and standard deviation of profit?",
+   "solution": "E[Π] = {a} × {m} − {b} = {=a*m-b}; σ_Π = {a} × {s} = {=a*s} (the constant shifts the mean but not the spread).",
+   "vars": {
+    "a": {
+     "min": 2,
+     "max": 6,
+     "step": 1
+    },
+    "b": {
+     "min": 20,
+     "max": 100,
+     "step": 10
+    },
+    "m": {
+     "min": 30,
+     "max": 60,
+     "step": 5
+    },
+    "s": {
+     "min": 5,
+     "max": 15,
+     "step": 1
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "a": 3,
+     "b": 50,
+     "m": 40,
+     "s": 10
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c13-e03",
+   "chapter": 13,
+   "topic": "Jensen's inequality and certainty equivalents",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "I have wealth of {w} and log utility. I'm offered a bet that raises my wealth to {hi} or lowers it to {lo} with equal probability. What's my expected wealth, expected utility and certainty equivalent? Should I take it?",
+   "solution": "Expected wealth = {=(hi+lo)/2}. Expected utility = 0.5 ln {hi} + 0.5 ln {lo} = {eu:4}. Certainty equivalent = e^{eu:4} = {ce:2}. {?ce<w|It's below current wealth {w}, so decline — even though the bet has a positive expected value, risk aversion outweighs it.|It's above current wealth {w}, so accept.}",
+   "vars": {
+    "w": {
+     "choices": [
+      100
+     ]
+    },
+    "hi": {
+     "min": 130,
+     "max": 170,
+     "step": 10
+    },
+    "lo": {
+     "min": 55,
+     "max": 80,
+     "step": 5
+    }
+   },
+   "compute": {
+    "eu": "0.5*ln(hi)+0.5*ln(lo)",
+    "ce": "exp(0.5*ln(hi)+0.5*ln(lo))"
+   },
+   "constraints": [
+    "(hi+lo)/2>w",
+    "abs(exp(0.5*ln(hi)+0.5*ln(lo))-w)>1"
+   ],
+   "check": {
+    "vars": {
+     "w": 100,
+     "hi": 150,
+     "lo": 60
+    },
+    "expect": {
+     "ce": 94.87
+    }
+   }
+  },
+  {
+   "id": "c13-e04",
+   "chapter": 13,
+   "topic": "Volatility drag",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Two funds both have an expected annual return of {m}%, but their volatilities are {s1}% and {s2}%. Roughly what's the long-run compound return of each? What does that mean for comparing funds by their average returns?",
+   "solution": "Compound ≈ μ − σ²/2: {m}% − {=s1^2/200:2}% = {=m-s1^2/200:2}% and {m}% − {=s2^2/200:2}% = {=m-s2^2/200:2}%. Arithmetic averages overstate long-run growth, more so for volatile funds — compare compound returns.",
+   "vars": {
+    "m": {
+     "min": 6,
+     "max": 10,
+     "step": 1
+    },
+    "s1": {
+     "min": 5,
+     "max": 15,
+     "step": 5
+    },
+    "s2": {
+     "min": 25,
+     "max": 40,
+     "step": 5
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "m": 8,
+     "s1": 10,
+     "s2": 30
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c13-e05",
+   "chapter": 13,
+   "topic": "Iterated expectations",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Our loan losses are {n}% of loans in a normal year and {r}% in a recession year. The probability of a recession is {p}. What's the expected loss rate?",
+   "solution": "E[loss] = {=1-p:2} × {n} + {p} × {r} = {=(1-p)*n+p*r:3}%.",
+   "vars": {
+    "n": {
+     "min": 0.5,
+     "max": 2,
+     "step": 0.5
+    },
+    "r": {
+     "min": 4,
+     "max": 8,
+     "step": 1
+    },
+    "p": {
+     "min": 0.1,
+     "max": 0.25,
+     "step": 0.05
+    }
+   },
+   "compute": {
+    "e": "(1-p)*n+p*r"
+   },
+   "check": {
+    "vars": {
+     "n": 1,
+     "r": 6,
+     "p": 0.15
+    },
+    "expect": {
+     "e": 1.75
+    }
+   }
+  },
+  {
+   "id": "c13-e06",
+   "chapter": 13,
+   "topic": "Binomial distribution",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "I make {n} independent sales calls, each ending in a sale with probability {p}. What are the probabilities of no sales, exactly {k} sales, and at least one sale? And the mean and variance of sales?",
+   "solution": "P(0) = {=1-p:2}^{n} = {p0:s3}. P({k}) = C({n},{k}) × {p}^{k} × {=1-p:2}^{=n-k} = {pk:s3}. P(≥ 1) = 1 − {p0:s3} = {=1-p0:4}. Mean = np = {=n*p:2}; variance = np(1 − p) = {=n*p*(1-p):2}.",
+   "vars": {
+    "n": {
+     "min": 6,
+     "max": 15,
+     "step": 1
+    },
+    "p": {
+     "min": 0.1,
+     "max": 0.5,
+     "step": 0.05
+    },
+    "k": {
+     "min": 2,
+     "max": 4,
+     "step": 1
+    }
+   },
+   "compute": {
+    "p0": "(1-p)^n",
+    "pk": "comb(n,k)*p^k*(1-p)^(n-k)"
+   },
+   "check": {
+    "vars": {
+     "n": 10,
+     "p": 0.3,
+     "k": 3
+    },
+    "expect": {
+     "p0": 0.0282,
+     "pk": 0.2668
+    }
+   }
+  },
+  {
+   "id": "c13-e07",
+   "chapter": 13,
+   "topic": "Poisson distribution",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Claims on our small insurance book arrive at an average of {l} per month. What's the probability of no claims in a month, and of more than {k} claims?",
+   "solution": "P(0) = e^−{l} = {=exp(-l):4}. P(≤ {k}) = e^−{l} × Σ {l}^j/j! for j = 0…{k} = {cdf:4}, so P(> {k}) = {=1-cdf:4}.",
+   "vars": {
+    "l": {
+     "min": 2,
+     "max": 5,
+     "step": 1
+    },
+    "k": {
+     "min": 4,
+     "max": 7,
+     "step": 1
+    }
+   },
+   "compute": {
+    "cdf": "exp(-l)*(1+l+l^2/2+l^3/6+l^4/24+(k>=5)*l^5/120+(k>=6)*l^6/720+(k>=7)*l^7/5040)"
+   },
+   "check": {
+    "vars": {
+     "l": 3,
+     "k": 5
+    },
+    "expect": {
+     "cdf": 0.9161
+    }
+   }
+  },
+  {
+   "id": "c13-e08",
+   "chapter": 13,
+   "topic": "Normal distribution",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Monthly household spending is normal with mean {m} and standard deviation {s}. What proportion of households spend more than {x}? Below what amount do {q}% of households spend?",
+   "solution": "z = ({x} − {m})/{s} = {=(x-m)/s:3}; P(X > {x}) = 1 − Φ({=(x-m)/s:3}) = {=(1-ncdf((x-m)/s))*100:1}%. {q}th percentile = {m} + z_{=q/100:2} × {s} = {m} + {=ninv(q/100):3} × {s} = {=m+ninv(q/100)*s:0}.",
+   "vars": {
+    "m": {
+     "min": 2000,
+     "max": 4000,
+     "step": 250
+    },
+    "s": {
+     "min": 400,
+     "max": 800,
+     "step": 100
+    },
+    "d": {
+     "choices": [
+      800,
+      1000,
+      1200
+     ]
+    },
+    "q": {
+     "choices": [
+      75,
+      90,
+      95
+     ]
+    }
+   },
+   "compute": {
+    "x": "m+d",
+    "pc": "m+ninv(q/100)*s"
+   },
+   "check": {
+    "vars": {
+     "m": 3000,
+     "s": 600,
+     "d": 1000,
+     "q": 90
+    },
+    "expect": {
+     "x": 4000,
+     "pc": 3769
+    },
+    "tol": 0.001
+   }
+  },
+  {
+   "id": "c13-e09",
+   "chapter": 13,
+   "topic": "Value at risk",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Our trading portfolio is worth {V} million and its daily returns are normal with mean 0 and standard deviation {s}%. What's the {a}% one-day VaR in currency? Why might the true {a}% loss be bigger?",
+   "solution": "z for {a}% = {=-ninv(a/100):3}. VaR = {=-ninv(a/100):3} × {s}% = {=-ninv(a/100)*s:2}% of {V} million = {var:2} million. Fat tails and volatility clustering make extreme losses more likely than the normal model predicts, especially in turbulent periods.",
+   "vars": {
+    "V": {
+     "min": 20,
+     "max": 100,
+     "step": 10
+    },
+    "s": {
+     "min": 0.8,
+     "max": 2.0,
+     "step": 0.1
+    },
+    "a": {
+     "choices": [
+      1,
+      5
+     ]
+    }
+   },
+   "compute": {
+    "var": "-ninv(a/100)*s/100*V"
+   },
+   "check": {
+    "vars": {
+     "V": 50,
+     "s": 1.2,
+     "a": 1
+    },
+    "expect": {
+     "var": 1.4
+    },
+    "tol": 0.01
+   }
+  },
+  {
+   "id": "c13-e10",
+   "chapter": 13,
+   "topic": "Lognormal prices",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "The log of a share's price in a year is normal with mean ln {P} + {m} and standard deviation {s}. What are the median and mean of the price in a year?",
+   "solution": "Median = e^(ln {P} + {m}) = {P}e^{m} = {=P*exp(m):2}. Mean = {P}e^({m} + {s}²/2) = {P}e^{=m+s^2/2:4} = {=P*exp(m+s^2/2):2} — above the median because the lognormal is right-skewed.",
+   "vars": {
+    "P": {
+     "min": 50,
+     "max": 200,
+     "step": 10
+    },
+    "m": {
+     "choices": [
+      0.03,
+      0.05,
+      0.08
+     ]
+    },
+    "s": {
+     "choices": [
+      0.2,
+      0.3,
+      0.4
+     ]
+    }
+   },
+   "compute": {
+    "mean": "P*exp(m+s^2/2)"
+   },
+   "check": {
+    "vars": {
+     "P": 100,
+     "m": 0.05,
+     "s": 0.3
+    },
+    "expect": {
+     "mean": 109.97
+    }
+   }
+  },
+  {
+   "id": "c14-e01",
+   "chapter": 14,
+   "topic": "Covariance and correlation",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Two assets return (−5, 8, 15)% and (2, 4, 12)% in three equally likely states. What are the means, variances, covariance and correlation?",
+   "solution": "Means 6 and 6. Deviations (−11, 2, 9) and (−4, −2, 6). Variances 206/3 = 68.67 and 56/3 = 18.67. Covariance (44 − 4 + 54)/3 = 31.33. Correlation 31.33/√(68.67 × 18.67) = 31.33/35.80 = 0.875."
+  },
+  {
+   "id": "c14-e02",
+   "chapter": 14,
+   "topic": "Sample correlation",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "What's the sample correlation between x = (1, 2, 3, 4, 5) and y = (2, 4, 5, 4, 5)?",
+   "solution": "x̄ = 3, ȳ = 4; Σ(x − x̄)(y − ȳ) = 6; Σ(x − x̄)² = 10; Σ(y − ȳ)² = 6. r = 6/√60 = 0.775."
+  },
+  {
+   "id": "c14-e03",
+   "chapter": 14,
+   "topic": "Two-asset portfolio risk",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Two assets have standard deviations {s1}% and {s2}% and correlation {r}. What's the standard deviation of an equal-weighted portfolio? What would it be if the correlation were −1?",
+   "solution": "Cov = {r} × {s1} × {s2} = {=r*s1*s2}. Variance = 0.25 × {=s1^2} + 0.25 × {=s2^2} + 2 × 0.25 × {=r*s1*s2} = {v:2}; σ = {=sqrt(v):2}%. With ρ = −1: variance = 0.25({s1} − {s2})² = {=0.25*(s1-s2)^2:2}, σ = {=abs(s1-s2)/2:2}%.",
+   "vars": {
+    "s1": {
+     "min": 15,
+     "max": 30,
+     "step": 5
+    },
+    "s2": {
+     "min": 5,
+     "max": 15,
+     "step": 5
+    },
+    "r": {
+     "choices": [
+      0.2,
+      0.3,
+      0.5,
+      0.7
+     ]
+    }
+   },
+   "compute": {
+    "v": "0.25*s1^2+0.25*s2^2+0.5*r*s1*s2"
+   },
+   "check": {
+    "vars": {
+     "s1": 20,
+     "s2": 10,
+     "r": 0.5
+    },
+    "expect": {
+     "v": 175
+    }
+   }
+  },
+  {
+   "id": "c14-e04",
+   "chapter": 14,
+   "topic": "Minimum-variance portfolio",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "Two assets have volatilities {s1}% and {s2}% and correlation {r}. What weight in the first asset minimises portfolio variance, and what's the resulting volatility?",
+   "solution": "σ₁₂ = {r} × {=s1/100} × {=s2/100} = {c:5}. w* = (σ₂² − σ₁₂)/(σ₁² + σ₂² − 2σ₁₂) = {w:4}. Variance = w²σ₁² + (1 − w)²σ₂² + 2w(1 − w)σ₁₂ = {v:5}; volatility = {=sqrt(v)*100:2}%{?sqrt(v)*100<min(s1,s2)| — below both assets'|}.",
+   "vars": {
+    "s1": {
+     "min": 20,
+     "max": 30,
+     "step": 5
+    },
+    "s2": {
+     "min": 10,
+     "max": 20,
+     "step": 5
+    },
+    "r": {
+     "choices": [
+      -0.3,
+      -0.2,
+      0,
+      0.2
+     ]
+    }
+   },
+   "compute": {
+    "c": "r*s1/100*s2/100",
+    "w": "((s2/100)^2-r*s1/100*s2/100)/((s1/100)^2+(s2/100)^2-2*r*s1/100*s2/100)",
+    "v": "(((s2/100)^2-r*s1/100*s2/100)/((s1/100)^2+(s2/100)^2-2*r*s1/100*s2/100))^2*(s1/100)^2+(1-((s2/100)^2-r*s1/100*s2/100)/((s1/100)^2+(s2/100)^2-2*r*s1/100*s2/100))^2*(s2/100)^2+2*((s2/100)^2-r*s1/100*s2/100)/((s1/100)^2+(s2/100)^2-2*r*s1/100*s2/100)*(1-((s2/100)^2-r*s1/100*s2/100)/((s1/100)^2+(s2/100)^2-2*r*s1/100*s2/100))*r*s1/100*s2/100"
+   },
+   "check": {
+    "vars": {
+     "s1": 25,
+     "s2": 15,
+     "r": -0.2
+    },
+    "expect": {
+     "w": 0.3,
+     "v": 0.0135
+    }
+   }
+  },
+  {
+   "id": "c14-e05",
+   "chapter": 14,
+   "topic": "Limits of diversification",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Shares each have volatility {s}% and pairwise correlation {r}. What's the volatility of equally weighted portfolios of 1, 5, 25 and infinitely many shares?",
+   "solution": "σ_p² = σ²/n + (1 − 1/n)ρσ². n = 1: {s}%. n = 5: {=sqrt((s/100)^2/5+0.8*r*(s/100)^2)*100:1}%. n = 25: {=sqrt((s/100)^2/25+0.96*r*(s/100)^2)*100:1}%. Limit: √(ρσ²) = {=sqrt(r)*s:1}% — correlated (systematic) risk can't be diversified away.",
+   "vars": {
+    "s": {
+     "min": 25,
+     "max": 45,
+     "step": 5
+    },
+    "r": {
+     "choices": [
+      0.16,
+      0.25,
+      0.36
+     ]
+    }
+   },
+   "compute": {
+    "n5": "sqrt((s/100)^2/5+0.8*r*(s/100)^2)*100"
+   },
+   "check": {
+    "vars": {
+     "s": 40,
+     "r": 0.25
+    },
+    "expect": {
+     "n5": 25.3
+    },
+    "tol": 0.002
+   }
+  },
+  {
+   "id": "c14-e06",
+   "chapter": 14,
+   "topic": "Correlated loan losses and capital",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Our bank holds {n} equal-sized loans. Each loan's loss rate has standard deviation {s}%. What's the standard deviation of the portfolio loss rate if losses are (a) independent, (b) correlated with pairwise correlation {r}? What does this mean for how much capital we need?",
+   "solution": "(a) {s}/√{n} = {=s/sqrt(n):2}%. (b) √(σ²/n + (1 − 1/n)ρσ²) = {=sqrt((s/100)^2/n+(1-1/n)*r*(s/100)^2)*100:2}%. Correlation multiplies the risk (about {=sqrt((s/100)^2/n+(1-1/n)*r*(s/100)^2)*100/(s/sqrt(n)):1}×); capital set assuming independence would be far too small.",
+   "vars": {
+    "n": {
+     "choices": [
+      100,
+      200,
+      400
+     ]
+    },
+    "s": {
+     "min": 5,
+     "max": 15,
+     "step": 5
+    },
+    "r": {
+     "choices": [
+      0.1,
+      0.2,
+      0.3
+     ]
+    }
+   },
+   "compute": {
+    "b": "sqrt((s/100)^2/n+(1-1/n)*r*(s/100)^2)*100"
+   },
+   "check": {
+    "vars": {
+     "n": 100,
+     "s": 10,
+     "r": 0.2
+    },
+    "expect": {
+     "b": 4.56
+    },
+    "tol": 0.002
+   }
+  },
+  {
+   "id": "c14-e07",
+   "chapter": 14,
+   "topic": "Portfolio variance in matrix form",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "Weights (0.5, 0.3, 0.2), expected returns (8, 6, 4)%, volatilities (20, 15, 5)%, correlation 0.5 between assets 1 and 2 and zero otherwise. What are the portfolio's expected return and volatility?",
+   "solution": "Expected return 0.5 × 8 + 0.3 × 6 + 0.2 × 4 = 6.6%. Variance = 0.25 × 0.04 + 0.09 × 0.0225 + 0.04 × 0.0025 + 2 × 0.5 × 0.3 × 0.5 × 0.2 × 0.15 = 0.016625; volatility 12.9%."
+  },
+  {
+   "id": "c14-e08",
+   "chapter": 14,
+   "topic": "Mean–variance allocation",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A safe asset returns {rf}% and an equity fund has expected return {m}% and volatility {s}%. With mean–variance preferences and risk aversion λ, the optimal equity share is (μ − r_f)/(λσ²). What's the optimal fraction in equities for λ = 2 and λ = 6? If I can't borrow, what do I hold when λ = 1?",
+   "solution": "σ² = {=(s/100)^2:4}. λ = 2: w = {=(m-rf)/100:3}/{=2*(s/100)^2:4} = {=(m-rf)/100/(2*(s/100)^2):2}. λ = 6: {=(m-rf)/100/(6*(s/100)^2):2}. λ = 1: unconstrained w = {=(m-rf)/100/((s/100)^2):2}{?(m-rf)/100/((s/100)^2)>1|; without borrowing, w = 1 (all in equities)|}.",
+   "vars": {
+    "rf": {
+     "min": 1,
+     "max": 4,
+     "step": 1
+    },
+    "m": {
+     "min": 6,
+     "max": 10,
+     "step": 1
+    },
+    "s": {
+     "min": 15,
+     "max": 22,
+     "step": 1
+    }
+   },
+   "compute": {
+    "w2": "(m-rf)/100/(2*(s/100)^2)"
+   },
+   "check": {
+    "vars": {
+     "rf": 3,
+     "m": 8,
+     "s": 18
+    },
+    "expect": {
+     "w2": 0.77
+    },
+    "tol": 0.01
+   }
+  },
+  {
+   "id": "c14-e09",
+   "chapter": 14,
+   "topic": "Leverage and capital",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A fund has assets of 100 and capital of {k}. Its assets fall in value by {d}%. What happens to its capital and leverage? Why does leverage make the accuracy of covariance estimates so important?",
+   "solution": "Assets fall to {=100-d}; debt is still {=100-k}, so capital falls to {=k-d} — a {=d/k*100:0}% loss — and leverage rises from {=100/k:1}× to {=(100-d)/(k-d):1}×. With high leverage small losses destroy capital, so underestimated risk (especially correlations that make positions lose together) is fatal rather than merely costly.",
+   "vars": {
+    "k": {
+     "min": 4,
+     "max": 10,
+     "step": 1
+    },
+    "d": {
+     "min": 1,
+     "max": 3,
+     "step": 1
+    }
+   },
+   "compute": {},
+   "constraints": [
+    "d<k"
+   ],
+   "check": {
+    "vars": {
+     "k": 4,
+     "d": 3
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c15-e01",
+   "chapter": 15,
+   "topic": "Standard errors and sample size",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Household monthly spending has standard deviation {s}. What's the standard error of the sample mean with samples of 100, 400 and 1,600? How large a sample do I need for a standard error of {t}?",
+   "solution": "SE = σ/√n: {=s/10}, {=s/20}, {=s/40}. For SE = {t}: √n = {s}/{t} = {=s/t}, so n = {=(s/t)^2}.",
+   "vars": {
+    "s": {
+     "min": 400,
+     "max": 1200,
+     "step": 100
+    },
+    "t": {
+     "choices": [
+      5,
+      10,
+      20
+     ]
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "s": 800,
+     "t": 10
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c15-e02",
+   "chapter": 15,
+   "topic": "Confidence interval and t-test",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A sample of {n} households has a mean saving rate of {m}% with standard deviation {s} percentage points. What's the 95% confidence interval? Can we reject that the population mean is {h}%?",
+   "solution": "SE = {s}/√{n} = {se:3}. CI: {m} ± 1.96 × {se:3} = [{=m-1.96*se:3}, {=m+1.96*se:3}]. t = ({m} − {h})/{se:3} = {=(m-h)/se:2} → {?abs((m-h)/se)>1.96|reject {h}% at the 5% level|cannot reject {h}% at the 5% level}.",
+   "vars": {
+    "n": {
+     "choices": [
+      100,
+      400,
+      900
+     ]
+    },
+    "m": {
+     "min": 2.5,
+     "max": 4,
+     "step": 0.1
+    },
+    "s": {
+     "min": 1,
+     "max": 3,
+     "step": 0.5
+    },
+    "h": {
+     "choices": [
+      3
+     ]
+    }
+   },
+   "compute": {
+    "se": "s/sqrt(n)"
+   },
+   "constraints": [
+    "abs(abs((m-h)/(s/sqrt(n)))-1.96)>0.1"
+   ],
+   "check": {
+    "vars": {
+     "n": 400,
+     "m": 3.2,
+     "s": 2,
+     "h": 3
+    },
+    "expect": {
+     "se": 0.1
+    }
+   }
+  },
+  {
+   "id": "c15-e03",
+   "chapter": 15,
+   "topic": "Confidence interval for a proportion",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "In a poll of {n} voters, {p}% support a policy. What's the 95% confidence interval? Can we reject that support is 50%?",
+   "solution": "SE = √({=p/100:2} × {=1-p/100:2}/{n}) = {se:4}. CI = {p}% ± {=196*se:2} points = [{=p-196*se:1}%, {=p+196*se:1}%]. {?abs(p/100-0.5)/se>1.96|50% lies outside the interval: reject it at 5%.|50% lies inside the interval (t = {=(p/100-0.5)/se:2}): cannot reject it at 5%.}",
+   "vars": {
+    "n": {
+     "choices": [
+      600,
+      1000,
+      1200,
+      2000
+     ]
+    },
+    "p": {
+     "min": 48,
+     "max": 56,
+     "step": 1
+    }
+   },
+   "compute": {
+    "se": "sqrt(p/100*(1-p/100)/n)"
+   },
+   "constraints": [
+    "p!=50",
+    "abs(abs(p/100-0.5)/sqrt(p/100*(1-p/100)/n)-1.96)>0.15"
+   ],
+   "check": {
+    "vars": {
+     "n": 1200,
+     "p": 52
+    },
+    "expect": {
+     "se": 0.0144
+    },
+    "tol": 0.01
+   }
+  },
+  {
+   "id": "c15-e04",
+   "chapter": 15,
+   "topic": "Small-sample t interval",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Nine bank branches cut waiting times after a reorganisation by an average of {m} minutes, with standard deviation {s} minutes. The t critical value with 8 degrees of freedom is 2.306. What's the 95% confidence interval for the mean reduction? Is it significantly different from zero?",
+   "solution": "SE = {s}/√9 = {=s/3:3}. CI = {m} ± 2.306 × {=s/3:3} = [{=m-2.306*s/3:2}, {=m+2.306*s/3:2}] minutes. t = {=m/(s/3):2}: {?m-2.306*s/3>0|zero lies outside, so it's significant at 5%|zero lies inside, so it's not significant at 5%}.",
+   "vars": {
+    "m": {
+     "min": 1,
+     "max": 6,
+     "step": 1
+    },
+    "s": {
+     "min": 2,
+     "max": 6,
+     "step": 1
+    }
+   },
+   "compute": {},
+   "constraints": [
+    "abs(m-2.306*s/3)>0.1"
+   ],
+   "check": {
+    "vars": {
+     "m": 4,
+     "s": 3
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c15-e05",
+   "chapter": 15,
+   "topic": "Difference in means test",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "In one region, {n1} randomly sampled firms report mean investment growth of {m1}% (s.d. {s1}); in another, {n2} firms report {m2}% (s.d. {s2}). Is mean growth different between the regions?",
+   "solution": "SE = √({=s1^2}/{n1} + {=s2^2}/{n2}) = {se:3}. t = ({m1} − {m2})/{se:3} = {=(m1-m2)/se:2} → {?abs((m1-m2)/se)>1.96|reject equality at the 5% level|cannot reject equality at the 5% level}.",
+   "vars": {
+    "n1": {
+     "choices": [
+      300,
+      500
+     ]
+    },
+    "n2": {
+     "choices": [
+      300,
+      400
+     ]
+    },
+    "m1": {
+     "min": 3.5,
+     "max": 5,
+     "step": 0.1
+    },
+    "m2": {
+     "min": 2.5,
+     "max": 4,
+     "step": 0.1
+    },
+    "s1": {
+     "min": 5,
+     "max": 7,
+     "step": 1
+    },
+    "s2": {
+     "min": 4,
+     "max": 6,
+     "step": 1
+    }
+   },
+   "compute": {
+    "se": "sqrt(s1^2/n1+s2^2/n2)"
+   },
+   "constraints": [
+    "m1>m2",
+    "abs(abs((m1-m2)/sqrt(s1^2/n1+s2^2/n2))-1.96)>0.15"
+   ],
+   "check": {
+    "vars": {
+     "n1": 500,
+     "n2": 400,
+     "m1": 4.0,
+     "m2": 3.1,
+     "s1": 6,
+     "s2": 5
+    },
+    "expect": {
+     "se": 0.367
+    },
+    "tol": 0.002
+   }
+  },
+  {
+   "id": "c15-e06",
+   "chapter": 15,
+   "topic": "Mean squared error",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Estimator A is unbiased with standard error {a}. Estimator B has bias {b} and standard error {c}. Which has the lower mean squared error?",
+   "solution": "MSE = bias² + variance. A: 0 + {=a^2} = {=a^2}. B: {=b^2} + {=c^2} = {=b^2+c^2}. {?b^2+c^2<a^2|B is more accurate on average despite its bias.|A has the lower MSE.}",
+   "vars": {
+    "a": {
+     "min": 3,
+     "max": 5,
+     "step": 1
+    },
+    "b": {
+     "min": 1,
+     "max": 3,
+     "step": 1
+    },
+    "c": {
+     "min": 1,
+     "max": 3,
+     "step": 1
+    }
+   },
+   "compute": {},
+   "constraints": [
+    "b^2+c^2!=a^2"
+   ],
+   "check": {
+    "vars": {
+     "a": 4,
+     "b": 1,
+     "c": 2
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c15-e07",
+   "chapter": 15,
+   "topic": "The delta method",
+   "kind": "calc",
+   "difficulty": 3,
+   "text": "A demand elasticity is estimated at −0.5 with standard error 0.1. I need g(ε) = 1/|ε| — the percentage price rise that reduces quantity by 1%. What's g, and roughly what's its standard error?",
+   "solution": "g(−0.5) = 2. For ε < 0, g(ε) = −1/ε, so |g′(ε)| = 1/ε² = 4; SE ≈ 4 × 0.1 = 0.4. The function is steep near −0.5, so a 0.1 standard error on the elasticity becomes 0.4 on its reciprocal."
+  },
+  {
+   "id": "c15-e08",
+   "chapter": 15,
+   "topic": "Sample size and statistical power",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "How many observations per group would we need to detect a rise in a conversion rate from {p1}% to {p2}% with 80% power at the 5% level? (Use n ≈ 7.84 × [p₁(1 − p₁) + p₂(1 − p₂)]/(p₂ − p₁)².)",
+   "solution": "n ≈ 7.84 × ({=p1/100:2} × {=1-p1/100:2} + {=p2/100:2} × {=1-p2/100:2})/{=((p2-p1)/100)^2:5} = {n:0} per group. Small effects need big samples.",
+   "vars": {
+    "p1": {
+     "min": 10,
+     "max": 30,
+     "step": 5
+    },
+    "d": {
+     "choices": [
+      2,
+      3,
+      5
+     ]
+    }
+   },
+   "compute": {
+    "p2": "p1+d",
+    "n": "7.84*(p1/100*(1-p1/100)+(p1+d)/100*(1-(p1+d)/100))/((d/100)^2)"
+   },
+   "check": {
+    "vars": {
+     "p1": 20,
+     "d": 2
+    },
+    "expect": {
+     "n": 6499
+    },
+    "tol": 0.002
+   }
+  },
+  {
+   "id": "c15-e09",
+   "chapter": 15,
+   "topic": "Multiple testing",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "An analyst backtests {k} trading rules, none of which truly predicts returns, each at the 5% level. How many should she expect to look significant? What's the probability that at least one does? What threshold would a Bonferroni correction require?",
+   "solution": "Expected false positives {k} × 0.05 = {=k*0.05}. P(at least one) = 1 − 0.95^{k} = {=1-0.95^k:3}. Bonferroni: 0.05/{k} = {=0.05/k:5} per test (roughly |t| > {=-ninv(0.025/k):1}).",
+   "vars": {
+    "k": {
+     "choices": [
+      20,
+      50,
+      100
+     ]
+    }
+   },
+   "compute": {
+    "p": "1-0.95^k"
+   },
+   "check": {
+    "vars": {
+     "k": 50
+    },
+    "expect": {
+     "p": 0.923
+    }
+   }
+  },
+  {
+   "id": "c15-e10",
+   "chapter": 15,
+   "topic": "Interpreting \"not significant\"",
+   "kind": "theory",
+   "difficulty": 2,
+   "text": "A study finds a training programme raises earnings by 1.5%, with a 95% confidence interval from −0.5% to 3.5%, and reports \"no significant effect\". What can and can't we conclude?",
+   "solution": "The data are consistent with anything from a small loss to a 3.5% gain. The study can't rule out zero — but it also can't rule out an economically meaningful gain. \"No significant effect\" isn't \"no effect\"; the study is imprecise. A larger sample or pooling with other studies is needed."
+  }
+ ]
+}

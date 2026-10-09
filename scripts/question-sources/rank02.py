@@ -1,0 +1,246 @@
+from qlib import *
+qs = []
+# ---------------- Chapter 5 ----------------
+qs.append(Q('c05-e01', 5, 'Derivatives', '''
+Calculus refresher for my MBA prep course. Can you differentiate these? (a) 3x⁴ − 2x + 7; (b) ln(x² + 1);
+(c) x·e^(−2x); (d) (2x + 1)/(x − 3); (e) 100 × 1.04^t with respect to t.''', '''
+(a) 12x³ − 2. (b) Chain rule: 2x/(x² + 1). (c) Product rule: e^(−2x) − 2x·e^(−2x) = e^(−2x)(1 − 2x).
+(d) Quotient rule: [2(x − 3) − (2x + 1)]/(x − 3)² = −7/(x − 3)². (e) 100 × 1.04^t × ln 1.04.''', kind='calc'))
+qs.append(Q('c05-e02', 5, 'Marginal cost: derivative vs discrete', '''
+Our cost function is C(q) = {F} + {a}q + {b}q². What's marginal cost at q = {q}, and what's the exact cost of
+producing unit number {=q+1}? Why are they different?''', '''
+C′(q) = {a} + {=2*b}q, so C′({q}) = {mc:2}. Exact cost of unit {=q+1}: C({=q+1}) − C({q}) = {disc:2}. The derivative is a
+local slope; because C is convex (marginal cost rises), the discrete cost exceeds C′({q}) by ½C″ × 1² = {b}.''',
+kind='calc', vars={'F': R(50, 200, 10), 'a': R(2, 8), 'b': C(0.25, 0.5, 1), 'q': R(5, 30, 5)},
+compute={'mc': 'a+2*b*q', 'disc': 'a*(q+1)+b*(q+1)^2-a*q-b*q^2'}, check=({'F': 100, 'a': 3, 'b': 0.5, 'q': 10}, {'mc': 13, 'disc': 13.5})))
+qs.append(Q('c05-e03', 5, 'Concavity and convexity', '''
+On x > 0, is each of these concave, convex or neither? (a) √x; (b) x² − 4x; (c) ln x; (d) x³ − 3x.''', '''
+(a) f″ = −¼x^(−3/2) < 0: concave. (b) f″ = 2: convex. (c) f″ = −1/x²: concave. (d) f″ = 6x > 0 for x > 0: convex on
+x > 0 (but not on the whole real line).'''))
+qs.append(Q('c05-e04', 5, 'Taylor approximation', '''
+Without a calculator: use a first-order and a second-order approximation of f(x) = √x around x = 1 to estimate
+√1.1. How close do you get to the true value?''', '''
+f(1) = 1, f′(1) = ½, f″(1) = −¼. First order: 1 + 0.5 × 0.1 = 1.05. Second order: 1.05 − ⅛ × 0.01 = 1.04875.
+True value: 1.048809 — the second-order term removes most of the error.''', kind='calc'))
+qs.append(Q('c05-e05', 5, 'Price elasticity of demand', '''
+Demand for our product is Q = {a} − {b}P. What's the price elasticity at P = {P}? At what price is demand
+unit-elastic, and what's revenue there?''', '''
+At P = {P}, Q = {=a-b*P} and ε = −{b} × {P}/{=a-b*P} = {=-b*P/(a-b*P):3}. Unit elasticity: {b}P/({a} − {b}P) = 1 →
+P = {=a/(2*b):2}, Q = {=a/2}, revenue = {=a*a/(4*b):2} — the maximum revenue. For linear demand, unit elasticity is
+always at the midpoint of the curve.''',
+kind='calc', vars={'a': R(100, 400, 20), 'b': C(2, 4, 5), 'P': R(5, 40, 5)}, constraints=['a-b*P>0'], compute={'e': '-b*P/(a-b*P)'},
+check=({'a': 200, 'b': 4, 'P': 20}, {'e': -0.6667})))
+qs.append(Q('c05-e06', 5, 'Profit maximisation with a capacity limit', '''
+We sell at a fixed market price of ${p}. Our cost is C(q) = {F} + {a}q + 0.5q². What output maximises profit, and
+what's the profit? Can you verify it's a maximum? And what if our capacity is only {cap} units?''', '''
+Π = {p}q − {F} − {a}q − 0.5q². FOC: {=p-a} − q = 0 → q* = {=p-a} (price = marginal cost {a} + q).
+Π = {=(p-a)^2/2-F:2}. Π″ = −1 < 0, so it's a maximum. With capacity {cap} < {=p-a}, Π′ > 0 on [0, {cap}], so produce
+q = {cap}: Π = {=p*cap-F-a*cap-0.5*cap^2:2}.''',
+kind='calc', vars={'p': R(30, 60, 5), 'F': R(50, 200, 25), 'a': R(2, 8)}, compute={'cap': 'round((p-a)*0.8)', 'pi': '(p-a)^2/2-F'},
+constraints=['(p-a)^2/2-F>0'], check=({'p': 40, 'F': 100, 'a': 4}, {'pi': 548})))
+qs.append(Q('c05-e07', 5, "Newton's method", '''
+Can you show me two iterations of Newton's method on f(x) = x² − {k}, starting from x₀ = {x0}? What number is it
+approximating?''', '''
+x₁ = x₀ − f(x₀)/f′(x₀) = {x0} − ({=x0^2-k})/{=2*x0} = {x1:5}; x₂ = x₁ − (x₁² − {k})/(2x₁) = {x2:5}. It approximates
+√{k} = {=sqrt(k):5}.''',
+kind='calc', vars={'k': C(2, 3, 5, 7, 10), 'x0': C(1, 2, 3)}, constraints=['abs(x0^2-k)<=5'],
+compute={'x1': 'x0-(x0^2-k)/(2*x0)', 'x2': 'x0-(x0^2-k)/(2*x0)-((x0-(x0^2-k)/(2*x0))^2-k)/(2*(x0-(x0^2-k)/(2*x0)))'},
+check=({'k': 2, 'x0': 1}, {'x1': 1.5, 'x2': 1.41667})))
+qs.append(Q('c05-e08', 5, 'Partial derivatives and indifference curves', '''
+My utility function is U(x, y) = x^{a}·y^{=1-a:1}. What are Uₓ and U_y, and what's the slope of the indifference
+curve through ({x}, {y})?''', '''
+Uₓ = {a}x^({=a-1:1})y^{=1-a:1} = {a}U/x; U_y = {=1-a:1}U/y. Slope = −Uₓ/U_y = −({a}/{=1-a:1})(y/x) = −({a}/{=1-a:1})({y}/{x})
+= {=-(a/(1-a))*(y/x):3}.''',
+kind='calc', vars={'a': C(0.3, 0.4, 0.5, 0.6), 'x': R(5, 20, 5), 'y': R(10, 30, 5)}, compute={'s': '-(a/(1-a))*(y/x)'},
+check=({'a': 0.4, 'x': 10, 'y': 20}, {'s': -1.3333})))
+qs.append(Q('c05-e09', 5, "Homogeneity and Euler's theorem", '''
+Show that F(K, L) = 2K^0.5·L^0.5 is homogeneous of degree one, and verify Euler's theorem at K = 16, L = 4.''', '''
+F(tK, tL) = 2t^0.5K^0.5·t^0.5L^0.5 = t·F(K, L): degree one. At (16, 4): F = 2 × 4 × 2 = 16; F_K = K^−0.5·L^0.5 = 2/4 = 0.5;
+F_L = K^0.5·L^−0.5 = 4/2 = 2. K·F_K + L·F_L = 8 + 8 = 16 = F, as Euler's theorem says.''', diff=2))
+qs.append(Q('c05-e10', 5, 'Optimisation in two variables', '''
+Find and classify the critical point of f(x, y) = 10x + 8y − x² + xy − y².''', '''
+fₓ = 10 − 2x + y = 0 and f_y = 8 + x − 2y = 0. From the first, y = 2x − 10; then 8 + x − 4x + 20 = 0 → x = 28/3,
+y = 26/3. f_xx = −2, f_yy = −2, f_xy = 1: det H = 4 − 1 = 3 > 0 with f_xx < 0, so it is a (global) maximum.''', kind='calc', diff=2))
+qs.append(Q('c05-e11', 5, 'Laffer curve', '''
+Simple Laffer model: tax revenue is R(τ) = τ·B₀(1 − τ)^e, so the tax base shrinks as the rate rises. If e = {e}, what's
+the revenue-maximising tax rate? If the actual rate is {t}%, would a small rise in the rate raise or lower revenue?''', '''
+R′(τ) has the sign of (1 − τ) − eτ, so τ* = 1/(1 + e) = {=100/(1+e):1}%. At τ = {t}%: (1 − {=t/100:2}) − {e} × {=t/100:2}
+= {=(1-t/100)-e*t/100:3}, which is {?(1-t/100)-e*t/100>0|positive, so a small rise would raise revenue|negative, so a small rise would lower revenue}.''',
+kind='calc', diff=2, vars={'e': C(0.25, 0.5, 0.8, 1, 1.5), 't': R(30, 70, 5)}, constraints=['abs((1-t/100)-e*t/100)>0.02'], compute={'ts': '100/(1+e)'},
+check=({'e': 0.5, 't': 40}, {'ts': 66.667})))
+# ---------------- Chapter 6 ----------------
+qs.append(Q('c06-e01', 6, 'Lagrangian optimisation', '''
+Maximise U = x^(1/3)·y^(2/3) subject to x + 2y = {m}. What are x*, y* and λ*, and can you verify that λ* equals the
+derivative of maximum utility with respect to income?''', '''
+Tangency: MUₓ/MU_y = y/(2x) = 1/2 → y = x. Then 3x = {m}, so x* = y* = {=m/3}: one-third of income is spent on x and
+two-thirds on y, matching the exponents. λ* = MUₓ/pₓ = (1/3)(y/x)^(2/3) = 1/3. With income m, x = y = m/3, so
+V(m) = m/3 and V′(m) = 1/3 = λ*.''', kind='calc', diff=2, vars={'m': R(60, 180, 30)}, compute={}, check=({'m': 90}, {})))
+qs.append(Q('c06-e02', 6, 'Shadow value of a constraint', '''
+I have {F} metres of fencing to enclose a rectangular field along a straight river (no fence needed on the river
+side). What dimensions maximise the area, and what's the shadow value of an extra metre of fencing?''', '''
+With two sides x perpendicular to the river and one side y parallel: maximise xy subject to 2x + y = {F}.
+A = x({F} − 2x) is maximised at x = {=F/4}, y = {=F/2}, area {=F^2/8}. With fencing F, A = F²/8, so A′(F) = F/4 = {=F/4} square
+metres per extra metre — the Lagrange multiplier (λ = x = {=F/4}).''',
+kind='calc', vars={'F': R(200, 800, 40)}, compute={'A': 'F^2/8'}, check=({'F': 400}, {'A': 20000})))
+qs.append(Q('c06-e03', 6, 'Envelope theorem', '''
+A consumer has U = x^0.5·y^0.5, income 100, and prices pₓ = 2 and p_y = 4 (so x* = 25 and λ* ≈ 0.1768). Use the
+envelope theorem to find the effect on maximum utility of a small rise in pₓ, and check it by writing maximum
+utility V as a function of pₓ.''', '''
+Envelope theorem: ∂V/∂pₓ = ∂L/∂pₓ = −λx = −0.1768 × 25 = −4.42. Directly: x = m/(2pₓ), y = m/(2p_y), so
+V = m/(2√(pₓp_y)) and ∂V/∂pₓ = −m/(4pₓ^1.5·p_y^0.5) = −100/(4 × 2^1.5 × 2) = −4.42.''', kind='calc', diff=3))
+qs.append(Q('c06-e04', 6, 'Cost minimisation', '''
+Our production function is q = K^0.5·L^0.5. The wage is w = {w} and the rental rate of capital is r = {r}. What
+input mix minimises the cost of producing q = {q}? What's the minimum cost and the marginal cost?''', '''
+Tangency: K/L = w/r = {w}/{r}, so K = {=w/r:3}L. Then q = √(K·L) = L√({=w/r:3}) = {q} → L = {=q/sqrt(w/r):3}, K = {=q*sqrt(w/r):3}.
+Cost = wL + rK = {cost:2}. In general C(q) = 2q√(wr) = {=2*sqrt(w*r):2}q, so marginal cost = average cost = {=2*sqrt(w*r):2}
+(constant returns to scale).''',
+kind='calc', diff=2, vars={'w': C(4, 9, 16, 25), 'r': C(1, 4, 9), 'q': R(6, 30, 6)}, compute={'cost': '2*q*sqrt(w*r)'},
+check=({'w': 9, 'r': 4, 'q': 12}, {'cost': 144})))
+qs.append(Q('c06-e05', 6, 'Corner solutions', '''
+A consumer has U = 2√x + y, income 10, and p_y = 1. What's the optimal bundle when pₓ = 0.5, and when pₓ = 0.05?
+What happens if income were only 5 with pₓ = 0.05?''', '''
+Interior condition MUₓ/pₓ = MU_y/p_y: x^(−1/2)/pₓ = 1, so x = 1/pₓ². At pₓ = 0.5: x = 4 (spending 2), y = 8.
+At pₓ = 0.05: x = 400 would cost 20, more than income, so it's a corner: y = 0, x = 10/0.05 = 200. With income 5
+the corner is x = 100, y = 0: the non-negativity constraint on y binds.''', kind='calc', diff=2))
+qs.append(Q('c06-e06', 6, 'Borrowing constraints (Kuhn–Tucker)', '''
+A household has utility ln c₁ + ln c₂, earns {y1} now and {y2} next period, the interest rate is {r}%, and it cannot
+borrow. What will it consume in each period? And what would it consume if it could borrow freely?''', '''
+Wealth W = {y1} + {y2}/{=1+r/100:2} = {W:2}. Unconstrained c₁ = W/2 = {=W/2:2} > {y1}, so the borrowing constraint binds:
+c₁ = {y1}, c₂ = {y2} (with a positive multiplier on the constraint). With free borrowing: c₁ = {=W/2:2},
+c₂ = {=W/2*(1+r/100):2}.''',
+kind='calc', diff=3, vars={'y1': R(20, 60, 10), 'y2': R(120, 240, 22), 'r': C(5, 10)}, compute={'W': 'y1+y2/(1+r/100)'}, constraints=['(y1+y2/(1+r/100))/2>y1'],
+check=({'y1': 40, 'y2': 176, 'r': 10}, {'W': 200})))
+qs.append(Q('c06-e07', 6, 'Linear programming and shadow prices', '''
+Maximise 3x + 2y subject to x + y ≤ 8, x + 3y ≤ 12, x ≤ 5, x, y ≥ 0. What's the optimal corner, and what are the
+shadow prices of the three constraints?''', '''
+Corners: (0,0), (5,0), (5, 7/3), (0,4); x + y ≤ 8 never binds. Values: 0, 15, 15 + 14/3 = 19.67, 8. Optimum (5, 7/3),
+value 59/3 ≈ 19.67. Shadow prices: x + y ≤ 8 is slack → 0. For the binding constraints, y₂ + y₃ = 3 and 3y₂ = 2
+give y₂ = 2/3 (for x + 3y ≤ 12) and y₃ = 7/3 (for x ≤ 5). Check: 12 × 2/3 + 5 × 7/3 = 59/3.''', kind='calc', diff=3))
+qs.append(Q('c06-e08', 6, 'LP duality', '''
+Our factory makes A and B. Machine time: 2A + B ≤ 120 hours; labour: A + 3B ≤ 150 hours. Profit per unit was 40 for
+A and 50 for B, but B's contribution has just risen to 90. What's the new optimal plan, what are the shadow prices
+of machine time and labour, and which resource became more valuable?''', '''
+Corners: (60,0) → 2,400; (0,50) → 4,500; (42,36) → 1,680 + 3,240 = 4,920. Still (42, 36). Dual: 2y₁ + y₂ = 40,
+y₁ + 3y₂ = 90 → y₁ = 6 (machine hour), y₂ = 28 (labour hour); check 720 + 4,200 = 4,920. Labour, used intensively by
+the now more profitable product B, has become more valuable; machine time less so.''', kind='calc', diff=3))
+qs.append(Q('c06-e09', 6, 'Interpreting a Lagrange multiplier', '''
+In a model of our bank's profit maximisation, the multiplier on the regulator's minimum capital ratio is 0.04 per
+unit of capital. What does that number mean, and why isn't it just our cost of issuing shares?''', '''
+It's the rate at which maximum profit would rise if the requirement were relaxed so one less unit of capital were
+needed — the marginal cost of the regulation to the bank's objective, inside the model. It isn't the cost of issuing
+shares (a market transaction cost): the shadow price reflects everything that makes capital constraining (e.g.
+forgone profitable lending), and it is local — a large relaxation wouldn't be worth 0.04 per unit throughout.''', diff=2))
+# ---------------- Chapter 7 ----------------
+qs.append(Q('c07-e01', 7, 'Antiderivatives', '''
+Can you find these integrals? (a) ∫(6x² − 4x + 3) dx; (b) ∫e^(−0.05t) dt; (c) ∫(2/x) dx; (d) ∫x·e^(2x) dx.''', '''
+(a) 2x³ − 2x² + 3x + C. (b) −20e^(−0.05t) + C. (c) 2 ln|x| + C. (d) By parts (u = x, dv = e^(2x) dx):
+½x·e^(2x) − ¼e^(2x) + C.''', kind='calc'))
+qs.append(Q('c07-e02', 7, 'Definite integrals', '''
+Evaluate: (a) ∫₀³ 2q dq; (b) ∫₁⁴ x^(−1/2) dx; (c) ∫₀¹⁰ e^(−0.1t) dt.''', '''
+(a) [q²]₀³ = 9. (b) [2x^(1/2)]₁⁴ = 4 − 2 = 2. (c) 10(1 − e^(−1)) = 6.32.''', kind='calc'))
+qs.append(Q('c07-e03', 7, 'Total cost from marginal cost', '''
+Our marginal cost is MC(q) = {a} + {b}q and fixed cost is {F}. What's total cost at q = {q1}, and what does it cost to
+increase output from {q1} to {q2}?''', '''
+Integrate MC: C(q) = {F} + {a}q + {=b/2}q². C({q1}) = {c1:2}. C({q2}) − C({q1}) = {=a*(q2-q1)+b/2*(q2^2-q1^2):2}.''',
+kind='calc', vars={'a': R(2, 10), 'b': C(0.02, 0.04, 0.06, 0.1), 'F': R(1000, 4000, 500), 'q1': R(300, 600, 100)}, compute={'q2': 'q1+100', 'c1': 'F+a*q1+b/2*q1^2'},
+check=({'a': 5, 'b': 0.04, 'F': 2000, 'q1': 500}, {'c1': 9500})))
+qs.append(Q('c07-e04', 7, 'Consumer and producer surplus', '''
+Inverse demand is P = {a} − {b}Q and inverse supply is P = {c} + {d}Q. What's the equilibrium, consumer surplus and
+producer surplus?''', '''
+{a} − {b}Q = {c} + {d}Q → Q = {Qe:2}, P = {Pe:2}. CS = ½ × {Qe:2} × ({a} − {Pe:2}) = {=0.5*Qe*(a-Pe):2}.
+PS = ½ × {Qe:2} × ({Pe:2} − {c}) = {=0.5*Qe*(Pe-c):2}.''',
+kind='calc', vars={'a': R(40, 100, 10), 'b': C(0.5, 1, 2), 'c': R(5, 20, 5), 'd': C(0.5, 1)}, compute={'Qe': '(a-c)/(b+d)', 'Pe': 'a-b*(a-c)/(b+d)'},
+check=({'a': 60, 'b': 0.5, 'c': 10, 'd': 0.5}, {'Qe': 50, 'Pe': 35})))
+qs.append(Q('c07-e05', 7, 'Stocks from flows', '''
+A central bank buys bonds at a rate that rises steadily from 0 to {k} billion a month over a year: b(t) = {=k/12:2}t
+billion per month for t between 0 and 12 months. By how much does its bond holding rise over the year?''', '''
+Integrate the flow: ∫₀¹² {=k/12:2}t dt = {=k/12:2} × 144/2 = {=k*6} billion.''',
+kind='calc', vars={'k': R(6, 24, 6)}, compute={'s': 'k*6'}, check=({'k': 12}, {'s': 72})))
+qs.append(Q('c07-e06', 7, 'Continuous discounting', '''
+A licence produces income of €{c} a year continuously for {n} years. What's its present value at a continuously
+compounded rate of {r}%? What would a perpetual licence be worth? And one whose income grows at {g}% a year forever?''', '''
+PV = {c}(1 − e^(−{=r*n/100:2}))/{=r/100:2} = {pv:0}. Perpetual: {c}/{=r/100:2} = {=c/(r/100):0}. Growing at {g}%:
+{c}/({=r/100:2} − {=g/100:2}) = {=c/((r-g)/100):0}.''',
+kind='calc', vars={'c': R(20000, 80000, 5000), 'n': C(5, 10, 15, 20), 'r': R(4, 9), 'g': R(1, 3)}, compute={'pv': 'c*(1-exp(-r*n/100))/(r/100)'},
+check=({'c': 50000, 'n': 10, 'r': 6, 'g': 2}, {'pv': 375990}), tol=0.001))
+qs.append(Q('c07-e07', 7, 'Probability density', '''
+A density is f(x) = 2x on [0, 1] and zero elsewhere. Can you check it integrates to one, and find P(X ≤ {a}) and
+P(X > {b})?''', '''
+∫₀¹ 2x dx = [x²]₀¹ = 1. P(X ≤ {a}) = {a}² = {=a^2:4}. P(X > {b}) = 1 − {b}² = {=1-b^2:4}.''',
+kind='calc', vars={'a': C(0.3, 0.4, 0.5, 0.6), 'b': C(0.7, 0.8, 0.9)}, compute={}, check=({'a': 0.5, 'b': 0.9}, {})))
+qs.append(Q('c07-e08', 7, 'Gini coefficient from a Lorenz curve', '''
+What's the Gini coefficient for the Lorenz curve L(p) = 0.4p + 0.6p²? Is that society more or less equal than one
+with L(p) = p²?''', '''
+∫₀¹ (0.4p + 0.6p²) dp = 0.2 + 0.2 = 0.4, so G = 1 − 2 × 0.4 = 0.2. For L = p², ∫ = 1/3 and G = 1/3, so the first society
+is more equal.''', kind='calc', diff=2))
+qs.append(Q('c07-e09', 7, 'Differential equations', '''
+(a) Solve ẋ = −0.2(x − 50) with x(0) = 10. What's x(5), and what's the half-life? (b) In a logistic adoption model
+with k = 0.8 and saturation level 100, starting from x₀ = 2, when does adoption reach 50? And 90?''', '''
+(a) x(t) = 50 − 40e^(−0.2t); x(5) = 50 − 40e^(−1) = 35.3; half-life ln 2/0.2 = 3.47. (b) x(t) = 100/(1 + 49e^(−0.8t)).
+Reaches 50 when 49e^(−0.8t) = 1: t = ln 49/0.8 = 4.86. Reaches 90 when 49e^(−0.8t) = 1/9: t = ln 441/0.8 = 7.61.''', kind='calc', diff=3))
+qs.append(Q('c07-e10', 7, "Euler's method", '''
+Use Euler's method with steps of 0.5 to approximate x(1) for ẋ = {k}x with x(0) = {x0}. Compare with the exact value
+and with a single step of 1.''', '''
+Steps of 0.5: {x0} × (1 + {=k/2})² = {=x0*(1+k/2)^2:2}. Exact: {x0}e^{k} = {=x0*exp(k):2}. One step of 1: {x0} × {=1+k} = {=x0*(1+k):2}.
+Halving the step roughly halves the error ({=x0*exp(k)-x0*(1+k):2} vs {=x0*exp(k)-x0*(1+k/2)^2:2}).''',
+kind='calc', vars={'k': C(0.05, 0.1, 0.2), 'x0': R(500, 2000, 500)}, compute={'h': 'x0*(1+k/2)^2'}, check=({'k': 0.1, 'x0': 1000}, {'h': 1102.5})))
+# ---------------- Chapter 8 ----------------
+qs.append(Q('c08-e01', 8, 'Dot products and a price index', '''
+A household buys the bundle q = ({q1}, {q2}, {q3}) at prices p = ({p1}, {p2}, {p3}). What does it spend? Next year
+prices are ({n1}, {n2}, {n3}). What does the same bundle cost, and what's the percentage change?''', '''
+p·q = {=p1*q1} + {=p2*q2} + {=p3*q3} = {s0}. New cost = {=n1*q1:2} + {=n2*q2:2} + {=n3*q3:2} = {s1:2}: a change of
+{=(s1/s0-1)*100:2}% — a fixed-basket price index.''',
+kind='calc', vars={'q1': R(5, 15), 'q2': R(2, 6), 'q3': R(1, 4), 'p1': R(2, 5), 'p2': R(8, 15), 'p3': R(20, 30), 'd1': C(-0.1, 0, 0.1, 0.3), 'd2': C(-0.5, 0, 0.5), 'd3': C(-1, 0, 1)},
+compute={'n1': 'p1+d1', 'n2': 'p2+d2', 'n3': 'p3+d3', 's0': 'p1*q1+p2*q2+p3*q3', 's1': '(p1+d1)*q1+(p2+d2)*q2+(p3+d3)*q3'},
+check=({'q1': 10, 'q2': 4, 'q3': 2, 'p1': 3, 'p2': 12, 'p3': 25, 'd1': 0.3, 'd2': 0, 'd3': -1}, {'s0': 128, 's1': 129})))
+qs.append(Q('c08-e02', 8, 'Matrix products', '''
+Let A = [[1, 2], [0, 3]] and B = [[4, 0], [1, 2]] (rows listed). Compute AB, BA and (AB)′, and verify that (AB)′ = B′A′.''', '''
+AB = [[6, 4], [3, 6]]; BA = [[4, 8], [1, 8]] ≠ AB (matrix multiplication isn't commutative). (AB)′ = [[6, 3], [4, 6]];
+B′A′ = [[4, 1], [0, 2]]·[[1, 0], [2, 3]] = [[6, 3], [4, 6]] ✓.''', kind='calc'))
+qs.append(Q('c08-e03', 8, 'Gaussian elimination', '''
+Solve: 2x + y − z = 3, x − y + 2z = 7, 3x + 2y + z = 10.''', '''
+From the second, x = 7 + y − 2z. Substituting: 3y − 5z = −11 and 5y − 5z = −11. Subtracting gives 2y = 0, so y = 0,
+z = 11/5 = 2.2, x = 7 − 4.4 = 2.6. Check: 5.2 + 0 − 2.2 = 3 ✓.''', kind='calc'))
+qs.append(Q('c08-e04', 8, 'Matrix inverse', '''
+Find the inverse of [[4, 3], [2, 2]] and use it to solve 4x + 3y = 18, 2x + 2y = 10.''', '''
+det = 8 − 6 = 2; inverse = ½[[2, −3], [−2, 4]]. x = (2 × 18 − 3 × 10)/2 = 3, y = (−2 × 18 + 4 × 10)/2 = 2.''', kind='calc'))
+qs.append(Q('c08-e05', 8, 'Singular matrices', '''
+For which value of k is the matrix [[2, k], [3, 6]] singular? For that k, does the system 2x + ky = 4, 3x + 6y = 6
+have no solution or infinitely many?''', '''
+det = 12 − 3k = 0 at k = 4. Then 2x + 4y = 4 is x + 2y = 2 and 3x + 6y = 6 is also x + 2y = 2: the same line, so
+infinitely many solutions.''', kind='calc'))
+qs.append(Q('c08-e06', 8, "Cramer's rule and comparative statics", '''
+Two related goods. Market 1 clears when 5p₁ − p₂ = 85. In market 2, demand is Q₂ = 60 + p₁ − 3p₂ and supply used to
+be Q₂ = 5 + 2p₂, which gave p₁ = 20, p₂ = 15. Supply of good 2 has fallen to Q₂ = −7 + 2p₂. Using Cramer's rule, what
+are the new prices, and why does the price of good 1 change too?''', '''
+Market 2 now clears when 60 + p₁ − 3p₂ = −7 + 2p₂, i.e. −p₁ + 5p₂ = 67 (up from 55). det = 25 − 1 = 24.
+p₁ = (85 × 5 + 67)/24 = 20.5; p₂ = (5 × 67 + 85)/24 = 17.5. Good 2's price rises 2.5; buyers switch toward the
+substitute good 1, raising its price by 0.5.''', kind='calc', diff=3))
+qs.append(Q('c08-e07', 8, 'Input–output (Leontief) model', '''
+Two industries: one unit of manufactures uses 0.2 manufactures and 0.4 services; one unit of services uses 0.3
+manufactures and 0.1 services. If final demand for services rises by {d}, by how much must each industry's gross
+output rise? Why does manufacturing output rise even though final demand for manufactures didn't change?''', '''
+(I − A) = [[0.8, −0.3], [−0.4, 0.9]], det = 0.60, (I − A)⁻¹ = [[1.5, 0.5], [0.667, 1.333]]. Δx = (I − A)⁻¹(0, {d})′ =
+({=0.5*d:1}, {=4/3*d:1}). Services use manufactured inputs (0.3 per unit), and those manufactures need services and
+manufactures in turn — the indirect requirements raise manufacturing output.''',
+kind='calc', diff=3, vars={'d': R(10, 60, 10)}, compute={'m': '0.5*d'}, check=({'d': 30}, {'m': 15})))
+qs.append(Q('c08-e08', 8, 'Definiteness of matrices', '''
+Classify each symmetric matrix as positive definite, negative (semi)definite or indefinite: [[2, 1], [1, 3]],
+[[−4, 2], [2, −1]] and [[1, 3], [3, 1]].''', '''
+First: a₁₁ = 2 > 0, det = 5 > 0 → positive definite. Second: a₁₁ = −4 < 0, det = 4 − 4 = 0 → negative semidefinite (not
+definite). Third: det = 1 − 9 = −8 < 0 → indefinite.''', diff=2))
+qs.append(Q('c08-e09', 8, 'Eigenvalues and stability', '''
+What are the eigenvalues of A = [[0.9, 0.3], [0.2, 0.4]]? Is the system x(t+1) = A·x(t) stable?''', '''
+Trace 1.3, determinant 0.36 − 0.06 = 0.30: λ = (1.3 ± √(1.69 − 1.2))/2 = (1.3 ± 0.7)/2 = 1.0 or 0.3. One eigenvalue
+equals 1, so the system is not stable in the strict sense: deviations along that eigenvector persist forever
+(a unit root).''', kind='calc', diff=3))
+qs.append(Q('c08-e10', 8, 'Markov chains (credit ratings)', '''
+Each year {s}% of investment-grade firms keep their rating and the rest are downgraded to speculative grade;
+{u}% of speculative-grade firms are upgraded and the rest stay. What's the long-run (stationary) distribution? If all
+firms start investment grade, what share is speculative grade after two years?''', '''
+Stationary share speculative = {=1-s/100:2}/({=1-s/100:2} + {=u/100:2}) = {=(1-s/100)/((1-s/100)+u/100)*100:1}%, investment grade
+{=u/100/((1-s/100)+u/100)*100:1}%. After one year: ({=s/100:2}, {=1-s/100:2}); after two, speculative = {=s/100:2} × {=1-s/100:2} +
+{=1-s/100:2} × {=1-u/100:2} = {two:4}.''',
+kind='calc', diff=2, vars={'s': R(80, 95), 'u': R(10, 30, 5)}, compute={'two': '(s/100)*(1-s/100)+(1-s/100)*(1-u/100)'},
+check=({'s': 90, 'u': 20}, {'two': 0.17})))
+write(2, 'Junior Associate', 'rank02_junior_associate.json', qs)

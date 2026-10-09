@@ -1,0 +1,892 @@
+{
+ "rank": 3,
+ "title": "Associate",
+ "source": "Exercises and worked solutions from \"Economies, Accounts and Money\" (Integrated Edition), rewritten as customer questions.",
+ "questions": [
+  {
+   "id": "c09-x02",
+   "chapter": 9,
+   "topic": "Annuities and perpetuities",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "At an interest rate of {i}%, what's the value today of: (a) {A} a year for {n} years, paid at the end of each year; (b) the same but paid at the start of each year; (c) {A} a year forever; (d) a perpetuity starting at {A} and growing at {g}% a year?",
+   "solution": "(a) {A} × (1 − {=1+i/100:2}^−{n})/{=i/100:2} = {pv:2}. (b) Annuity due = {pv:2} × {=1+i/100:2} = {=pv*(1+i/100):2}. (c) {A}/{=i/100:2} = {=A/(i/100):2}. (d) {A}/({=i/100:2} − {=g/100:2}) = {=A/((i-g)/100):2}. Note how much of the perpetuity's value lies beyond year {n}: {=A/(i/100)-pv:2}.",
+   "vars": {
+    "i": {
+     "min": 3,
+     "max": 9,
+     "step": 1
+    },
+    "A": {
+     "min": 100,
+     "max": 1000,
+     "step": 100
+    },
+    "n": {
+     "choices": [
+      5,
+      10,
+      15,
+      20
+     ]
+    },
+    "g": {
+     "min": 1,
+     "max": 2,
+     "step": 1
+    }
+   },
+   "compute": {
+    "pv": "pv(i/100, n, A)"
+   },
+   "check": {
+    "vars": {
+     "i": 5,
+     "A": 100,
+     "n": 10,
+     "g": 2
+    },
+    "expect": {
+     "pv": 772.17
+    }
+   }
+  },
+  {
+   "id": "c09-e01",
+   "chapter": 9,
+   "topic": "Lump sum vs annuity",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "I won the lottery! I can take ${L} now or ${A} at the end of each year for {n} years. Which is worth more if the interest rate is {r1}%? And at {r2}%?",
+   "solution": "PV of the annuity = {A} × (1 − (1 + r)^−{n})/r. At {r1}%: {p1:0} → {?p1>L|take the annuity|take the lump sum}. At {r2}%: {p2:0} → {?p2>L|take the annuity|take the lump sum}. The ranking depends on the rate because the annuity's payments stretch far into the future.",
+   "vars": {
+    "L": {
+     "min": 800000,
+     "max": 1200000,
+     "step": 50000
+    },
+    "A": {
+     "min": 40000,
+     "max": 80000,
+     "step": 5000
+    },
+    "n": {
+     "choices": [
+      20,
+      25,
+      30
+     ]
+    },
+    "r1": {
+     "choices": [
+      4,
+      5,
+      6
+     ]
+    },
+    "r2": {
+     "choices": [
+      2,
+      3
+     ]
+    }
+   },
+   "compute": {
+    "p1": "pv(r1/100, n, A)",
+    "p2": "pv(r2/100, n, A)"
+   },
+   "check": {
+    "vars": {
+     "L": 1000000,
+     "A": 60000,
+     "n": 25,
+     "r1": 4,
+     "r2": 3
+    },
+    "expect": {
+     "p1": 937325,
+     "p2": 1044789
+    },
+    "tol": 0.0005
+   }
+  },
+  {
+   "id": "c09-e02",
+   "chapter": 9,
+   "topic": "Annuity timing",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Our office lease requires payments of ${A} a year for {n} years. What's its present value at {r}% if the payments are made (a) at the end of each year, (b) at the start of each year?",
+   "solution": "(a) {A} × (1 − {=1+r/100:2}^−{n})/{=r/100:2} = {pv:2}. (b) Paying a year earlier multiplies by {=1+r/100:2}: {=pv*(1+r/100):2}.",
+   "vars": {
+    "A": {
+     "min": 6000,
+     "max": 30000,
+     "step": 1000
+    },
+    "n": {
+     "min": 3,
+     "max": 10,
+     "step": 1
+    },
+    "r": {
+     "min": 4,
+     "max": 10,
+     "step": 1
+    }
+   },
+   "compute": {
+    "pv": "pv(r/100, n, A)"
+   },
+   "check": {
+    "vars": {
+     "A": 12000,
+     "n": 5,
+     "r": 7
+    },
+    "expect": {
+     "pv": 49202.37
+    }
+   }
+  },
+  {
+   "id": "c09-e03",
+   "chapter": 9,
+   "topic": "Deferred annuity",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "My pension will pay ${A} a year at the end of each year from year {s} to year {e}. What's it worth today at {r}%?",
+   "solution": "Value at the end of year {=s-1}: {A} × (1 − {=1+r/100:2}^−{=e-s+1})/{=r/100:2} = {v:2}. Discount back {=s-1} years: {v:2}/{=1+r/100:2}^{=s-1} = {=v/(1+r/100)^(s-1):2}.",
+   "vars": {
+    "A": {
+     "min": 10000,
+     "max": 40000,
+     "step": 2000
+    },
+    "s": {
+     "choices": [
+      11,
+      16,
+      21,
+      26
+     ]
+    },
+    "len": {
+     "choices": [
+      15,
+      20,
+      25
+     ]
+    },
+    "r": {
+     "min": 3,
+     "max": 7,
+     "step": 1
+    }
+   },
+   "compute": {
+    "e": "s+len-1",
+    "v": "pv(r/100, len, A)"
+   },
+   "check": {
+    "vars": {
+     "A": 20000,
+     "s": 21,
+     "len": 20,
+     "r": 5
+    },
+    "expect": {
+     "e": 40,
+     "v": 249244.21
+    }
+   }
+  },
+  {
+   "id": "c09-e04",
+   "chapter": 9,
+   "topic": "Loan amortisation schedule",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "I'm taking a car loan of ${L} at {r}% a year, repaid in {n} equal annual payments. What's the payment? Can you walk me through how much of the first payment is interest and how much repays principal, and what I'll still owe after it?",
+   "solution": "Payment = r·L/(1 − (1 + r)^−n) = {=r/100:2} × {L}/(1 − {=1+r/100:2}^−{n}) = {A:2}. Year 1: interest = {=r/100:2} × {L} = {=L*r/100:2}; principal = {A:2} − {=L*r/100:2} = {=A-L*r/100:2}; balance = {=L-(A-L*r/100):2}. Each year interest is charged on the opening balance, so the interest part shrinks and the principal part grows until the balance reaches zero.",
+   "vars": {
+    "L": {
+     "min": 10000,
+     "max": 40000,
+     "step": 1000
+    },
+    "r": {
+     "min": 4,
+     "max": 12,
+     "step": 1
+    },
+    "n": {
+     "min": 3,
+     "max": 6,
+     "step": 1
+    }
+   },
+   "compute": {
+    "A": "pmt(r/100, n, L)"
+   },
+   "check": {
+    "vars": {
+     "L": 24000,
+     "r": 9,
+     "n": 4
+    },
+    "expect": {
+     "A": 7408.05
+    }
+   }
+  },
+  {
+   "id": "c09-x03",
+   "chapter": 9,
+   "topic": "Amortisation schedule (full)",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A loan of {L} at {r}% is repaid in three equal annual payments. What's the payment, and can you give me the full schedule (opening balance, interest, principal, closing balance each year)?",
+   "solution": "A = {=r/100:2} × {L}/(1 − {=1+r/100:2}^−3) = {A:2}. Year 1: interest {i1:2}, principal {=A-i1:2}, closing {b1:2}. Year 2: interest {i2:2}, principal {=A-i2:2}, closing {b2:2}. Year 3: interest {=b2*r/100:2}, principal {b2:2}, closing 0.",
+   "vars": {
+    "L": {
+     "min": 5000,
+     "max": 30000,
+     "step": 1000
+    },
+    "r": {
+     "min": 4,
+     "max": 10,
+     "step": 1
+    }
+   },
+   "compute": {
+    "A": "pmt(r/100, 3, L)",
+    "i1": "L*r/100",
+    "b1": "L-(pmt(r/100,3,L)-L*r/100)",
+    "i2": "(L-(pmt(r/100,3,L)-L*r/100))*r/100",
+    "b2": "(L-(pmt(r/100,3,L)-L*r/100))*(1+r/100)-pmt(r/100,3,L)"
+   },
+   "check": {
+    "vars": {
+     "L": 10000,
+     "r": 6
+    },
+    "expect": {
+     "A": 3741.1,
+     "b1": 6858.9,
+     "b2": 3529.34
+    }
+   }
+  },
+  {
+   "id": "c09-e05",
+   "chapter": 9,
+   "topic": "Mortgage payments and effective rate",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "I'm taking a ${L} mortgage repaid monthly over {y} years. The quoted rate is {r}% a year, compounded monthly. What's my monthly payment, and what's the effective annual rate?",
+   "solution": "Monthly rate = {r}/12 = {=r/1200:5}, n = {=y*12}. Payment = {=r/1200:5} × {L}/(1 − (1 + {=r/1200:5})^−{=y*12}) = {A:2}. Effective annual rate = (1 + {=r/1200:5})¹² − 1 = {=((1+r/1200)^12-1)*100:2}%.",
+   "vars": {
+    "L": {
+     "min": 150000,
+     "max": 600000,
+     "step": 25000
+    },
+    "y": {
+     "choices": [
+      15,
+      20,
+      25,
+      30
+     ]
+    },
+    "r": {
+     "min": 3,
+     "max": 8,
+     "step": 0.25
+    }
+   },
+   "compute": {
+    "A": "pmt(r/1200, y*12, L)"
+   },
+   "check": {
+    "vars": {
+     "L": 300000,
+     "y": 30,
+     "r": 6
+    },
+    "expect": {
+     "A": 1798.65
+    }
+   }
+  },
+  {
+   "id": "c09-e06",
+   "chapter": 9,
+   "topic": "NPV and IRR",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "A project costs ${C} and returns ${A} at the end of each of {n} years. What's its NPV at {r1}% and at {r2}%? Roughly where does its IRR lie?",
+   "solution": "NPV = −{C} + {A} × annuity factor. At {r1}%: {n1:2}. At {r2}%: {n2:2}. The IRR (where NPV = 0) is about {irr:2}% {?n1>0 && n2>0|— above both rates, so the project is worth doing at either|{?n1<0 && n2<0|— below both rates|— between the two rates}}.",
+   "vars": {
+    "C": {
+     "min": 4000,
+     "max": 10000,
+     "step": 500
+    },
+    "A": {
+     "min": 1000,
+     "max": 3000,
+     "step": 100
+    },
+    "n": {
+     "min": 3,
+     "max": 6,
+     "step": 1
+    },
+    "r1": {
+     "choices": [
+      6,
+      8
+     ]
+    },
+    "r2": {
+     "choices": [
+      10,
+      12
+     ]
+    }
+   },
+   "compute": {
+    "n1": "-C+pv(r1/100,n,A)",
+    "n2": "-C+pv(r2/100,n,A)",
+    "irr": "100*irr(-C, n>=1?A:0, n>=2?A:0, n>=3?A:0, n>=4?A:0, n>=5?A:0, n>=6?A:0)"
+   },
+   "constraints": [
+    "A*n>C*1.05"
+   ],
+   "check": {
+    "vars": {
+     "C": 5000,
+     "A": 1500,
+     "n": 4,
+     "r1": 8,
+     "r2": 10
+    },
+    "expect": {
+     "n1": -31.81,
+     "n2": -245.2,
+     "irr": 7.71
+    },
+    "tol": 0.01
+   }
+  },
+  {
+   "id": "c09-x05",
+   "chapter": 9,
+   "topic": "NPV vs IRR rule",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A machine costs {C} and yields {A} at the end of each of the next three years. Our cost of funds is {r}%. What's the NPV, roughly what's the IRR, and should we buy it?",
+   "solution": "NPV = −{C} + {A} × (1 − {=1+r/100:2}^−3)/{=r/100:2} = {npv:2}. The IRR solves {A}(1 − (1 + i)^−3)/i = {C}: i ≈ {irr:2}%. {?npv>0|NPV is positive and the IRR exceeds the {r}% cost of funds, so buy it — the rules agree here.|NPV is negative and the IRR is below {r}%, so don't buy it.} (For mutually exclusive projects of different scale/timing the rules can disagree; NPV is the reliable one.)",
+   "vars": {
+    "C": {
+     "min": 800,
+     "max": 2000,
+     "step": 100
+    },
+    "A": {
+     "min": 300,
+     "max": 900,
+     "step": 50
+    },
+    "r": {
+     "min": 5,
+     "max": 12,
+     "step": 1
+    }
+   },
+   "compute": {
+    "npv": "-C+pv(r/100,3,A)",
+    "irr": "100*irr(-C,A,A,A)"
+   },
+   "constraints": [
+    "abs(-C+pv(r/100,3,A))>5",
+    "3*A>C"
+   ],
+   "check": {
+    "vars": {
+     "C": 1000,
+     "A": 400,
+     "r": 8
+    },
+    "expect": {
+     "npv": 30.84,
+     "irr": 9.7
+    },
+    "tol": 0.01
+   }
+  },
+  {
+   "id": "c09-e07",
+   "chapter": 9,
+   "topic": "Bond pricing",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A {n}-year bond with face value 1,000 pays a {c}% annual coupon. What's its price if the market yield is {y}%? Can you explain without calculating why it's {?c<y|below|above} 1,000?",
+   "solution": "P = Σ coupons/(1 + y)^t + 1,000/(1 + y)^{n} = {P:2}. The coupon rate ({c}%) is {?c<y|below|above} the market yield ({y}%), so investors pay {?c<y|less|more} than face value: the {?c<y|gain from buying below face value compensates for the low coupon|premium paid is offset by the above-market coupons}.",
+   "vars": {
+    "n": {
+     "min": 2,
+     "max": 5,
+     "step": 1
+    },
+    "c": {
+     "min": 2,
+     "max": 10,
+     "step": 1
+    },
+    "y": {
+     "min": 2,
+     "max": 10,
+     "step": 1
+    }
+   },
+   "compute": {
+    "P": "pv(y/100, n, 10*c, 1000)"
+   },
+   "constraints": [
+    "c!=y"
+   ],
+   "check": {
+    "vars": {
+     "n": 2,
+     "c": 8,
+     "y": 10
+    },
+    "expect": {
+     "P": 965.29
+    }
+   }
+  },
+  {
+   "id": "c09-x06",
+   "chapter": 9,
+   "topic": "Bond prices and yields move inversely",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A three-year bond with face value 1,000 pays an annual coupon of 50. What's its price if the market yield is 6%? What if the yield falls to 4%? And at 5%?",
+   "solution": "At 6%: 50/1.06 + 50/1.06² + 1,050/1.06³ = 47.17 + 44.50 + 881.60 = 973.27. At 4%: 1,027.75. At 5% (= the coupon rate): exactly 1,000. Bond prices and yields move in opposite directions."
+  },
+  {
+   "id": "c09-e08",
+   "chapter": 9,
+   "topic": "Real vs nominal discounting",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "A project produces {X} a year in today's prices for three years, and prices rise {pi}% a year. The nominal discount rate is {nom:2}%. Can you value it (a) by discounting nominal cash flows at the nominal rate and (b) by discounting real cash flows at the real rate? Why do the answers match?",
+   "solution": "Real rate = (1 + nominal)/(1 + inflation) − 1 = {=(1+nom/100)/(1+pi/100):4} − 1 = {rr:2}%. (a) Nominal flows {=X*(1+pi/100):2}, {=X*(1+pi/100)^2:2}, {=X*(1+pi/100)^3:2} discounted at {nom:2}% → {v:2}. (b) {X} × (1 − {=1+rr/100:4}^−3)/{=rr/100:4} = {v:2}. They agree because each nominal factor (1 + π)^t/(1 + i)^t equals the real factor 1/(1 + r)^t.",
+   "vars": {
+    "X": {
+     "min": 500,
+     "max": 3000,
+     "step": 100
+    },
+    "pi": {
+     "min": 2,
+     "max": 5,
+     "step": 1
+    },
+    "rr": {
+     "min": 3,
+     "max": 7,
+     "step": 1
+    }
+   },
+   "compute": {
+    "nom": "((1+rr/100)*(1+pi/100)-1)*100",
+    "v": "pv(rr/100, 3, X)"
+   },
+   "check": {
+    "vars": {
+     "X": 1000,
+     "pi": 3,
+     "rr": 5
+    },
+    "expect": {
+     "nom": 8.15,
+     "v": 2723.25
+    }
+   }
+  },
+  {
+   "id": "c09-e09",
+   "chapter": 9,
+   "topic": "Two-period consumption choice",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "A household with u(c) = ln c and no impatience (β = 1) earns {y1} this period and {y2} next period, and the interest rate is {r}%. How much will it consume in each period, and how much will it save (or borrow) now? What if it couldn't borrow?",
+   "solution": "Wealth W = {y1} + {y2}/{=1+r/100:2} = {W:2}. With β = 1: c₁ = W/2 = {=W/2:2}, c₂ = {=1+r/100:2} × {=W/2:2} = {=W/2*(1+r/100):2}. Saving = {y1} − {=W/2:2} = {=y1-W/2:2} {?y1<W/2|(it borrows and repays with interest next period)|(it saves)}. {?y1<W/2|Without borrowing it would consume c₁ = {y1}, c₂ = {y2}: lower lifetime utility.|The borrowing constraint doesn't bind here.}",
+   "vars": {
+    "y1": {
+     "min": 30,
+     "max": 80,
+     "step": 10
+    },
+    "y2": {
+     "min": 110,
+     "max": 220,
+     "step": 11
+    },
+    "r": {
+     "choices": [
+      5,
+      10
+     ]
+    }
+   },
+   "compute": {
+    "W": "y1+y2/(1+r/100)"
+   },
+   "check": {
+    "vars": {
+     "y1": 50,
+     "y2": 165,
+     "r": 10
+    },
+    "expect": {
+     "W": 200
+    }
+   }
+  },
+  {
+   "id": "c09-x07",
+   "chapter": 9,
+   "topic": "Consumption smoothing with impatience",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "With log utility u(c) = ln c and discount factor β = 0.9, a household earns 100 now and 110 next period at r = 10%. How much does it consume in each period? Does it borrow?",
+   "solution": "W = 100 + 110/1.1 = 200. Euler equation with log utility: c₂ = β(1 + r)c₁, so c₁ = W/(1 + β) = 200/1.9 = 105.26 and c₂ = 0.9 × 1.1 × 105.26 = 104.21. Check: 105.26 + 104.21/1.1 = 200. It borrows 5.26 now, so consumption is nearly equal across periods even though income isn't."
+  },
+  {
+   "id": "c09-e10",
+   "chapter": 9,
+   "topic": "Growing annuity formula",
+   "kind": "theory",
+   "difficulty": 3,
+   "text": "How do I show that the present value of n payments — the first, A, at the end of period 1, each growing at rate g, discounted at i ≠ g — equals [A/(i − g)]·[1 − ((1 + g)/(1 + i))ⁿ]? And what happens as n → ∞?",
+   "solution": "The payments are A(1 + g)^(t−1), so PV = A/(1 + i) × Σ q^t (t = 0 … n−1) with q = (1 + g)/(1 + i). The geometric sum is (1 − qⁿ)/(1 − q), and (1 + i)(1 − q) = i − g, giving the formula. If g < i, qⁿ → 0 and the value tends to the growing perpetuity A/(i − g); if g ≥ i it grows without limit."
+  },
+  {
+   "id": "c10-e01",
+   "chapter": 10,
+   "topic": "The accounting equation",
+   "kind": "theory",
+   "difficulty": 1,
+   "text": "For each transaction, what happens to assets, liabilities and equity? (a) a firm buys inventory for 5,000 cash; (b) it buys inventory for 5,000 on credit; (c) it pays a supplier 2,000; (d) it sells goods costing 3,000 for 4,500 on credit; (e) it pays a dividend of 1,000; (f) it repays 10,000 of a bank loan.",
+   "solution": "(a) Inventory +5,000, cash −5,000: total assets unchanged. (b) Inventory +5,000, accounts payable +5,000. (c) Cash −2,000, payables −2,000. (d) Receivables +4,500, inventory −3,000: assets +1,500, retained earnings +1,500 (revenue 4,500 − COGS 3,000). (e) Cash −1,000, retained earnings −1,000 — a distribution to owners, not an expense. (f) Cash −10,000, loan −10,000."
+  },
+  {
+   "id": "c10-e02",
+   "chapter": 10,
+   "topic": "Preparing financial statements",
+   "kind": "calc",
+   "difficulty": 3,
+   "text": "Our café, Harbour Coffee, had this balance sheet on 31 January: cash 45,000, receivables 3,000, inventory 2,000, equipment 29,500; loan 20,000, payables 4,000, interest payable 100, share capital 50,000, retained earnings 5,400. In February we: sold drinks for 20,000 cash using supplies that cost 7,000; bought supplies for 9,000 on credit; collected the 3,000 the office owed us; paid the supplier 10,000; paid wages of 7,000; recorded depreciation of 500; and accrued another 100 of interest (none paid). What's the 28 February balance sheet, February's income statement, and operating cash flow?",
+   "solution": "Income statement: revenue 20,000 − COGS 7,000 − wages 7,000 − depreciation 500 − interest 100 = net income 5,400. Balance sheet: cash 51,000; receivables 0; inventory 4,000; equipment 29,000 → assets 84,000. Payables 3,000, interest payable 200, loan 20,000, share capital 50,000, retained earnings 10,800 → 84,000. Operating cash flow 6,000 (direct: 23,000 received − 10,000 suppliers − 7,000 wages; indirect: 5,400 + 500 + 3,000 − 2,000 − 1,000 + 100)."
+  },
+  {
+   "id": "c10-e03",
+   "chapter": 10,
+   "topic": "Accrual vs cash accounting",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "On 1 December our software company signed a contract to provide a year of service for {P}, paid in full on signing. Our financial year ends on 31 December. How much revenue do we recognise this year? What liability appears on the balance sheet? And what's the effect on operating cash flow?",
+   "solution": "One month of service has been delivered: revenue = {P}/12 = {=P/12:2}. The remaining {=P*11/12:2} is a liability (deferred revenue / contract liability) — 11 months of service still owed. Operating cash flow includes the full {P} received, which is why growing subscription businesses often show cash flow well above net income.",
+   "vars": {
+    "P": {
+     "min": 6000,
+     "max": 60000,
+     "step": 1200
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "P": 12000
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c10-e04",
+   "chapter": 10,
+   "topic": "Value added and GDP",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A mine produces iron ore worth {o} and sells it to a steelmaker. The steelmaker also buys energy worth {en} and makes steel worth {s}, of which {sd} goes to a carmaker and the rest is exported. The carmaker buys parts worth {p} from other domestic firms (which used no purchased inputs) and makes cars worth {c}, all sold to households. The energy producer used no purchased inputs. What's each firm's value added and GDP? Can you check it with the expenditure approach?",
+   "solution": "Mine {o}; energy {en}; steelmaker {s} − {o} − {en} = {=s-o-en}; parts makers {p}; carmaker {c} − {sd} − {p} = {=c-sd-p}. GDP = {gdp}. Expenditure: consumption (cars) {c} + exports (steel) {=s-sd} = {=c+s-sd} ✓.",
+   "vars": {
+    "o": {
+     "min": 150,
+     "max": 300,
+     "step": 50
+    },
+    "en": {
+     "min": 50,
+     "max": 150,
+     "step": 50
+    },
+    "s": {
+     "min": 500,
+     "max": 800,
+     "step": 100
+    },
+    "x": {
+     "min": 100,
+     "max": 200,
+     "step": 50
+    },
+    "p": {
+     "min": 200,
+     "max": 400,
+     "step": 50
+    },
+    "c": {
+     "min": 1000,
+     "max": 1500,
+     "step": 100
+    }
+   },
+   "compute": {
+    "sd": "s-x",
+    "gdp": "o+en+(s-o-en)+p+(c-(s-x)-p)"
+   },
+   "constraints": [
+    "s>o+en",
+    "c>s-x+p"
+   ],
+   "check": {
+    "vars": {
+     "o": 200,
+     "en": 100,
+     "s": 600,
+     "x": 150,
+     "p": 300,
+     "c": 1200
+    },
+    "expect": {
+     "gdp": 1350
+    }
+   }
+  },
+  {
+   "id": "c10-e05",
+   "chapter": 10,
+   "topic": "What counts in GDP?",
+   "kind": "theory",
+   "difficulty": 1,
+   "text": "Is each of these in this year's GDP, and if so in which expenditure component? (a) a household buys a newly built house; (b) a household buys a ten-year-old house; (c) a firm buys a new delivery van; (d) the government pays unemployment benefits; (e) the government pays teachers' salaries; (f) a German firm buys machinery made in China; (g) a Malaysian factory produces chips that are unsold at year end; (h) I buy shares in a company.",
+   "solution": "(a) Yes — residential investment (I). (b) No — produced in an earlier year (an agent's commission would count). (c) Yes — business investment (I). (d) No — a transfer, not a purchase of output. (e) Yes — government purchases (G). (f) Germany: in I but subtracted in imports, so no net effect; China: exports, in Chinese GDP. (g) Yes — Malaysian inventory investment. (h) No — a financial transaction, not production."
+  },
+  {
+   "id": "c10-e06",
+   "chapter": 10,
+   "topic": "GDP vs GNI",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "Our country's GDP is {G}. Foreign-owned firms here earn profits of {f}, which they send home. Residents earn {i} in interest on foreign bonds and {w} in wages from working across the border. What's GNI, and which measure better reflects residents' incomes?",
+   "solution": "GNI = GDP − income paid to foreigners + income received from abroad = {G} − {f} + {i} + {w} = {=G-f+i+w}. GNI is the better guide to residents' incomes, because the {f} of profits belongs to foreigners.",
+   "vars": {
+    "G": {
+     "min": 300,
+     "max": 1000,
+     "step": 50
+    },
+    "f": {
+     "min": 20,
+     "max": 100,
+     "step": 10
+    },
+    "i": {
+     "min": 5,
+     "max": 30,
+     "step": 5
+    },
+    "w": {
+     "min": 2,
+     "max": 10,
+     "step": 1
+    }
+   },
+   "compute": {},
+   "check": {
+    "vars": {
+     "G": 500,
+     "f": 60,
+     "i": 15,
+     "w": 5
+    },
+    "expect": {}
+   }
+  },
+  {
+   "id": "c10-x09",
+   "chapter": 10,
+   "topic": "Laspeyres, Paasche and Fisher indexes",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "My household's purchases. Base period: bread 100 loaves at 2.00, 1 phone at 500, 12 months' rent at 800. Current period: 95 loaves at 2.20, 1.2 phones at {ph}, 12 months' rent at 840. What are the Laspeyres, Paasche and Fisher price indexes?",
+   "solution": "Base basket: at base prices 10,300; at current prices 220 + {ph} + 10,080 = {cb} → Laspeyres = {L:4}. Current basket: at current prices 209 + {=1.2*ph} + 10,080 = {cc}; at base prices 190 + 600 + 9,600 = 10,390 → Paasche = {P:4}. Fisher = √(L × P) = {=sqrt(L*P):4}. Laspeyres ignores substitution toward goods that got cheaper, so it is usually higher.",
+   "vars": {
+    "ph": {
+     "choices": [
+      350,
+      400,
+      450,
+      480
+     ]
+    }
+   },
+   "compute": {
+    "cb": "220+ph+10080",
+    "cc": "209+1.2*ph+10080",
+    "L": "(220+ph+10080)/10300",
+    "P": "(209+1.2*ph+10080)/10390"
+   },
+   "check": {
+    "vars": {
+     "ph": 450
+    },
+    "expect": {
+     "L": 1.0437,
+     "P": 1.0423
+    }
+   }
+  },
+  {
+   "id": "c10-e08",
+   "chapter": 10,
+   "topic": "CPI vs GDP deflator",
+   "kind": "theory",
+   "difficulty": 1,
+   "text": "Our country imports all its oil. The world oil price doubles and nothing else changes immediately. What happens to (a) the CPI and (b) the GDP deflator?",
+   "solution": "(a) The CPI rises — oil products (petrol, heating) are in the consumer basket, imported or not. (b) The GDP deflator is not directly affected, because imported oil isn't domestic production. Later, domestic firms may pass on higher energy costs, which does raise the deflator."
+  },
+  {
+   "id": "c10-e09",
+   "chapter": 10,
+   "topic": "Base-year bias in real GDP",
+   "kind": "calc",
+   "difficulty": 3,
+   "text": "An economy produces apples and computers. Year 1: 100 apples at 1, 10 computers at 100. Year 2: 110 apples at 1.2, 15 computers at 80. Using year 1 as the base, what's real GDP growth and the GDP deflator for year 2? Why would a chain-weighted measure give a different answer?",
+   "solution": "Nominal GDP: 1,100 → 1,332. Real GDP in year 2 at year-1 prices = 110 + 1,500 = 1,610: growth 46.4%. Deflator = 1,332/1,610 = 0.827, implying −17.3% inflation — computers' price fell, and valuing year-2 output at year-1's high computer prices inflates real GDP. Chain-weighting (Fisher quantity index, growth 45.6%) gives a deflator of (1,332/1,100)/1.4557 = 0.832, about −16.8%. The base year changes measured real growth and inflation."
+  },
+  {
+   "id": "c10-e10",
+   "chapter": 10,
+   "topic": "Sector financial balances",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "An economy has Y = {Y}, C = {Cn}, I = {I}, G = {G}, T = {T} and imports M = {M}. What are exports, private saving and the three sector balances? Who's financing whom?",
+   "solution": "X = Y − C − I − G + M = {X}. Private saving S = Y − T − C = {S}. Private balance S − I = {=S-I}; government T − G = {=T-G}; rest of world M − X = {=M-X}. They sum to zero. {?M-X>0|Foreigners are in surplus ({=M-X}) vis-à-vis this country — it runs a current-account deficit financed from abroad.|The country runs a current-account surplus: it lends {=X-M} to the rest of the world.}",
+   "vars": {
+    "Y": {
+     "choices": [
+      1000,
+      2000,
+      3000
+     ]
+    },
+    "cs": {
+     "min": 0.6,
+     "max": 0.7,
+     "step": 0.05
+    },
+    "is": {
+     "min": 0.15,
+     "max": 0.22,
+     "step": 0.01
+    },
+    "gs": {
+     "min": 0.18,
+     "max": 0.25,
+     "step": 0.01
+    },
+    "ts": {
+     "min": 0.17,
+     "max": 0.24,
+     "step": 0.01
+    },
+    "ms": {
+     "min": 0.15,
+     "max": 0.3,
+     "step": 0.05
+    }
+   },
+   "compute": {
+    "Cn": "Y*cs",
+    "I": "Y*is",
+    "G": "Y*gs",
+    "T": "Y*ts",
+    "M": "Y*ms",
+    "X": "Y-Y*cs-Y*is-Y*gs+Y*ms",
+    "S": "Y-Y*ts-Y*cs"
+   },
+   "constraints": [
+    "Y-Y*cs-Y*is-Y*gs+Y*ms>0"
+   ],
+   "check": {
+    "vars": {
+     "Y": 2000,
+     "cs": 0.65,
+     "is": 0.2,
+     "gs": 0.225,
+     "ts": 0.19,
+     "ms": 0.25
+    },
+    "expect": {
+     "X": 350,
+     "S": 320
+    }
+   }
+  },
+  {
+   "id": "c10-e11",
+   "chapter": 10,
+   "topic": "Identities vs theories",
+   "kind": "theory",
+   "difficulty": 2,
+   "text": "A politician says: \"A country that cuts its government deficit will automatically improve its current account.\" Is that right? Use the sector balances identity.",
+   "solution": "X − M ≡ (S − I) + (T − G). If T − G rises, the current account improves only if the private balance S − I doesn't fall by an offsetting amount — and it might: fiscal tightening can reduce incomes and private saving, or lower interest rates can raise investment. Nothing is automatic; the claim confuses an identity with a theory of behaviour."
+  },
+  {
+   "id": "c10-e12",
+   "chapter": 10,
+   "topic": "Data revisions",
+   "kind": "theory",
+   "difficulty": 2,
+   "text": "Our central bank raised rates after an advance estimate showed 4% annual growth. Two years later the figure was revised to 2%. Was the decision a mistake? What else would you want to know?",
+   "solution": "Not necessarily: judge a decision against the information available at the time and the costs of waiting. You'd want to know what other indicators showed then (employment, inflation, surveys), how uncertain the advance estimate was known to be, and the costs of acting vs not acting. If growth looked strong and inflation was rising, raising rates may have been sensible even though the estimate was later revised down."
+  },
+  {
+   "id": "c10-e13",
+   "chapter": 10,
+   "topic": "Value added of a firm",
+   "kind": "calc",
+   "difficulty": 2,
+   "text": "In January our café had revenue of 18,000, used 6,000 of supplies bought from other domestic firms, paid wages of 6,000, accrued 100 of interest, recorded 500 of depreciation and made a profit of 5,400. We also bought 30,000 of equipment. What was our contribution to GDP (value added)? And why doesn't buying the equipment reduce it?",
+   "solution": "Value added = output − intermediate inputs used = 18,000 − 6,000 = 12,000. It is paid out as wages 6,000 + interest 100 + depreciation 500 + profit 5,400 = 12,000 (the income approach for one firm). Equipment is a capital good, not an intermediate input — its purchase is investment in GDP; only its depreciation (part of gross value added) reflects its use."
+  },
+  {
+   "id": "c10-x07",
+   "chapter": 10,
+   "topic": "Three approaches to GDP",
+   "kind": "calc",
+   "difficulty": 1,
+   "text": "A bread chain: a farm grows wheat worth 100 (wages 60, profit 40, no purchased inputs); a mill turns it into flour worth 250 (wages 100, profit 50); a bakery makes bread worth 400 (wages 110, profit 40). A machine-maker builds an oven worth 50 for the bakery (wages 30, profit 20, no inputs). Households buy all the bread. What's GDP by the production, income and expenditure approaches?",
+   "solution": "Production (value added): farm 100 + mill 150 + bakery 150 + machine-maker 50 = 450. Income: wages 300 + profits 150 = 450. Expenditure: consumption (bread) 400 + investment (oven) 50 = 450. Summing gross outputs (800) would double-count intermediate inputs."
+  }
+ ]
+}

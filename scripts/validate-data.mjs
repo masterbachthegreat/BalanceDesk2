@@ -4,7 +4,7 @@ import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { instantiate, computeEnv, fill } from '../src/js/game/template.js';
+import { instantiate, computeEnv, fill, formatValue } from '../src/js/game/template.js';
 import { evaluate } from '../src/js/core/expr.js';
 
 const require = createRequire(import.meta.url);
@@ -59,7 +59,7 @@ for (const q of D.questions) {
   else if (!ranks.get(q.rank).chapters.includes(q.chapter)) warn(`${where}: chapter ${q.chapter} not in rank ${q.rank}`);
   if (!q.text || !q.solution || !q.topic) err(`${where}: missing text/solution/topic`);
   if (!q.vars) {
-    if (/\{=?[A-Za-z_][^{}]*\}/.test(q.text + q.solution)) warn(`${where}: has {placeholders} but no vars`);
+    if (/\{[=?]?[A-Za-z_][^{}]*\}/.test(q.text + q.solution)) warn(`${where}: has {placeholders} but no vars`);
     continue;
   }
   try {
@@ -69,13 +69,20 @@ for (const q of D.questions) {
         if (!close(env[k], v, q.check.tol ?? 0.006)) err(`${where}: check ${k} = ${env[k]} but book says ${v}`);
       }
       const t = fill(q.text, env) + fill(q.solution, env);
-      if (/\{=?[A-Za-z_][^{}]*\}/.test(t)) err(`${where}: unfilled placeholder in book check: ${t.match(/\{=?[A-Za-z_][^{}]*\}/)[0]}`);
+      if (/\{[=?]?[A-Za-z_][^{}]*\}/.test(t)) err(`${where}: unfilled placeholder in book check: ${t.match(/\{[=?]?[A-Za-z_][^{}]*\}/)[0]}`);
     } else warn(`${where}: templated question without a book check`);
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 200; i++) {
       const inst = instantiate(q);
       for (const [k, v] of Object.entries(inst.values)) if (typeof v === 'number' && !Number.isFinite(v)) throw new Error(`${k} is ${v}`);
       for (const c of q.constraints || []) if (!evaluate(c, inst.values)) throw new Error('constraint never satisfied: ' + c);
-      if (/\{=?[A-Za-z_][^{}]*\}/.test(inst.text + inst.solution)) throw new Error('unfilled placeholder');
+      if (/\{[=?]?[A-Za-z_][^{}]*\}/.test(inst.text + inst.solution)) throw new Error('unfilled placeholder');
+      // a non-zero value must not be shown as 0 because of too few decimals
+      for (const m of (q.text + ' ' + q.solution).matchAll(/\{(=?)([^{}?|]+?)(?::([a-z0-9]+))?\}/gi)) {
+        const v = m[1] ? evaluate(m[2], inst.values) : inst.values[m[2].trim()];
+        if (typeof v !== "number" || Math.abs(v) < 1e-9) continue;
+        const shown = parseFloat(formatValue(v, m[3]).replace(/,/g, ''));
+        if (shown === 0) throw new Error(`${m[0]} shows as 0 but is ${v}`);
+      }
     }
   } catch (e) {
     err(`${where}: ${e.message}`);
