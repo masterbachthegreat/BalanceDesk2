@@ -17,6 +17,7 @@ export function openDrawer() {
     ['📝', 'Notepad', () => ui.openNotepad(), !shop.hasTool('notepad')],
     ['🤖', 'Desk Bot', () => ui.openChat('bot')],
     ['🎓', 'Mentor', () => ui.openChat('mentor')],
+    ['💼', 'Manager (Diane)', () => ui.openChat('boss')],
     ['🌗', document.documentElement.dataset.theme === 'day' ? 'Night mode' : 'Day mode', () => ui.toggleDayNight()],
     ['⚙', 'Settings', () => ui.openSettings()],
     ['📂', 'Open save folder', () => window.api.openDataFolder()],

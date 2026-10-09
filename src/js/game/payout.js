@@ -20,6 +20,19 @@ export function finalStars(chat, gradeStars) {
   return { stars, emojiBonus, notes };
 }
 
+// Best factor up to the ideal reply time, linear down to `atSlow` at the slow mark, then down
+// to `minFactor` at twice the slow mark; each chase costs nudgePenalty. Rush chats use minutes.
+export function timeFactor(avgMs, rush = false, nudges = 0) {
+  const T = cfg().pay.time;
+  const ideal = rush ? cfg().rush.idealReplyMs : cfg().world.idealReplyMs;
+  const slow = rush ? cfg().rush.slowReplyMs : T.slowReplyMs;
+  let f;
+  if (avgMs <= ideal) f = T.bestFactor;
+  else if (avgMs <= slow) f = T.bestFactor - (T.bestFactor - T.atSlow) * (avgMs - ideal) / (slow - ideal);
+  else f = T.atSlow - (T.atSlow - T.minFactor) * Math.min(1, (avgMs - slow) / slow);
+  return clamp(Math.round((f - T.nudgePenalty * nudges) * 100) / 100, T.minFactor, T.bestFactor);
+}
+
 function lengthFactor(exchanges) {
   for (const row of cfg().pay.lengthFactors) if (exchanges <= row.maxExchanges) return row.factor;
   return 1;
@@ -55,11 +68,21 @@ export function computePayout(chat, grade, modifiers = S.profile.modifiers) {
 
   const T = P.time;
   let avgMs = cs.latencies.length ? cs.latencies.reduce((s, x) => s + x, 0) / cs.latencies.length : null;
-  if (avgMs === null) avgMs = Math.max(0, (chat.endedA || 0) - (cs.lastCustomerA || chat.startedA));
+  if (avgMs === null) avgMs = Math.max(0, (chat.endedAt || 0) - (cs.lastCustomerAt || chat.createdAt));
   const nudges = cs.nudges || 0;
-  const tf = clamp(T.bestFactor - T.lossPerMinute * (avgMs / 60000) - T.nudgePenalty * nudges, T.minFactor, T.bestFactor);
+  const tf = timeFactor(avgMs, chat.rush, nudges);
   amount *= tf;
   lines.push({ label: 'Response time', why: `avg reply ${durationWords(avgMs)}${nudges ? `, chased ${nudges}×` : ''}`, mult: tf });
+
+  if (chat.rush) {
+    amount *= cfg().rush.payMult;
+    lines.push({ label: 'Rush shift', why: 'Extra customers sent your way by your manager', mult: cfg().rush.payMult });
+  }
+  const raise = S.profile.payRaise || 0;
+  if (raise > 0) {
+    amount *= 1 + raise;
+    lines.push({ label: 'Pay raise', why: `+${Math.round(raise * 100)}% from your manager`, mult: 1 + raise });
+  }
 
   // bonuses from memos and consumables
   const used = [];

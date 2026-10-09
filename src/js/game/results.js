@@ -15,23 +15,46 @@ const END_TEXT = {
   left: '🚪 The customer left the conversation',
   timeout: '⌛ The customer got tired of waiting and left',
   closed: '✖ You closed this conversation',
+  missed: '⌛ The customer gave up before you ever replied',
 };
 
 const grading = new Set();
 
-export async function finishConversation(chat, reason) {
+// `at` is when it ended (in the past during catch-up).
+export async function finishConversation(chat, reason, at = clock.now()) {
   if (chat.status !== 'active') return;
   const cs = chat.cs;
+  const answered = chat.messages.some((m) => m.from === 'me' && !m.after && !m.local);
+  if (!answered && reason !== 'closed') reason = 'missed';
   chat.status = 'grading';
-  chat.endedA = clock.now();
-  chat.endedAt = Date.now();
+  chat.endedAt = at;
   chat.endReason = reason;
   cs.typing = false;
-  cs.pendingReadA = null;
-  cs.waitingSinceA = null;
-  sysMessage(chat, END_TEXT[reason] || 'Conversation ended');
-  sysMessage(chat, '⏳ Grading your answer…', { kind: 'grading' });
+  cs.readAt = cs.nudgeAt = cs.leaveAt = cs.waitingSince = null;
+  cs.onlineUntil = Math.min(cs.onlineUntil || 0, at);
+  sysMessage(chat, END_TEXT[reason] || 'Conversation ended', { t: at });
+  if (!answered) { noAnswer(chat, reason, at); return; }
+  sysMessage(chat, '⏳ Grading your answer…', { kind: 'grading', t: at });
   await gradeAndPay(chat);
+}
+
+// Nothing to grade: you never wrote to this customer.
+function noAnswer(chat, reason, at) {
+  const p = S.profile;
+  chat.status = 'ended';
+  chat.result = {
+    aiScore: 0, stars: 1, graderStars: 1, missed: true,
+    grade: { score: 0, stars: 1, summary: 'You never replied to this customer.', correctAnswer: chat.question.solution, strengths: [], improvements: ['Reply sooner: customers chase you after about 12 hours and then give up.'] },
+    payout: { lines: [{ label: 'No reply', why: reason === 'closed' ? 'You closed the chat without answering' : 'The customer gave up waiting', value: 0 }], total: 0 },
+    durationMs: at - chat.createdAt,
+    avgReplyMs: null,
+  };
+  p.stats.missed = (p.stats.missed || 0) + 1;
+  clock.today(at).missed++;
+  addMessage(chat, { from: 'sys', kind: 'payout', text: 'No pay', t: at });
+  if (!S.catchingUp) botSay(`📭 ${chat.customer.name}${chat.customer.vip ? ' 👑' : ''} (${handle(chat)}) ${reason === 'closed' ? 'was closed' : 'gave up'} before you replied. No pay.`, { silent: true });
+  touchProfile();
+  touchChat(chat);
 }
 
 function consumeModifiers(ids) {
@@ -55,7 +78,7 @@ export async function gradeAndPay(chat) {
     consumeModifiers(payout.usedModifiers);
     p.balance += payout.total;
     p.lifetimeEarned += payout.total;
-    const d = clock.today();
+    const d = clock.today(chat.endedAt);
     d.chats++; d.earned += payout.total; d.scoreSum += grade.score; d.starsSum += payout.stars;
 
     chat.result = {
@@ -64,13 +87,13 @@ export async function gradeAndPay(chat) {
       graderStars: grade.stars,
       grade,
       payout: { lines: payout.lines, total: payout.total },
-      durationMs: chat.endedA - chat.startedA,
+      durationMs: chat.endedAt - chat.createdAt,
       avgReplyMs: payout.avgReplyMs,
     };
     p.lastPayoutChat = chat.id;
     chat.status = 'ended';
     chat.messages = chat.messages.filter((m) => m.kind !== 'grading');
-    addMessage(chat, { from: 'sys', kind: 'payout', text: `Paid ${money(payout.total)}` });
+    addMessage(chat, { from: 'sys', kind: 'payout', text: `Paid ${money(payout.total)}`, t: Math.max(chat.endedAt, ...chat.messages.map((m) => m.t || 0)) });
     recordChat(chat);
     botSay(`💸 **${money(payout.total, { plus: true })}** from ${chat.customer.name}${chat.customer.vip ? ' 👑' : ''} (${handle(chat)}${chat.deleted ? ', deleted' : ''}) · ${starsText(payout.stars)} · score ${grade.score}/100\nBalance: **${money(p.balance)}**`, { silent: true });
     touchProfile();

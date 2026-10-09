@@ -3,7 +3,7 @@ import { S, touchChat, uid } from '../core/state.js';
 import { emit } from '../core/bus.js';
 import * as clock from './clock.js';
 
-export const SYSTEM_CHATS = ['bot', 'mentor', 'manager'];
+export const SYSTEM_CHATS = ['bot', 'mentor', 'manager', 'boss'];
 
 export function getChat(id) { return S.chats.get(id); }
 
@@ -16,7 +16,7 @@ export function activeCustomerChats() {
 }
 
 export function newChat(kind, fields = {}) {
-  const t = Date.now();
+  const t = clock.now();
   const chat = {
     id: fields.id || uid('c'),
     kind,
@@ -39,14 +39,17 @@ export function isViewing(chat) {
   return S.activeChatId === chat.id && S.focused && !S.showModal;
 }
 
-// msg: { from: 'me' | 'them' | 'sys', text, kind?, ... }
+// msg: { from: 'me' | 'them' | 'sys', text, kind?, t?, ... }
+// `t` defaults to now; catch-up (world.js) passes past times. Messages stay in time order.
 export function addMessage(chat, msg) {
-  const m = { id: uid('m'), t: Date.now(), a: clock.now(), ...msg };
-  chat.messages.push(m);
-  chat.lastAt = m.t;
+  const m = { id: uid('m'), ...msg, t: msg.t ?? clock.now() };
+  let i = chat.messages.length;
+  while (i > 0 && (chat.messages[i - 1].t || 0) > m.t) i--;
+  chat.messages.splice(i, 0, m);
+  chat.lastAt = Math.max(chat.lastAt || 0, m.t);
   if (m.from === 'them' && !isViewing(chat)) {
     chat.unread = (chat.unread || 0) + 1;
-    emit('incoming', chat);
+    if (!S.catchingUp) emit('incoming', chat);
   }
   // Telegram behaviour: a new message un-archives a chat
   if (m.from === 'them' && chat.archived && chat.kind === 'customer') chat.archived = false;

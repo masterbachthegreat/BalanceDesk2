@@ -1,13 +1,14 @@
 // Right column: the open chat (header, messages, composer, info panel).
 import { S, cfg } from '../core/state.js';
-import { escapeHtml, clockTime, dayLabel, duration, durationWords, money, starsText, stars, num } from '../core/format.js';
+import { escapeHtml, clockTime, dayLabel, waitWords, durationWords, money, starsText, stars, num } from '../core/format.js';
 import { chatAvatar } from './avatar.js';
 import { renderMarkdown, splitCharts } from './markdown.js';
 import { renderChart, destroyChartsIn } from './charts.js';
 import { displayName, handle, customerChats, markRead, getChat } from '../game/chats.js';
 import * as clock from '../game/clock.js';
 import * as shop from '../game/shop.js';
-import { onPlayerMessage, retryCustomer } from '../game/customers.js';
+import { onPlayerMessage, retryCustomer, isOnline } from '../game/customers.js';
+import * as boss from '../game/boss.js';
 import { gradeAndPay } from '../game/results.js';
 import { handleBotInput, handleChatCommand, COMMANDS, CHAT_COMMANDS } from '../game/bot.js';
 import { sendToMentor, retryMentor } from '../game/mentor.js';
@@ -25,28 +26,42 @@ function subtitle(chat) {
   if (chat.kind === 'bot') return { text: 'bot · type /help', cls: '' };
   if (chat.kind === 'manager') return { text: 'channel · official announcements', cls: '' };
   if (chat.kind === 'mentor') return chat.typing ? { text: 'typing…', cls: 'online' } : { text: 'your mentor · online', cls: 'online' };
+  if (chat.kind === 'boss') return boss.presenceText();
   if (chat.status === 'active') {
     if (chat.cs.typing) return { text: 'typing…', cls: 'online' };
-    return { text: chat.customer.vip ? 'online · VIP client' : 'online', cls: 'online' };
+    const vip = chat.customer.vip ? ' · VIP client' : '';
+    if (isOnline(chat)) return { text: 'online' + vip, cls: 'online' };
+    return { text: lastSeen(chat.cs.lastSeen) + vip, cls: '' };
   }
   if (chat.status === 'grading') return { text: 'conversation ended · grading…', cls: '' };
   const r = chat.result;
   return { text: r ? `conversation ended · ${starsText(r.stars)} · score ${r.aiScore}/100 · ${money(r.payout.total)}` : 'conversation ended', cls: '' };
 }
 
+function lastSeen(t) {
+  if (!t) return 'last seen a while ago';
+  const ago = clock.now() - t;
+  if (ago < 60000) return 'last seen just now';
+  if (ago < 3600000) return `last seen ${Math.floor(ago / 60000)} min ago`;
+  if (new Date(t).toDateString() === new Date(clock.now()).toDateString()) return 'last seen at ' + clockTime(t);
+  return `last seen ${dayLabel(t).toLowerCase()} at ${clockTime(t)}`;
+}
+
 function timersHtml(chat) {
   if (chat.kind !== 'customer' || chat.status !== 'active') return '';
   const cs = chat.cs;
-  let h = `<span class="timer-pill" title="Conversation time">⏱ ${duration(clock.now() - chat.startedA)}</span>`;
-  if (cs.waitingSinceA != null) {
-    const w = clock.now() - cs.waitingSinceA;
-    const cls = cs.nudgedA != null ? 'danger' : w > Math.min(cfg().customer.warnAfterMs || 300000, cs.patienceMs * 0.8) ? 'warn' : '';
-    h += `<span class="timer-pill ${cls}" title="The customer is waiting for your reply">⌛ waiting ${duration(w)}</span>`;
+  let h = `<span class="timer-pill" title="Since the customer first wrote">⏱ open ${waitWords(clock.now() - chat.createdAt)}</span>`;
+  if (cs.waitingSince != null) {
+    const w = clock.now() - cs.waitingSince;
+    const ideal = chat.rush ? cfg().rush.idealReplyMs : cfg().world.idealReplyMs;
+    const cls = cs.nudged ? 'danger' : w > ideal ? 'warn' : '';
+    h += `<span class="timer-pill ${cls}" title="The customer is waiting for your reply (ideal: within ${waitWords(ideal)})">⌛ waiting ${waitWords(w)}</span>`;
   } else if (cs.typing) {
     h += '<span class="timer-pill">✍ customer is typing</span>';
-  } else if (cs.pendingReadA != null) {
-    h += '<span class="timer-pill">👀 customer is reading</span>';
+  } else if (cs.readAt != null) {
+    h += `<span class="timer-pill" title="They'll read it next time they check their phone">${isOnline(chat) ? '👀 reading' : '📱 not read yet'}</span>`;
   }
+  if (chat.rush) h += '<span class="timer-pill" title="Rush shift customer: expects replies within minutes">⚡ rush</span>';
   return h;
 }
 
@@ -74,6 +89,7 @@ function isOnlyEmoji(t) {
 function payoutCard(chat) {
   const r = chat.result;
   if (!r) return '<div class="service">Paid</div>';
+  if (r.missed) return `<div class="payout-card"><div class="pc-title">No reply · ${escapeHtml(reasonText(chat.endReason))}</div><div style="font-size:13px">No pay and no rating. It doesn't count towards promotion.</div><div style="margin-top:8px"><button class="btn small" data-review="${chat.id}">🎓 Review with mentor</button></div></div>`;
   return `<div class="payout-card">
     <div class="pc-title">Conversation result · ${escapeHtml(reasonText(chat.endReason))}</div>
     <div class="pc-stars" title="${r.stars} stars">${stars(r.stars)}</div>
@@ -144,7 +160,7 @@ function messageEl(chat, m) {
       } else renderChart(text, part.json);
     }
   } else {
-    text.innerHTML = renderMarkdown(m.text, { full, commands: chat.kind === 'bot', mentions: chat.kind === 'mentor' });
+    text.innerHTML = renderMarkdown(m.text, { full, commands: chat.kind === 'bot', mentions: chat.kind === 'mentor' || chat.kind === 'boss' });
   }
   if (m.charts) for (const spec of m.charts) renderChart(text, spec);
   bubble.appendChild(text);
@@ -204,7 +220,19 @@ function syncMessages(chat, forceBottom = false) {
     if (!ids.has(id)) { destroyChartsIn(el); el.remove(); view.els.delete(id); }
   }
   if (view.typingEl) { view.typingEl.remove(); view.typingEl = null; }
-  // append new messages (always chronological) and update ticks
+  // a message timestamped earlier than ones already shown (caught-up replies): rebuild in order
+  let seenNew = false;
+  for (const m of chat.messages) {
+    if (!view.els.has(m.id)) seenNew = true;
+    else if (seenNew) {
+      for (const el of view.els.values()) destroyChartsIn(el);
+      inner.innerHTML = '';
+      view.els.clear();
+      view.lastDay = null;
+      break;
+    }
+  }
+  // append new messages and update ticks
   for (const m of chat.messages) {
     let el = view.els.get(m.id);
     if (!el) {
@@ -240,7 +268,8 @@ function composerHtml(chat) {
   let note = '';
   if (chat.kind === 'customer' && chat.status !== 'active') note = '<div class="composer-note">This conversation has ended — the customer won\'t see new messages. Try /payout or /feedback.</div>';
   if (chat.kind === 'mentor') note = '<div class="composer-note">Mention a chat with @ (e.g. @chat3) and the mentor reads the whole conversation.</div>';
-  const placeholder = chat.kind === 'bot' ? 'Type a command, e.g. /help' : chat.kind === 'mentor' ? 'Ask your mentor…' : chat.status === 'active' ? 'Write a message…' : 'Message (the customer has left)';
+  if (chat.kind === 'boss') note = `<div class="composer-note">Diane answers during office hours (${String(cfg().boss.workHours[0]).padStart(2, '0')}:00–${cfg().boss.workHours[1]}:00). Ask for a rush, a lighter or heavier day, time off, a transfer (@chat3) or a raise.</div>`;
+  const placeholder = chat.kind === 'bot' ? 'Type a command, e.g. /help' : chat.kind === 'mentor' ? 'Ask your mentor…' : chat.kind === 'boss' ? 'Message Diane…' : chat.status === 'active' ? 'Write a message…' : 'Message (the customer has left)';
   const emojiBtn = chat.kind === 'bot' ? '' : '<button class="icon-btn" id="emojiBtn" title="Emoji">😊</button>';
   return `<div class="composer">${note}<div class="composer-inner">${emojiBtn}
     <textarea id="input" rows="1" placeholder="${placeholder}" spellcheck="true"></textarea>
@@ -266,6 +295,7 @@ function send() {
   hideEmoji();
   if (chat.kind === 'bot') handleBotInput(text);
   else if (chat.kind === 'mentor') sendToMentor(text);
+  else if (chat.kind === 'boss') boss.onPlayerMessage(text);
   else if (chat.kind === 'customer') {
     if (text.startsWith('/') && handleChatCommand(chat, text)) return;
     onPlayerMessage(chat, text);
@@ -293,7 +323,7 @@ function updateSuggest() {
     kind = 'cmd';
     const list = chat.kind === 'bot' ? COMMANDS : CHAT_COMMANDS;
     items = list.filter((c) => c.cmd.startsWith(cm[1].toLowerCase())).map((c) => ({ key: '/' + c.cmd + (c.args ? ' ' : ''), label: '/' + c.cmd, desc: (c.args ? c.args + ' — ' : '') + c.desc }));
-  } else if (mm && chat.kind === 'mentor') {
+  } else if (mm && (chat.kind === 'mentor' || chat.kind === 'boss')) {
     kind = 'mention';
     const q = mm[2].toLowerCase();
     items = customerChats().sort((a, b) => b.lastAt - a.lastAt)
@@ -354,6 +384,7 @@ function infoHtml(chat) {
       bot: 'Your desk assistant. Type /help for commands: balance, stats, rank, shop, spendings and more.',
       mentor: 'A senior analyst who coaches you. Ask about any concept, get graphs, or mention a chat (@chat3) so the mentor can read it.',
       manager: 'Official memos from Whiterock management. Some memos come with pay bonuses.',
+      boss: 'Diane Whitfield, Head of Client Services: your manager. Ask her for a rush shift (the next few customers right away), a lighter or heavier day, time off, to hand a chat to a colleague, or a raise when your numbers are good.',
     }[chat.kind];
     return `<div class="ip-top">${chatAvatar(chat, 'lg')}<h3>${escapeHtml(chat.title)}</h3></div><div class="ip-val">${about}</div>`;
   }
@@ -362,6 +393,7 @@ function infoHtml(chat) {
   let h = `<div class="ip-top">${chatAvatar(chat, 'lg')}<h3>${escapeHtml(c.name)}${c.vip ? ' 👑' : ''}</h3><div style="color:var(--muted)">${handle(chat)}${c.vip ? ' · VIP client' : ''}</div></div>
     <div class="ip-sec">About</div><div class="ip-val">${escapeHtml(c.bio)}</div>
     <div class="ip-sec">Traits</div><div class="ip-val">Reads ${c.read} · patience ${c.patience}</div>
+    <div class="ip-sec">Local time</div><div class="ip-val">${localTimeOf(chat)}</div>
     <div class="ip-sec">Started</div><div class="ip-val">${new Date(chat.createdAt).toLocaleString('en-GB')}</div>`;
   if (chat.status === 'active') {
     h += `<div class="ip-sec">Customer replies</div><div class="ip-val">${chat.cs.turns} so far (gives up after about ${chat.cs.maxTurns})</div>`;
@@ -372,6 +404,14 @@ function infoHtml(chat) {
   }
   h += `<div style="margin-top:18px"><button class="btn small" id="askMentor">🎓 Ask the mentor about this chat</button></div>`;
   return h;
+}
+
+function localTimeOf(chat) {
+  const p = S.data.personalities.find((x) => x.id === chat.customer.personaId);
+  const tz = p?.tz ?? 0;
+  const d = new Date(clock.now() + tz * 3600000);
+  const hh = String(d.getUTCHours()).padStart(2, '0'), mm = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${hh}:${mm} (UTC${tz >= 0 ? '+' : ''}${tz})`;
 }
 
 // ---------- public ----------
@@ -516,6 +556,7 @@ export function bindChatPane() {
       if (!b) return;
       if (b.action === 'cmd') handleBotInput(b.value);
       else if (b.action === 'ui') ({ shop: ui.openShop, settings: ui.openSettings, profile: ui.openProfile })[b.value]?.();
+      else if (b.action === 'open') ui.openChat(b.value);
       return;
     }
     const retry = t.closest('[data-retry]');
@@ -524,6 +565,7 @@ export function bindChatPane() {
       if (kind === 'customer') retryCustomer(chat);
       else if (kind === 'grade') gradeAndPay(chat);
       else if (kind === 'mentor') retryMentor();
+      else if (kind === 'boss') boss.retryBoss();
       return;
     }
     if (t.closest('#chConceptBtn')) { ui.openConcept?.(chat.id); return; }

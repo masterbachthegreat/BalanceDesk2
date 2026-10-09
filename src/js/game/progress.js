@@ -4,6 +4,7 @@ import { emit } from '../core/bus.js';
 import { botSay } from './bot.js';
 import { triggerMemo } from './manager.js';
 import { toast } from '../ui/toast.js';
+import * as clock from './clock.js';
 
 export function rankInfo(r) {
   const ranks = S.data.ranks;
@@ -35,6 +36,7 @@ export function recordChat(chat) {
   if (chat.endReason === 'left' || chat.endReason === 'timeout') st.lost++;
   if (chat.customer.vip) st.vipServed++;
   st.bestPay = Math.max(st.bestPay || 0, r.payout.total);
+  p.recentScores = [...(p.recentScores || []), r.aiScore].slice(-30);
 
   // promotion: last N graded chats taken at the current rank
   if (chat.rankAtStart === p.rank) {
@@ -60,7 +62,7 @@ export function promote() {
   const old = rankInfo(p.rank);
   p.rank += 1;
   p.rankChats = [];
-  p.rankHistory.push({ rank: p.rank, at: Date.now() });
+  p.rankHistory.push({ rank: p.rank, at: clock.now() });
   const nr = rankInfo(p.rank);
   botSay('🎉 **Promotion!** You are now **' + nr.title + '** (rank ' + p.rank + ').\nNew topics unlocked: ' + nr.topics + '.\nBase pay per chat: $' + nr.basePay + ' (was $' + old.basePay + ').');
   triggerMemo('promotion');

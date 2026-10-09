@@ -32,7 +32,19 @@ export function durationWords(ms) {
   if (s < 60) return s + 's';
   const m = Math.floor(s / 60), r = s % 60;
   if (m < 60) return m + 'm ' + String(r).padStart(2, '0') + 's';
-  return Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
+  const h = Math.floor(m / 60);
+  if (h < 48) return h + 'h ' + (m % 60) + 'm';
+  return Math.floor(h / 24) + 'd ' + (h % 24) + 'h';
+}
+
+// Coarse "3h 12m" / "45m" / "2d 4h" for waiting times.
+export function waitWords(ms) {
+  const m = Math.max(0, Math.floor(ms / 60000));
+  if (m < 1) return '<1m';
+  if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60);
+  if (h < 48) return h + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : '');
+  return Math.floor(h / 24) + 'd ' + (h % 24) + 'h';
 }
 
 export function clockTime(t) {

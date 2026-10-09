@@ -32,6 +32,7 @@ await new Promise((r) => setTimeout(r, 800));
 
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+await page.addInitScript(() => { window.HOUR = 3600000; }); // also usable inside page.evaluate callbacks
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -39,18 +40,14 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 const bd = (fn, arg) => page.evaluate(fn, arg);
 const chatsOfKind = (kind) => bd((k) => [...window.__bd.S.chats.values()].filter((c) => c.kind === k).map((c) => c.id), kind);
 const send = async (text) => { await page.fill('#input', text); await page.keyboard.press('Enter'); };
-const forceRead = (id) => bd((cid) => { const c = window.__bd.S.chats.get(cid); c.cs.pendingReadA = window.__bd.clock.now(); }, id);
+const forceRead = (id) => bd((cid) => { const c = window.__bd.S.chats.get(cid); c.cs.readAt = window.__bd.clock.now(); }, id);
+const HOUR = 3600000;
 const status = (id) => bd((cid) => window.__bd.S.chats.get(cid)?.status ?? 'gone', id);
 const waitFor = (fn, arg, ms = 20000) => page.waitForFunction(fn, arg, { timeout: ms });
 const LONG = 'Here is the full explanation: the changes multiply, so the overall factor is the product of the two multipliers, and that is why the result differs from the naive sum.';
 
 async function newCustomer() {
-  const before = await chatsOfKind('customer');
-  await page.click('.chat-row[data-id="bot"]');
-  await send('/next');
-  await waitFor((n) => [...window.__bd.S.chats.values()].filter((c) => c.kind === 'customer').length > n, before.length);
-  const after = await chatsOfKind('customer');
-  const id = after.find((x) => !before.includes(x));
+  const id = await bd(() => window.__bd.spawnCustomer().id);
   await waitFor((cid) => !window.__bd.S.chats.get(cid).cs.openingPending, id); // question posted
   await page.click(`.chat-row[data-id="${id}"]`);
   return id;
@@ -67,7 +64,8 @@ try {
   check((await bd(() => window.__bd.S.chats.get('bot').messages.length)) >= 1, 'bot welcome message');
   check((await bd(() => window.__bd.S.chats.get('mentor').messages.length)) >= 1, 'mentor intro message');
   check((await bd(() => window.__bd.S.chats.get('manager').messages.length)) >= 1, 'manager welcome memo');
-  await bd(() => window.__bd.ui.setStatus('away')); // keep random arrivals out of the way
+  check((await bd(() => window.__bd.S.chats.get('boss').messages.length)) >= 1, 'manager Diane says hello');
+  await bd(() => { window.__bd.S.profile.world.nextArrivalAt = Date.now() + 1e12; }); // keep random arrivals out of the way
 
   console.log('Customer conversation');
   const c1 = await newCustomer();
@@ -77,7 +75,7 @@ try {
   await forceRead(c1);
   await waitFor((id) => window.__bd.S.chats.get(id).cs.turns === 1, c1);
   check((await bd((id) => window.__bd.S.chats.get(id).messages.filter((m) => m.from === 'me').every((m) => m.read), c1)), 'read ticks set');
-  check((await bd((id) => window.__bd.S.chats.get(id).cs.waitingSinceA !== null, c1)), 'waiting timer starts after customer reply');
+  check((await bd((id) => window.__bd.S.chats.get(id).cs.waitingSince !== null && window.__bd.S.chats.get(id).cs.nudgeAt > window.__bd.clock.now() + HOUR, c1)), 'waiting timer starts after customer reply (chase hours later)');
   const balBefore = await bd(() => window.__bd.S.profile.balance);
   await send(LONG);
   await forceRead(c1);
@@ -101,7 +99,7 @@ try {
 
   console.log('Bot and shop');
   await page.click('.chat-row[data-id="bot"]');
-  for (const c of ['/help', '/balance', '/rank', '/stats', '/payformula', '/history', '/today', '/shop themes', '/spendings']) {
+  for (const c of ['/help', '/balance', '/rank', '/stats', '/payformula', '/history', '/today', '/queue', '/shop themes', '/spendings']) {
     const n = await bd(() => window.__bd.S.chats.get('bot').messages.length);
     await send(c);
     await waitFor((k) => window.__bd.S.chats.get('bot').messages.length >= k + 2, n);
@@ -152,6 +150,7 @@ try {
 
   console.log('Delete an active chat');
   const c3 = await newCustomer();
+  await send('Let me look into this for you.');
   const balBeforeDelete = await bd(() => window.__bd.S.profile.balance);
   await page.click(`.chat-row[data-id="${c3}"]`, { button: 'right' });
   await page.click('.ctx-item:has-text("Delete chat")');
@@ -163,13 +162,64 @@ try {
 
   console.log('Impatience');
   const c4 = await newCustomer();
-  await bd((id) => { const c = window.__bd.S.chats.get(id); c.cs.waitingSinceA = window.__bd.clock.now() - c.cs.patienceMs - 1000; }, c4);
-  await waitFor((id) => window.__bd.S.chats.get(id).cs.nudgedA !== null, c4);
+  await bd((id) => { window.__bd.S.chats.get(id).cs.nudgeAt = window.__bd.clock.now() - 1000; }, c4);
+  await waitFor((id) => window.__bd.S.chats.get(id).cs.nudged, c4);
   check(true, 'customer chases after patience runs out');
-  await bd((id) => { const c = window.__bd.S.chats.get(id); c.cs.nudgedA = window.__bd.clock.now() - 1000000; }, c4);
+  await bd((id) => { window.__bd.S.chats.get(id).cs.leaveAt = window.__bd.clock.now() - 1000; }, c4);
   await waitFor((id) => window.__bd.S.chats.get(id).status === 'ended', c4);
   const r4 = await bd((id) => window.__bd.S.chats.get(id), c4);
-  check(r4.endReason === 'timeout' && r4.result.stars <= 2, 'customer leaves after waiting, stars capped');
+  check(r4.endReason === 'missed' && r4.result.payout.total === 0, 'never answered: missed, no pay, no grading call', r4.endReason);
+  const c7 = await newCustomer();
+  await send('Give me a moment to work this out.');
+  await forceRead(c7);
+  await waitFor((id) => window.__bd.S.chats.get(id).cs.turns === 1, c7);
+  await bd((id) => { window.__bd.S.chats.get(id).cs.nudgeAt = window.__bd.clock.now() - 1000; }, c7);
+  await waitFor((id) => window.__bd.S.chats.get(id).cs.nudged, c7);
+  await bd((id) => { window.__bd.S.chats.get(id).cs.leaveAt = window.__bd.clock.now() - 1000; }, c7);
+  await waitFor((id) => window.__bd.S.chats.get(id).status === 'ended', c7);
+  const r7 = await bd((id) => window.__bd.S.chats.get(id), c7);
+  check(r7.endReason === 'timeout' && r7.result.stars <= 2, 'answered but left waiting: timeout, stars capped');
+
+  console.log('Time passes while the app is closed');
+  const c8 = await newCustomer();
+  await send('Quick question first: is this for a personal account?');
+  await bd((id) => {
+    const { S, clock } = window.__bd;
+    S.chats.get(id).cs.readAt = clock.now() + 2 * HOUR; // they'll check their phone in 2 hours
+    S.profile.world.lastSeen = clock.now();
+    S.profile.world.nextArrivalAt = clock.now() + HOUR;
+    clock.skip(6 * HOUR);
+  }, c8);
+  const nBefore = (await chatsOfKind('customer')).length;
+  await bd(() => window.__bd.world.catchUp());
+  await waitFor((id) => window.__bd.S.chats.get(id).cs.turns === 1, c8);
+  const r8 = await bd((id) => { const c = window.__bd.S.chats.get(id); const m = c.messages.filter((x) => x.from === 'them').at(-1); return { ago: window.__bd.clock.now() - m.t, read: c.messages.filter((x) => x.from === 'me').every((x) => x.read) }; }, c8);
+  check(r8.read && r8.ago > 3 * HOUR, 'customer read and replied hours ago, while the app was "closed"', JSON.stringify(r8));
+  check((await chatsOfKind('customer')).length > nBefore, 'customers arrived while away');
+  check((await bd(() => window.__bd.S.chats.get('bot').messages.some((m) => /While you were away/.test(m.text)))), '"While you were away" summary');
+  await bd(() => { window.__bd.S.profile.world.nextArrivalAt = Date.now() + 1e12; });
+
+  console.log('Manager: rush, transfer, time off');
+  const askBoss = async (text) => {
+    await page.click('.chat-row[data-id="boss"]');
+    const n = await bd(() => window.__bd.S.chats.get('boss').messages.filter((m) => m.from === 'them').length);
+    await send(text);
+    await bd(() => { window.__bd.S.chats.get('boss').replyAt = window.__bd.clock.now(); });
+    await waitFor((k) => window.__bd.S.chats.get('boss').messages.filter((m) => m.from === 'them').length > k, n);
+  };
+  await askBoss('It is quiet, can you send me a rush of more customers?');
+  check((await bd(() => window.__bd.world.rushStatus().active)), 'boss starts a rush shift');
+  await bd(() => { window.__bd.S.profile.world.rush.nextAt = window.__bd.clock.now(); });
+  await waitFor(() => [...window.__bd.S.chats.values()].some((c) => c.rush && c.status === 'active'));
+  check((await bd(() => [...window.__bd.S.chats.values()].find((c) => c.rush).cs.mode === 'live')), 'rush customer arrives and stays online');
+  const tr = await bd(() => [...window.__bd.S.chats.values()].find((c) => c.rush && c.status === 'active').seq);
+  await askBoss(`Please transfer @chat${tr} to a colleague`);
+  check((await bd((seq) => [...window.__bd.S.chats.values()].find((c) => c.seq === seq).endReason === 'transferred', tr)), 'boss transfers a chat');
+  await askBoss('Could I take some time off tomorrow?');
+  check((await bd(() => !!window.__bd.world.vacation())), 'boss grants time off');
+  check((await page.textContent('#statusBar')).includes('off until'), 'status bar shows time off');
+  await askBoss("I'm back, open my queue please");
+  check((await bd(() => !window.__bd.world.vacation())), 'time off ended early');
 
   console.log('Concept, hints and review');
   const c6 = await newCustomer();
@@ -212,7 +262,15 @@ try {
   await waitFor((id) => window.__bd.S.chats.get(id).status === 'ended', c5);
   check((await bd(() => window.__bd.S.profile.rank)) === 2, 'promoted to rank 2 after 8 good chats');
 
-  console.log('Persistence');
+  console.log('Persistence and v0.2 save migration');
+  const c9 = await newCustomer();
+  await bd((id) => { // make it look like a v0.2 save (active-time clock)
+    const { S } = window.__bd;
+    const cs = S.chats.get(id).cs;
+    for (const k of ['mode', 'readAt', 'nudgeAt', 'leaveAt', 'waitingSince', 'lastCustomerAt']) delete cs[k];
+    Object.assign(cs, { waitingSinceA: 5000, nudgedA: null, pendingReadA: null, lastCustomerA: 5000, patienceMs: 600000 });
+    S.profile.version = 1; S.profile.status = 'online'; S.profile.memo.nextAtA = 123;
+  }, c9);
   await page.waitForTimeout(800);
   const snapshot = await bd(() => ({ bal: window.__bd.S.profile.balance, n: window.__bd.S.chats.size, rank: window.__bd.S.profile.rank }));
   await page.evaluate(() => window.dispatchEvent(new Event('beforeunload')));
@@ -221,6 +279,8 @@ try {
   await page.waitForFunction(() => window.__bd && window.__bd.S.profile);
   const after = await bd(() => ({ bal: window.__bd.S.profile.balance, n: window.__bd.S.chats.size, rank: window.__bd.S.profile.rank }));
   check(after.bal === snapshot.bal && after.n === snapshot.n && after.rank === snapshot.rank, 'state survives reload', JSON.stringify({ snapshot, after }));
+  const mig = await bd((id) => { const { S } = window.__bd; const cs = S.chats.get(id).cs; return { v: S.profile.version, mode: cs.mode, w: cs.waitingSince != null && cs.nudgeAt > Date.now(), old: 'waitingSinceA' in cs }; }, c9);
+  check(mig.v === 2 && mig.mode === 'async' && mig.w && !mig.old, 'v0.2 active chat migrated to wall-clock timers', JSON.stringify(mig));
   await page.screenshot({ path: path.join(dataDir, 'final.png') });
 
   check(errors.length === 0, 'no console/page errors', errors.slice(0, 3).join(' | '));

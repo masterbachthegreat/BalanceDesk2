@@ -633,7 +633,7 @@
   "effect": {
    "readMult": 0.7
   },
-  "desc": "Customers read your replies 30% sooner."
+  "desc": "Customers read and answer your messages about 30% sooner."
  },
  {
   "id": "upg-holdmusic",
@@ -642,9 +642,9 @@
   "name": "Hold-music licence",
   "price": 400,
   "effect": {
-   "patienceMs": 60000
+   "patienceMs": 7200000
   },
-  "desc": "Customers wait one extra minute before chasing you."
+  "desc": "Customers wait 2 extra hours before chasing you."
  },
  {
   "id": "upg-monitor",
@@ -653,9 +653,9 @@
   "name": "Second monitor",
   "price": 800,
   "effect": {
-   "slots": 1
+   "rushExtra": 1
   },
-  "desc": "Handle one more customer at the same time."
+  "desc": "Rush shifts from your boss bring one extra customer."
  },
  {
   "id": "upg-vipline",
@@ -677,9 +677,9 @@
   "requires": "upg-monitor",
   "minRank": 5,
   "effect": {
-   "slots": 1
+   "rushCooldownCut": 3600000
   },
-  "desc": "Yet another simultaneous customer line."
+  "desc": "Your boss can give you rush shifts an hour sooner."
  },
  {
   "id": "con-espresso",

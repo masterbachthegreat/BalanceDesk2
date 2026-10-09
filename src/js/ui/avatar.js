@@ -2,11 +2,13 @@
 import { S } from '../core/state.js';
 import { escapeHtml } from '../core/format.js';
 import * as shop from '../game/shop.js';
+import { isOnline } from '../game/customers.js';
 
 const SYSTEM = {
   bot: { emoji: '🤖', color: '#4f8fd6' },
   mentor: { emoji: '🎓', color: '#8e6cd1' },
   manager: { emoji: '🏢', color: '#2e8b72' },
+  boss: { emoji: '💼', color: '#c0794a' },
 };
 
 function initials(name) {
@@ -22,7 +24,7 @@ export function chatAvatar(chat, size = '') {
   const c = chat.customer;
   const inner = c.emoji ? escapeHtml(c.emoji) : escapeHtml(initials(c.name));
   const border = c.vip ? ' border-gold' : '';
-  const online = chat.status === 'active' ? '<span class="online-dot"></span>' : '';
+  const online = isOnline(chat) ? '<span class="online-dot"></span>' : '';
   return `<div class="avatar-wrap${border}"><div class="avatar ${c.emoji ? 'emoji ' : ''}${size}" style="background:${c.color}">${inner}</div>${online}</div>`;
 }
 

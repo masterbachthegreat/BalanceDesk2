@@ -1,7 +1,7 @@
 // The Whiterock Desk Bot: slash commands, receipts and the in-chat /payout command.
 import { S, cfg, touchChat } from '../core/state.js';
-import { money, num, starsText, durationWords, dateKey, plural } from '../core/format.js';
-import { addMessage, getChat, customerChats, handle } from './chats.js';
+import { money, num, starsText, durationWords, waitWords, dateKey, plural } from '../core/format.js';
+import { addMessage, getChat, customerChats, activeCustomerChats, handle } from './chats.js';
 import * as shop from './shop.js';
 import * as clock from './clock.js';
 import { rankInfo, promotionStatus, maxRank } from './progress.js';
@@ -23,9 +23,7 @@ export const COMMANDS = [
   { cmd: 'use', args: '<item>', desc: 'Use a consumable (espresso, coin…)' },
   { cmd: 'bonuses', desc: 'Active bonuses from memos and items' },
   { cmd: 'spendings', desc: 'OpenRouter usage & cost, with graphs' },
-  { cmd: 'next', desc: 'Call the next customer right now' },
-  { cmd: 'online', desc: 'Start receiving customers' },
-  { cmd: 'away', desc: 'Stop new customers from arriving' },
+  { cmd: 'queue', desc: 'Open chats, longest-waiting first' },
   { cmd: 'calc', desc: 'Open the calculator (shop item)' },
   { cmd: 'notes', desc: 'Open your notepad (shop item)' },
   { cmd: 'profile', desc: 'Open your profile' },
@@ -68,7 +66,7 @@ function itemLine(i) {
 const handlers = {
   help() {
     const lines = COMMANDS.map((c) => `/${c.cmd}${c.args ? ' ' + c.args : ''} — ${c.desc}`);
-    botSay('**Commands**\n' + lines.join('\n') + '\n\nIn customer chats: /payout and /feedback (after a chat ends).\nIn the Mentor chat, mention a chat with @chat12 (or @Name) and the mentor reads the whole conversation.\nRight-click a chat for Close, Archive and Delete.');
+    botSay('**Commands**\n' + lines.join('\n') + '\n\nIn customer chats: /payout and /feedback (after a chat ends).\nIn the Mentor chat, mention a chat with @chat12 (or @Name) and the mentor reads the whole conversation.\nMessage your manager **Diane** for a rush shift, a lighter or heavier day, time off, or to hand a chat to a colleague.\nRight-click a chat for Close, Archive and Delete.');
   },
   balance() {
     const p = S.profile;
@@ -78,7 +76,7 @@ const handlers = {
   stats() {
     const st = S.profile.stats;
     const n = st.completed;
-    botSay(`📊 **Lifetime stats**\nChats completed: ${n}\nAverage AI score: ${n ? num(st.scoreSum / n, 1) : '—'}/100\nAverage service: ${n ? num(st.starsSum / n, 2) : '—'}★\n5★ chats: ${st.fiveStars}\nVIPs served: ${st.vipServed}\nClosed by you: ${st.closedByMe} · customers lost: ${st.lost}\nBest single payout: ${money(st.bestPay || 0)}\nTime on shift: ${durationWords(S.profile.activeMs)}`);
+    botSay(`📊 **Lifetime stats**\nChats completed: ${n}\nAverage AI score: ${n ? num(st.scoreSum / n, 1) : '—'}/100\nAverage service: ${n ? num(st.starsSum / n, 2) : '—'}★\n5★ chats: ${st.fiveStars}\nVIPs served: ${st.vipServed}\nClosed by you: ${st.closedByMe} · customers lost: ${st.lost} · never answered: ${st.missed || 0}\nBest single payout: ${money(st.bestPay || 0)}\nTime on shift: ${durationWords(S.profile.activeMs)}`);
   },
   rank() {
     const p = S.profile;
@@ -94,7 +92,8 @@ const handlers = {
   },
   today() {
     const d = clock.today();
-    botSay(`🗓 **Today (${dateKey()})**\nTime on shift: ${durationWords(d.activeMs)}\nChats finished: ${d.chats}\nEarned: ${money(d.earned)}\nAverage score: ${d.chats ? num(d.scoreSum / d.chats, 1) : '—'} · average stars: ${d.chats ? num(d.starsSum / d.chats, 2) : '—'}`);
+    const W = cfg().world;
+    botSay(`🗓 **Today (${dateKey(clock.now())})**\nTime with the app open: ${durationWords(d.activeMs)}\nCustomers who wrote in: ${d.arrivals || 0} (daily cap ${W.dailyCap})\nOpen chats now: ${activeCustomerChats().length}/${W.openCap}\nChats finished: ${d.chats}${d.missed ? ` · never answered: ${d.missed}` : ''}\nEarned: ${money(d.earned)}\nAverage score: ${d.chats ? num(d.scoreSum / d.chats, 1) : '—'} · average stars: ${d.chats ? num(d.starsSum / d.chats, 2) : '—'}`);
   },
   history() {
     const list = customerChats().filter((c) => c.result).sort((a, b) => b.endedAt - a.endedAt).slice(0, 10);
@@ -104,7 +103,7 @@ const handlers = {
   payformula() {
     const P = cfg().pay;
     const St = cfg().stars;
-    botSay(`🧮 **How pay works**\nPay = Base × VIP × Quality × Service × Length × Time × Bonuses + Tip\n\n• **Base**: depends on your rank (${money(rankInfo(S.profile.rank).basePay)} now)\n• **VIP**: ×${P.vipMultiplier} for VIP clients 👑\n• **Quality**: AI score ÷ 100\n• **Service**: ${P.serviceMultBase} + ${P.serviceMultPerStar} × stars (1★ = ×${num(P.serviceMultBase + P.serviceMultPerStar, 2)}, 5★ = ×${num(P.serviceMultBase + 5 * P.serviceMultPerStar, 2)})\n• **Length**: ${P.lengthFactors.map((r) => (r.maxExchanges >= 999 ? 'more' : '≤' + r.maxExchanges) + ' → ×' + r.factor).join(', ')} (customer replies after the question)\n• **Time**: ×${P.time.bestFactor} for instant replies, −${P.time.lossPerMinute} per minute of average reply time, −${P.time.nudgePenalty} each time a customer has to chase you (min ×${P.time.minFactor})\n• **Stars**: grader's rating + emoji pack bonus (max +${St.emojiBonusCap}); closing a chat yourself −${St.closePenalty}; customers who leave give at most ${St.leftCap}★\n• **Tip**: happy customers (≥${P.tip.minStars}★, score ≥${P.tip.minScore}) sometimes tip 5–25%\n\nType /payout inside a finished chat to see its exact breakdown.`);
+    botSay(`🧮 **How pay works**\nPay = Base × VIP × Quality × Service × Length × Time × Bonuses + Tip\n\n• **Base**: depends on your rank (${money(rankInfo(S.profile.rank).basePay)} now)\n• **VIP**: ×${P.vipMultiplier} for VIP clients 👑\n• **Quality**: AI score ÷ 100\n• **Service**: ${P.serviceMultBase} + ${P.serviceMultPerStar} × stars (1★ = ×${num(P.serviceMultBase + P.serviceMultPerStar, 2)}, 5★ = ×${num(P.serviceMultBase + 5 * P.serviceMultPerStar, 2)})\n• **Length**: ${P.lengthFactors.map((r) => (r.maxExchanges >= 999 ? 'more' : '≤' + r.maxExchanges) + ' → ×' + r.factor).join(', ')} (customer replies after the question)\n• **Time**: ×${P.time.bestFactor} if your average reply comes within ${waitWords(cfg().world.idealReplyMs)}, sliding to ×${P.time.atSlow} at ${waitWords(P.time.slowReplyMs)} and ×${P.time.minFactor} at ${waitWords(2 * P.time.slowReplyMs)}; −${P.time.nudgePenalty} each time a customer has to chase you. Rush-shift customers expect replies within ${waitWords(cfg().rush.idealReplyMs)}.\n• **Rush shift**: ×${cfg().rush.payMult}${S.profile.payRaise ? `\n• **Your raise**: ×${num(1 + S.profile.payRaise, 2)}` : ''}\n• **Stars**: grader's rating + emoji pack bonus (max +${St.emojiBonusCap}); closing a chat yourself −${St.closePenalty}; customers who leave give at most ${St.leftCap}★\n• **Tip**: happy customers (≥${P.tip.minStars}★, score ≥${P.tip.minScore}) sometimes tip 5–25%\n\nType /payout inside a finished chat to see its exact breakdown.`);
   },
   shop(arg) {
     if (arg) {
@@ -166,8 +165,8 @@ const handlers = {
   async spendings() {
     const recs = await window.api.usage();
     if (!recs.length) return botSay('No API calls recorded yet.');
-    const cats = ['customer', 'grading', 'mentor', 'other'];
-    const label = { customer: 'Customers (Haiku)', grading: 'Grading (Sonnet)', mentor: 'Mentor (Sonnet)', other: 'Other' };
+    const cats = ['customer', 'grading', 'mentor', 'concept', 'boss', 'other'];
+    const label = { customer: 'Customers (Haiku)', grading: 'Grading (Sonnet)', mentor: 'Mentor (Sonnet)', concept: 'Concept lessons (Sonnet)', boss: 'Manager (Sonnet)', other: 'Other' };
     const tot = {};
     for (const c of cats) tot[c] = { cost: 0, in: 0, out: 0, calls: 0 };
     for (const r of recs) {
@@ -182,7 +181,7 @@ const handlers = {
       `\n| **Total** | ${all.calls} | ${all.in.toLocaleString()} | ${all.out.toLocaleString()} | **${fmt(all.cost)}** |`;
     // last 14 days, stacked by category
     const days = [];
-    for (let i = 13; i >= 0; i--) days.push(dateKey(Date.now() - i * 86400000));
+    for (let i = 13; i >= 0; i--) days.push(dateKey(clock.now() - i * 86400000));
     const perDay = Object.fromEntries(cats.map((c) => [c, days.map(() => 0)]));
     for (const r of recs) {
       const k = dateKey(r.t);
@@ -208,11 +207,17 @@ const handlers = {
     ];
     botSay(`💳 **OpenRouter usage**\n${table}${useCost ? '' : '\n\n_OpenRouter did not report costs, so the graphs show tokens._'}`, { charts });
   },
-  next() {
-    ui.callNextCustomer?.();
+  queue() {
+    const t = clock.now();
+    const list = activeCustomerChats().sort((a, b) => (a.cs.waitingSince ?? Infinity) - (b.cs.waitingSince ?? Infinity));
+    if (!list.length) return botSay('📭 No open chats. New customers write in through the day.');
+    const lines = list.map((c) => {
+      const cs = c.cs;
+      const st = cs.waitingSince != null ? `${cs.nudged ? '🔴' : t - cs.waitingSince > cfg().world.idealReplyMs ? '🟡' : '⚪'} waiting ${waitWords(t - cs.waitingSince)}${cs.nudged ? ' · chased you' : ''}` : cs.typing ? '✍ typing' : '👀 your turn is done, they haven\'t read it yet';
+      return `${handle(c)} **${c.customer.name}**${c.customer.vip ? ' 👑' : ''}${c.rush ? ' ⚡' : ''} — ${st}`;
+    });
+    botSay(`📋 **Open chats (${list.length}/${cfg().world.openCap})**\n` + lines.join('\n'), { buttons: list.filter((c) => c.cs.waitingSince != null).slice(0, 3).map((c) => [{ label: 'Open ' + c.customer.name, action: 'open', value: c.id }]) });
   },
-  online() { ui.setStatus?.('online'); botSay('🟢 You are online. Customers will start arriving.'); },
-  away() { ui.setStatus?.('away'); botSay('⏸ You are away. No new customers will arrive; ongoing chats continue.'); },
   calc() {
     if (!shop.hasTool('calculator')) return botSay('🧮 You don\'t own a calculator yet. Buy one: /buy tool-calculator', { buttons: [[{ label: 'Buy calculator', action: 'cmd', value: '/buy tool-calculator' }]] });
     ui.openCalculator?.();

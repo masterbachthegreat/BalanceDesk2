@@ -35,6 +35,24 @@ async function respond(req) {
     });
   }
 
+  if (req.category === 'boss') {
+    const sys = req.messages[0]?.content || '';
+    const can = (a) => sys.includes(`- "${a}"`);
+    const pickAct = () => {
+      if (/rush|more customers|busy/i.test(text) && can('rush')) return { action: 'rush' };
+      if (/lighter|fewer/i.test(text) && can('lighter_day')) return { action: 'lighter_day' };
+      if (/heavier/i.test(text) && can('heavier_day')) return { action: 'heavier_day' };
+      if (/back|return/i.test(text) && can('end_time_off')) return { action: 'end_time_off' };
+      if (/time off|day off|vacation|holiday/i.test(text) && can('time_off')) return { action: 'time_off', hours: 24 };
+      const m = /@chat\d+/.exec(text);
+      if (/transfer|hand/i.test(text) && m && can('transfer')) return { action: 'transfer', chat: m[0] };
+      if (/raise/i.test(text) && can('raise')) return { action: 'raise' };
+      return { action: 'none' };
+    };
+    const a = pickAct();
+    return JSON.stringify({ reply: a.action === 'none' ? 'Noted. Keep up the good work.' : 'Sure, done.', ...a });
+  }
+
   if (req.category === 'concept') {
     return '**The idea** — mock concept explainer.\n\n**How to work it out** — step 1, step 2.\n\n**Mini example** — 2 × 3 = 6.\n\n**Watch out** — units.';
   }

@@ -1,7 +1,14 @@
-// Customer behaviour: arrival, reading delay, typing, impatience and Haiku-written replies.
+// Customers: who arrives, when they read your messages, and their (Haiku-written) replies.
+// Everything is timestamped in real time, so the same code runs live and when the world is
+// caught up after the app was closed (world.js). Per chat, `cs` holds the pending events:
+//   readAt   — when the customer will next read your unread messages
+//   nudgeAt  — when they'll chase you if you still haven't replied
+//   leaveAt  — when they'll give up after chasing you
+// Rush customers (mode 'live', from your boss) stay online and expect replies in minutes.
 import { S, cfg, rand, randInt, pick, clamp, touchChat, touchProfile } from '../core/state.js';
 import { ui } from '../ui/registry.js';
 import * as clock from './clock.js';
+import * as presence from './presence.js';
 import { newChat, addMessage, sysMessage, activeCustomerChats, removeChat } from './chats.js';
 import { pickQuestion } from './questions.js';
 import { pickPersona, colorFor } from './personas.js';
@@ -9,12 +16,11 @@ import { llmCall, parseJSON, withRetry } from './llm.js';
 import { finishConversation, gradeAndPay } from './results.js';
 import * as shop from './shop.js';
 
-const inflight = new Set(); // chats with a customer LLM request running
+const inflight = new Set(); // chats whose events are being processed (LLM call running)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const LIVE_WINDOW = 120000; // an event this close to "now" is shown live (typing indicator etc.)
 
-export function maxSlots() { return cfg().maxConcurrentCustomers + shop.effectSum('slots'); }
-
-export function freeSlots() { return maxSlots() - activeCustomerChats().length; }
+export function openCount() { return activeCustomerChats().length; }
 
 function transform(persona, text) {
   if (persona.transform === 'upper') return text.toUpperCase();
@@ -22,25 +28,82 @@ function transform(persona, text) {
   return text;
 }
 
-function readDelayMs(chat) {
+export function personaOf(chat) {
+  return S.data.personalities.find((p) => p.id === chat.customer.personaId) || { ...chat.customer, nudges: [], leaves: [] };
+}
+
+function liveReadDelay(chat) {
   const C = cfg().customer;
   const [a, b] = C.readDelayMs[chat.customer.read] || C.readDelayMs.normal;
   return Math.max(1000, rand(a, b) * shop.effectProduct('readMult'));
+}
+
+export function isOnline(chat, t = clock.now()) {
+  return chat.kind === 'customer' && chat.status === 'active' && (chat.cs.onlineUntil || 0) > t;
+}
+
+function comeOnline(chat, t) {
+  const cs = chat.cs;
+  const len = cs.mode === 'live' ? 6 * 3600000 : presence.sessionLength();
+  cs.onlineUntil = Math.max(cs.onlineUntil || 0, t + len);
+  cs.lastSeen = Math.max(cs.lastSeen || 0, t);
+}
+
+function patienceMs(chat) {
+  const W = cfg().world;
+  const c = chat.customer;
+  return W.nudgeAfterMs * (W.patienceMult[c.patience] || 1) * (c.vip ? W.vipPatienceMult : 1) * rand(0.85, 1.15) + shop.effectSum('patienceMs');
+}
+
+// The customer has just written at time t and now waits for the agent.
+function setWaiting(chat, t) {
+  const cs = chat.cs;
+  cs.waitingSince = t;
+  cs.nudged = false;
+  cs.leaveAt = null;
+  if (cs.mode === 'live') {
+    const [a, b] = cfg().rush.nudgeAfterMs;
+    cs.nudgeAt = t + rand(a, b);
+  } else {
+    cs.nudgeAt = presence.nextCheck(personaOf(chat), t + patienceMs(chat));
+  }
+}
+
+// When will the customer read what the agent just sent (at `from`)?
+function scheduleRead(chat, from) {
+  if (chat.cs.mode === 'live' || isOnline(chat, from)) return from + liveReadDelay(chat);
+  const next = presence.nextCheck(personaOf(chat), from);
+  return from + Math.max(60000, (next - from) * shop.effectProduct('readMult'));
+}
+
+// While the app is open, pending reads arrive `onlineSpeedup` times faster.
+export function speedUpReads(dt) {
+  const extra = dt * (cfg().world.onlineSpeedup - 1);
+  if (extra <= 0) return;
+  const t = clock.now();
+  for (const chat of activeCustomerChats()) {
+    const cs = chat.cs;
+    if (cs.readAt != null && cs.readAt > t && !inflight.has(chat.id)) cs.readAt = Math.max(t, cs.readAt - extra);
+  }
 }
 
 // ---------- arrival ----------
 export function spawnCustomer(opts = {}) {
   const p = S.profile;
   const C = cfg().customer;
+  const at = opts.at ?? clock.now();
+  const rush = !!opts.rush;
   let vip = opts.vip ?? Math.random() < cfg().vipChance + shop.effectSum('vipChance');
   if (p.vipNext) { vip = true; p.vipNext = false; }
-  const persona = pickPersona(vip);
+  const persona = pickPersona(vip, rush ? null : at);
   const question = pickQuestion(p.rank, vip);
   p.counters.chatSeq += 1;
-  const patienceMs = rand(C.patienceMs[0], C.patienceMs[1]) * (C.patienceMult[persona.patience] || 1) + shop.effectSum('patienceMs');
   const chat = newChat('customer', {
     seq: p.counters.chatSeq,
     rankAtStart: p.rank,
+    createdAt: at,
+    lastAt: at,
+    rush,
     customer: {
       personaId: persona.id,
       name: persona.name,
@@ -55,8 +118,8 @@ export function spawnCustomer(opts = {}) {
       emoji: persona.emoji || null,
     },
     question,
-    startedA: clock.now(),
     cs: {
+      mode: rush ? 'live' : 'async',
       turns: 0,
       followUps: 0,
       pushbacks: 0,
@@ -65,43 +128,48 @@ export function spawnCustomer(opts = {}) {
       hintsGiven: 0,
       mood: 0,
       maxTurns: C.maxTurns[persona.patience] || C.maxTurns.normal,
-      patienceMs,
-      waitingSinceA: null,
-      nudgedA: null,
+      waitingSince: null,
+      nudgeAt: null,
+      leaveAt: null,
+      nudged: false,
       nudges: 0,
-      pendingReadA: null,
+      readAt: null,
+      onlineUntil: 0,
+      lastSeen: at,
       typing: false,
-      lastCustomerA: null,
+      lastCustomerAt: null,
       awaitingReply: false,
       latencies: [],
-      openingPending: true,
+      openingPending: false,
     },
     emojiPacksUsed: [],
   });
+  comeOnline(chat, at);
   touchProfile();
-  // greeting now, question a moment later (with a typing indicator in between)
-  const greeting = pick(persona.greetings || ['Hi!']);
-  addMessage(chat, { from: 'them', text: transform(persona, greeting) });
-  chat.cs.typing = true;
-  touchChat(chat);
-  setTimeout(() => postOpeningQuestion(chat), rand(...C.secondMessageDelayMs));
+  const greeting = transform(persona, pick(persona.greetings || ['Hi!']));
+  addMessage(chat, { from: 'them', text: greeting, t: at });
+  if (at >= clock.now() - 10000) {
+    // happening right now: greeting, typing…, then the question
+    chat.cs.openingPending = true;
+    chat.cs.typing = true;
+    touchChat(chat);
+    setTimeout(() => postOpeningQuestion(chat), rand(1500, 4000));
+  } else {
+    postOpeningQuestion(chat, at + rand(15000, 60000));
+  }
   return chat;
 }
 
-function postOpeningQuestion(chat) {
-  if (chat.deleted || chat.status !== 'active' || !chat.cs.openingPending) return;
-  const persona = personaOf(chat);
-  chat.cs.openingPending = false;
-  chat.cs.typing = false;
-  addMessage(chat, { from: 'them', text: transform(persona, chat.question.text) });
-  chat.cs.lastCustomerA = clock.now();
-  chat.cs.awaitingReply = true;
-  if (chat.cs.pendingReadA == null) chat.cs.waitingSinceA = clock.now();
+function postOpeningQuestion(chat, t = clock.now()) {
+  if (chat.deleted || chat.status !== 'active') return;
+  const cs = chat.cs;
+  cs.openingPending = false;
+  cs.typing = false;
+  addMessage(chat, { from: 'them', text: transform(personaOf(chat), chat.question.text), t });
+  cs.lastCustomerAt = t;
+  cs.awaitingReply = true;
+  if (cs.readAt == null) setWaiting(chat, t);
   touchChat(chat);
-}
-
-export function personaOf(chat) {
-  return S.data.personalities.find((p) => p.id === chat.customer.personaId) || { ...chat.customer, nudges: [], leaves: [] };
 }
 
 // ---------- the player writes ----------
@@ -112,94 +180,141 @@ export function onPlayerMessage(chat, text) {
     return;
   }
   const cs = chat.cs;
-  addMessage(chat, { from: 'me', text, read: false });
-  if (cs.awaitingReply && cs.lastCustomerA != null) {
-    cs.latencies.push(clock.now() - cs.lastCustomerA);
+  const t = clock.now();
+  addMessage(chat, { from: 'me', text, read: false, t });
+  if (cs.awaitingReply && cs.lastCustomerAt != null) {
+    cs.latencies.push(t - cs.lastCustomerAt);
     cs.awaitingReply = false;
   }
-  cs.waitingSinceA = null;
-  cs.nudgedA = null;
+  cs.waitingSince = null;
+  cs.nudgeAt = null;
+  cs.leaveAt = null;
+  cs.nudged = false;
   chat.emojiPacksUsed = [...new Set([...(chat.emojiPacksUsed || []), ...shop.packsUsedIn(text)])];
-  if (!cs.typing && cs.pendingReadA == null && !inflight.has(chat.id)) cs.pendingReadA = clock.now() + readDelayMs(chat);
+  if (cs.readAt == null && !cs.typing && !cs.openingPending) cs.readAt = scheduleRead(chat, t);
   touchChat(chat);
 }
 
-// ---------- periodic tick ----------
-export function tickCustomers() {
-  const C = cfg().customer;
-  const t = clock.now();
-  for (const chat of activeCustomerChats()) {
-    const cs = chat.cs;
-    if (cs.pendingReadA != null && t >= cs.pendingReadA && !inflight.has(chat.id)) {
-      if (cs.openingPending) cs.pendingReadA = t + 1500;
-      else doRead(chat);
-    }
-    if (cs.waitingSinceA != null && !inflight.has(chat.id)) {
-      if (cs.nudgedA == null && t - cs.waitingSinceA >= cs.patienceMs) nudge(chat);
-      else if (cs.nudgedA != null && t - cs.nudgedA >= C.leaveAfterNudgeMs) customerLeaves(chat);
-    }
+// ---------- events: read, nudge, leave ----------
+function nextEvent(chat) {
+  const cs = chat.cs;
+  const ev = [];
+  if (cs.readAt != null) ev.push(['read', cs.readAt]);
+  if (cs.waitingSince != null && !cs.nudged && cs.nudgeAt != null) ev.push(['nudge', cs.nudgeAt]);
+  if (cs.waitingSince != null && cs.nudged && cs.leaveAt != null) ev.push(['leave', cs.leaveAt]);
+  ev.sort((a, b) => a[1] - b[1]);
+  return ev[0] || null;
+}
+
+// Synchronous part of catch-up: chasing and giving up (no LLM needed) up to time `upTo`.
+export function advanceTimers(chat, upTo) {
+  if (inflight.has(chat.id)) return;
+  for (let guard = 0; guard < 5 && chat.status === 'active'; guard++) {
+    const e = nextEvent(chat);
+    if (!e || e[0] === 'read' || e[1] > upTo) return;
+    if (e[0] === 'nudge') nudge(chat, e[1]);
+    else customerLeaves(chat, e[1]);
   }
 }
 
-function nudge(chat) {
-  const persona = personaOf(chat);
-  chat.cs.nudgedA = clock.now();
-  chat.cs.nudges = (chat.cs.nudges || 0) + 1;
-  addMessage(chat, { from: 'them', text: transform(persona, pick(persona.nudges?.length ? persona.nudges : ['Hello? Are you still there?'])), kind: 'nudge' });
-}
-
-function customerLeaves(chat) {
-  const persona = personaOf(chat);
-  addMessage(chat, { from: 'them', text: transform(persona, pick(persona.leaves?.length ? persona.leaves : ['Forget it, I\'ll ask someone else.'])) });
-  finishConversation(chat, 'timeout');
-}
-
-// ---------- the customer reads and answers ----------
-async function doRead(chat) {
-  const cs = chat.cs;
-  const C = cfg().customer;
-  cs.pendingReadA = null;
-  for (const m of chat.messages) if (m.from === 'me' && !m.read) m.read = true;
-  cs.typing = true;
+export async function advanceChat(chat, now = clock.now()) {
+  if (inflight.has(chat.id) || chat.cs.openingPending) return;
   inflight.add(chat.id);
-  touchChat(chat);
-  const started = performance.now();
   try {
-    const out = await withRetry(() => customerReply(chat), 3, 1500);
-    if (chat.status !== 'active' || chat.deleted) return;
-    const typingMs = clamp(out.reply.length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
-    const remaining = typingMs - (performance.now() - started);
-    if (remaining > 0) await sleep(remaining);
-    if (chat.status !== 'active' || chat.deleted) return;
-    cs.typing = false;
-    cs.turns += 1;
-    cs.mood = out.mood;
-    if (out.followUp) cs.followUps += 1;
-    if (out.pushback) cs.pushbacks = (cs.pushbacks || 0) + 1;
-    raiseAnger(chat, out);
-    addMessage(chat, { from: 'them', text: transform(personaOf(chat), out.reply) });
-    cs.lastCustomerA = clock.now();
-    cs.awaitingReply = true;
-    if (out.status === 'satisfied') return void finishConversation(chat, 'satisfied');
-    if (out.status === 'leaving') return void finishConversation(chat, 'left');
-    if (out.pushback) ui.maybeMentorHint?.(chat);
-    if (cs.turns >= cs.maxTurns || cs.anger >= 100) {
-      const persona = personaOf(chat);
-      addMessage(chat, { from: 'them', text: transform(persona, pick(persona.leaves?.length ? persona.leaves : ['I have to go. Bye.'])) });
-      return void finishConversation(chat, 'left');
-    }
-    const unread = chat.messages.some((m) => m.from === 'me' && !m.read);
-    if (unread) cs.pendingReadA = clock.now() + rand(1000, 4000); // they're in the chat already
-    else cs.waitingSinceA = clock.now();
-  } catch (e) {
-    cs.typing = false;
-    if (chat.status === 'active' && !chat.deleted) {
-      sysMessage(chat, '⚠ Couldn\'t get the customer\'s reply: ' + e.message, { kind: 'error', retry: 'customer' });
+    for (let guard = 0; guard < 25 && chat.status === 'active' && !chat.deleted; guard++) {
+      const e = nextEvent(chat);
+      if (!e || e[1] > now) break;
+      if (e[0] === 'read') {
+        if (!(await customerReads(chat, e[1]))) break;
+        now = Math.max(now, clock.now());
+      } else if (e[0] === 'nudge') {
+        nudge(chat, e[1]);
+      } else {
+        customerLeaves(chat, e[1]);
+      }
     }
   } finally {
     inflight.delete(chat.id);
     touchChat(chat);
   }
+}
+
+function nudge(chat, t) {
+  const persona = personaOf(chat);
+  const cs = chat.cs;
+  cs.nudged = true;
+  cs.nudges = (cs.nudges || 0) + 1;
+  comeOnline(chat, t);
+  addMessage(chat, { from: 'them', text: transform(persona, pick(persona.nudges?.length ? persona.nudges : ['Hello? Are you still there?'])), kind: 'nudge', t });
+  if (cs.mode === 'live') {
+    cs.leaveAt = t + cfg().rush.leaveAfterNudgeMs;
+  } else {
+    const [a, b] = cfg().world.giveUpAfterNudgeMs;
+    const W = cfg().world;
+    const mult = (W.patienceMult[chat.customer.patience] || 1) * (chat.customer.vip ? W.vipPatienceMult : 1);
+    cs.leaveAt = presence.nextCheck(persona, t + rand(a, b) * mult);
+  }
+}
+
+function customerLeaves(chat, t) {
+  const persona = personaOf(chat);
+  comeOnline(chat, t);
+  addMessage(chat, { from: 'them', text: transform(persona, pick(persona.leaves?.length ? persona.leaves : ['Forget it, I\'ll ask someone else.'])), t });
+  finishConversation(chat, 'timeout', t);
+}
+
+// The customer reads the agent's messages at time `at` and answers. Returns false to stop processing.
+async function customerReads(chat, at) {
+  const cs = chat.cs;
+  const C = cfg().customer;
+  cs.readAt = null;
+  for (const m of chat.messages) if (m.from === 'me' && !m.read) { m.read = true; m.readAt = at; }
+  comeOnline(chat, at);
+  const live = clock.now() - at < LIVE_WINDOW;
+  if (live) cs.typing = true;
+  touchChat(chat);
+  const started = performance.now();
+  let out;
+  try {
+    out = await withRetry(() => customerReply(chat), 3, 1500);
+  } catch (e) {
+    cs.typing = false;
+    if (chat.status === 'active' && !chat.deleted) sysMessage(chat, '⚠ Couldn\'t get the customer\'s reply: ' + e.message, { kind: 'error', retry: 'customer' });
+    return false;
+  }
+  if (chat.status !== 'active' || chat.deleted) return false;
+  const typingMs = clamp(out.reply.length * C.typingMsPerChar, C.typingMinMs, C.typingMaxMs);
+  let t;
+  if (live) {
+    const remaining = typingMs - (performance.now() - started);
+    if (remaining > 0) await sleep(remaining);
+    if (chat.status !== 'active' || chat.deleted) return false;
+    t = clock.now();
+  } else {
+    t = at + typingMs;
+  }
+  cs.typing = false;
+  cs.turns += 1;
+  cs.mood = out.mood;
+  if (out.followUp) cs.followUps += 1;
+  if (out.pushback) cs.pushbacks = (cs.pushbacks || 0) + 1;
+  raiseAnger(chat, out);
+  addMessage(chat, { from: 'them', text: transform(personaOf(chat), out.reply), t });
+  comeOnline(chat, t);
+  cs.lastCustomerAt = t;
+  cs.awaitingReply = true;
+  if (out.status === 'satisfied') { finishConversation(chat, 'satisfied', t); return false; }
+  if (out.status === 'leaving') { finishConversation(chat, 'left', t); return false; }
+  if (out.pushback) ui.maybeMentorHint?.(chat);
+  if (cs.turns >= cs.maxTurns || cs.anger >= 100) {
+    const persona = personaOf(chat);
+    addMessage(chat, { from: 'them', text: transform(persona, pick(persona.leaves?.length ? persona.leaves : ['I have to go. Bye.'])), t: t + 5000 });
+    finishConversation(chat, 'left', t + 5000);
+    return false;
+  }
+  if (chat.messages.some((m) => m.from === 'me' && !m.read)) cs.readAt = t + liveReadDelay(chat); // they're in the chat already
+  else setWaiting(chat, t);
+  return true;
 }
 
 // Impatience meter: grows with every reply, faster when the customer has to push back.
@@ -235,12 +350,6 @@ function toneGuide(chat) {
       : '\n- As a VIP you stay composed for now, but you notice every mistake.';
   }
   return `Your impatience level is ${a}/100. ${tone}${vip}`;
-}
-
-export function retryCustomer(chat) {
-  chat.messages = chat.messages.filter((m) => !(m.kind === 'error' && m.retry === 'customer'));
-  chat.cs.pendingReadA = clock.now();
-  touchChat(chat);
 }
 
 function buildCustomerPrompt(chat) {
@@ -303,6 +412,12 @@ async function customerReply(chat) {
   return { reply, status, mood: clamp(Math.round(Number(j.mood) || 0), -2, 2), followUp: !!j.followUp, pushback: !!j.pushback && status !== 'satisfied' };
 }
 
+export function retryCustomer(chat) {
+  chat.messages = chat.messages.filter((m) => !(m.kind === 'error' && m.retry === 'customer'));
+  chat.cs.readAt = clock.now();
+  touchChat(chat);
+}
+
 // ---------- player actions from the context menu ----------
 export function closeChat(chat) {
   if (chat.status !== 'active') return false;
@@ -316,6 +431,49 @@ export function deleteChat(chat) {
   if (wasActive) finishConversation(chat, 'closed');
 }
 
+// Your boss takes a chat off your hands: it ends without pay or grading.
+export function transferChat(chat) {
+  if (chat.status !== 'active') return false;
+  const cs = chat.cs;
+  chat.status = 'ended';
+  chat.endedAt = clock.now();
+  chat.endReason = 'transferred';
+  cs.typing = false;
+  cs.readAt = cs.nudgeAt = cs.leaveAt = cs.waitingSince = null;
+  sysMessage(chat, '↪ Transferred to a colleague by your manager — no pay, no rating');
+  touchChat(chat);
+  return true;
+}
+
+// Time off: nothing happens in open chats while you're away, so their clocks move on by `ms`.
+export function shiftTimers(ms) {
+  for (const chat of activeCustomerChats()) {
+    const cs = chat.cs;
+    for (const k of ['readAt', 'nudgeAt', 'leaveAt', 'waitingSince', 'lastCustomerAt']) if (cs[k] != null) cs[k] += ms;
+    touchChat(chat);
+  }
+}
+
+// Saves from v0.2 used an "active time" clock; restart their timers on wall time.
+export function migrateChat(chat) {
+  const cs = chat.cs;
+  const t = clock.now();
+  if (!cs || cs.mode) return;
+  cs.mode = 'async';
+  cs.lastSeen = t;
+  cs.onlineUntil = 0;
+  cs.readAt = cs.pendingReadA != null ? t + 60000 : null;
+  cs.lastCustomerAt = cs.lastCustomerA != null ? t : null;
+  cs.nudges = cs.nudgedA != null ? 1 : cs.nudges || 0;
+  cs.leaveAt = null;
+  cs.nudged = false;
+  if (cs.waitingSinceA != null) setWaiting(chat, t);
+  else { cs.waitingSince = null; cs.nudgeAt = null; }
+  for (const k of ['pendingReadA', 'waitingSinceA', 'nudgedA', 'lastCustomerA', 'patienceMs']) delete cs[k];
+  delete chat.startedA;
+  touchChat(chat);
+}
+
 // ---------- after loading a save ----------
 export function resumeAfterLoad() {
   for (const chat of S.chats.values()) {
@@ -325,9 +483,8 @@ export function resumeAfterLoad() {
       if (cs.openingPending) postOpeningQuestion(chat);
       if (cs.typing) { // a reply was being written when the app closed
         cs.typing = false;
-        cs.pendingReadA = clock.now() + 1500;
+        if (cs.readAt == null) cs.readAt = clock.now();
       }
-      if (chat.messages.some((m) => m.from === 'me' && !m.read) && cs.pendingReadA == null) cs.pendingReadA = clock.now() + readDelayMs(chat);
       touchChat(chat);
     } else if (chat.status === 'grading') {
       gradeAndPay(chat);

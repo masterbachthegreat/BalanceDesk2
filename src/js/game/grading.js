@@ -2,7 +2,7 @@
 import { llmCall, parseJSON } from './llm.js';
 import { messageLines, reasonText } from './transcript.js';
 import { clamp, cfg } from '../core/state.js';
-import { durationWords } from '../core/format.js';
+import { durationWords, waitWords } from '../core/format.js';
 
 const SYSTEM = `You are the quality-assurance grader at Whiterock, a financial-services firm. You review finished customer-support chats in which a support agent (the player of a training game) answered a customer's question about economics, finance, accounting, statistics or mathematics.
 
@@ -30,7 +30,7 @@ export async function gradeChat(chat) {
     `Customer's question:\n${q.text}`,
     `Reference solution:\n${q.solution}`,
     `How the chat ended: ${reasonText(chat.endReason)}.`,
-    `Agent's average reply time: ${lat === null ? 'n/a' : durationWords(lat)}; the customer had to chase the agent ${cs.nudges || 0} time(s).`,
+    `Agent's average reply time: ${lat === null ? 'n/a' : durationWords(lat)}; the customer had to chase the agent ${cs.nudges || 0} time(s). ${chat.rush ? 'This was a rush-shift live chat: the customer expected replies within minutes.' : `This is an asynchronous messenger: replies within ${waitWords(cfg().world.idealReplyMs)} are normal and good service, so only count slowness against "stars" if the customer had to chase the agent.`}`,
     '',
     'Transcript:',
     ...messageLines(chat),

@@ -1,13 +1,15 @@
 // BalanceDesk renderer entry point: loads the save, wires UI and runs the game loop.
-import { S, cfg, flushAll, touchProfile, saveProfile, rand } from './core/state.js';
+import { S, flushAll, touchProfile, saveProfile } from './core/state.js';
 import { on } from './core/bus.js';
 import { money } from './core/format.js';
 import * as clock from './game/clock.js';
 import * as shop from './game/shop.js';
-import { newChat, getChat, activeCustomerChats, customerChats, addMessage, markRead, handle } from './game/chats.js';
-import { spawnCustomer, tickCustomers, freeSlots, maxSlots, resumeAfterLoad } from './game/customers.js';
-import { botSay } from './game/bot.js';
-import { tickMemos, triggerMemo } from './game/manager.js';
+import { newChat, getChat, addMessage, markRead, handle } from './game/chats.js';
+import { spawnCustomer, resumeAfterLoad, migrateChat } from './game/customers.js';
+import { botSay, handleBotInput } from './game/bot.js';
+import { triggerMemo } from './game/manager.js';
+import * as world from './game/world.js';
+import * as boss from './game/boss.js';
 import { ui } from './ui/registry.js';
 import { renderSidebar, renderStatusBar, bindSidebar } from './ui/sidebar.js';
 import { renderChatPane, updateChatPane, tickChatPane, bindChatPane, prefillInput } from './ui/chatview.js';
@@ -20,7 +22,7 @@ import { toast, ping } from './ui/toast.js';
 
 function newProfile(name) {
   return {
-    version: 1,
+    version: 2,
     name,
     createdAt: Date.now(),
     balance: S.data.config.startingBalance || 0,
@@ -29,18 +31,21 @@ function newProfile(name) {
     rank: 1,
     rankHistory: [{ rank: 1, at: Date.now() }],
     rankChats: [],
-    stats: { completed: 0, scoreSum: 0, starsSum: 0, fiveStars: 0, closedByMe: 0, lost: 0, vipServed: 0, bestPay: 0 },
+    stats: { completed: 0, scoreSum: 0, starsSum: 0, fiveStars: 0, closedByMe: 0, lost: 0, missed: 0, vipServed: 0, bestPay: 0 },
     owned: {},
     equipped: { theme: 'theme-night', wallpaper: null, border: null, nameColor: null, title: null },
     avatar: null,
-    status: 'online',
     activeMs: 0,
     days: {},
     seenQuestions: {},
     recentPersonas: [],
     modifiers: [],
-    memo: { nextAtA: null, sent: [] },
-    nextCustomerA: null,
+    memo: { nextAt: null, sent: [] },
+    world: {},
+    payRaise: 0,
+    raiseAtChats: 0,
+    recentScores: [],
+    lastBossNag: 0,
     vipNext: false,
     counters: { chatSeq: 0 },
     streak: { low: 0, high: 0 },
@@ -55,6 +60,14 @@ function migrate(p) {
   for (const k of Object.keys(d)) if (p[k] === undefined) p[k] = d[k];
   for (const k of Object.keys(d.stats)) if (p.stats[k] === undefined) p.stats[k] = 0;
   for (const k of Object.keys(d.equipped)) if (p.equipped[k] === undefined) p.equipped[k] = d.equipped[k];
+  if ((p.version || 1) < 2) {
+    // v0.3: the world runs on wall-clock time (see world.js)
+    delete p.status;
+    delete p.nextCustomerA;
+    p.memo = { nextAt: null, sent: p.memo?.sent || [] };
+    for (const c of S.chats.values()) if (c.kind === 'customer' && c.status === 'active') migrateChat(c);
+    p.version = 2;
+  }
   return p;
 }
 
@@ -62,14 +75,15 @@ function ensureSystemChats() {
   if (!getChat('bot')) newChat('bot', { id: 'bot', title: 'Whiterock Desk Bot' });
   if (!getChat('mentor')) newChat('mentor', { id: 'mentor', title: 'Mentor' });
   if (!getChat('manager')) newChat('manager', { id: 'manager', title: 'Whiterock Management' });
+  if (!getChat('boss')) newChat('boss', { id: 'boss', title: boss.BOSS.name });
 }
 
 function welcome() {
   const p = S.profile;
   const keyNote = S.settings.hasKey
-    ? 'Your OpenRouter key is set, so customers will start arriving in a few seconds.'
+    ? 'Your OpenRouter key is set, so your first customer will write in shortly.'
     : '⚠ **First, add your OpenRouter API key** — customers can\'t talk without it.';
-  botSay(`👋 Welcome to Whiterock, **${p.name}**!\nI'm the Desk Bot. Customers will message you with finance, accounting, statistics and maths questions. Keep chatting until they're satisfied: you're graded on the answer (AI score /100) and on service (★1–5), and paid when each chat ends.\n\n${keyNote}\n\nUseful: /help · /rank · /payformula · /shop · /spendings\nRight-click a chat to close, archive or delete it.`, {
+  botSay(`👋 Welcome to Whiterock, **${p.name}**!\nI'm the Desk Bot. Customers message you with finance, accounting, statistics and maths questions, any time of day, like on a real messenger. Keep chatting until they're satisfied: you're graded on the answer (AI score /100) and on service (★1–5), and paid when each chat ends.\n\n⏰ The world keeps running when BalanceDesk is closed. Customers read your replies when they check their phones (twice as fast while the app is open). Answer within about **3 hours** for full pay; after **12 hours** they chase you, and later they give up. You can have up to 15 open chats.\n\n${keyNote}\n\nUseful: /help · /queue · /rank · /payformula · /shop · /spendings\nMessage your manager **Diane** for a rush shift or time off. Right-click a chat to close, archive or delete it.`, {
     buttons: S.settings.hasKey ? [[{ label: '📖 All commands', action: 'cmd', value: '/help' }]] : [[{ label: '⚙ Open Settings', action: 'ui', value: 'settings' }], [{ label: '📖 All commands', action: 'cmd', value: '/help' }]],
   });
   addMessage(getChat('mentor'), {
@@ -77,6 +91,7 @@ function welcome() {
     text: `Hi ${p.name}, welcome aboard. I'm your mentor.\n\nAsk me anything: a concept you're unsure about, how to explain something to a customer, or a quick check of your maths. I'll draw graphs when they help.\n\nTo show me a conversation, mention it with **@** (for example **@chat1**) and I'll read the whole chat. If I see a customer keep pushing back on you, I'll drop you a hint here.`,
   });
   triggerMemo('welcome');
+  boss.welcomeMessage();
 }
 
 // ---------- rendering (batched) ----------
@@ -118,27 +133,6 @@ function openChat(id) {
   updateTitle();
 }
 
-function setStatus(st) {
-  S.profile.status = st;
-  if (st !== 'online') S.profile.nextCustomerA = null;
-  touchProfile();
-  renderStatusBar();
-}
-
-function callNextCustomer() {
-  if (!S.settings.hasKey) {
-    botSay('⚠ Add your OpenRouter API key first.', { buttons: [[{ label: '⚙ Open Settings', action: 'ui', value: 'settings' }]] });
-    return;
-  }
-  if (freeSlots() <= 0) {
-    botSay(`📵 All your lines are busy (${maxSlots()}/${maxSlots()}). Finish a chat first — or buy a Second Monitor in the /shop for an extra line.`);
-    return;
-  }
-  const chat = spawnCustomer();
-  S.profile.nextCustomerA = null;
-  openChat(chat.id);
-}
-
 function askMentorAbout(chatId) {
   const c = getChat(chatId);
   if (!c) return;
@@ -152,7 +146,8 @@ function toggleDayNight() {
 }
 
 Object.assign(ui, {
-  openChat, refresh, setStatus, callNextCustomer, askMentorAbout, toggleDayNight, chatContextMenu,
+  openChat, refresh, askMentorAbout,
+  showQueue: () => { openChat('bot'); handleBotInput('/queue'); }, toggleDayNight, chatContextMenu,
   openSettings: settingsModal, openProfile: profileModal, openShop: (c) => shopModal(c),
   openCalculator: () => { if (!openCalculator()) shopModal('tools'); },
   openNotepad: () => { if (!openNotepad()) shopModal('tools'); },
@@ -163,29 +158,11 @@ Object.assign(ui, {
 });
 
 // ---------- game loop ----------
-function arrivals() {
-  const p = S.profile;
-  const A = cfg().arrival;
-  if (p.status !== 'online' || !S.settings.hasKey || freeSlots() <= 0) { p.nextCustomerA = null; return; }
-  if (p.nextCustomerA == null) {
-    const idle = activeCustomerChats().length === 0;
-    p.nextCustomerA = clock.now() + (customerChats().length === 0 ? A.firstMs : idle ? rand(A.firstMs, A.minMs) : rand(A.minMs, A.maxMs));
-    return;
-  }
-  if (clock.now() >= p.nextCustomerA) {
-    p.nextCustomerA = null;
-    const chat = spawnCustomer();
-    if (!S.activeChatId) openChat(chat.id);
-  }
-}
-
 let ticks = 0;
 function tick() {
   if (!S.profile) return;
-  clock.advance();
-  tickCustomers();
-  arrivals();
-  tickMemos();
+  const dt = clock.advance();
+  world.tick(dt);
   ticks++;
   if (ticks % 2 === 0) { renderSidebar(); renderStatusBar(); tickChatPane(); }
   if (ticks % 30 === 0) saveProfile();
@@ -199,6 +176,9 @@ function onIncoming(chat) {
     const m = chat.messages[chat.messages.length - 1];
     const first = chat.messages.filter((x) => x.from === 'them').length === 1;
     toast(first ? `New customer: ${chat.customer.name}${chat.customer.vip ? ' 👑' : ''}` : chat.customer.name, (m?.text || '').slice(0, 90), first ? 'good' : '', () => openChat(chat.id));
+  } else if (S.activeChatId !== chat.id && chat.kind === 'boss') {
+    const m = chat.messages[chat.messages.length - 1];
+    toast('💼 Diane', (m?.text || '').slice(0, 90), '', () => openChat('boss'));
   }
 }
 
@@ -212,7 +192,8 @@ async function boot() {
 
   let fresh = false;
   if (saved) {
-    S.profile = migrate(saved);
+    S.profile = saved;
+    migrate(saved);
   } else {
     fresh = true;
     S.profile = newProfile('Agent');
@@ -260,12 +241,15 @@ async function boot() {
     welcome();
     openChat('bot');
   } else {
+    boss.welcomeMessage();
     resumeAfterLoad();
     openChat(S.profile.lastOpenChat && getChat(S.profile.lastOpenChat) ? S.profile.lastOpenChat : 'bot');
   }
+  window.__bd = { S, spawnCustomer, clock, world, boss, ui }; // handy for debugging in DevTools (and used by tests)
+  const caught = world.catchUp(); // replays the time the app was closed (world.tick waits for it)
   setInterval(tick, 500);
   setInterval(() => { S.profile.lastOpenChat = S.activeChatId; }, 5000);
-  window.__bd = { S, spawnCustomer, clock, ui }; // handy for debugging in DevTools (and used by tests)
+  await caught;
 }
 
 boot().catch((e) => {

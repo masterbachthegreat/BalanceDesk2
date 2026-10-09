@@ -1,14 +1,15 @@
 // Left column: chat list (Telegram-style), archive folder and the status bar.
 import { S, cfg } from '../core/state.js';
-import { escapeHtml, listTime, duration, money, starsText } from '../core/format.js';
+import { escapeHtml, listTime, waitWords, money, starsText } from '../core/format.js';
 import { chatAvatar } from './avatar.js';
 import { plainPreview } from './markdown.js';
 import { displayName } from '../game/chats.js';
 import * as clock from '../game/clock.js';
-import { freeSlots, maxSlots } from '../game/customers.js';
+import { openCount } from '../game/customers.js';
+import * as world from '../game/world.js';
 import { ui } from './registry.js';
 
-const ORDER = { bot: 0, mentor: 1, manager: 2 };
+const ORDER = { bot: 0, boss: 1, mentor: 2, manager: 3 };
 
 function sortChats(list) {
   return list.sort((a, b) => {
@@ -43,10 +44,11 @@ function rightBottom(chat) {
   if (chat.status === 'grading') return '<span class="cr-meta">⏳</span>';
   if (chat.status === 'ended') return chat.result ? `<span class="cr-meta" style="color:var(--star)">${starsText(chat.result.stars)}</span>` : '';
   const cs = chat.cs;
-  if (cs.waitingSinceA != null) {
-    const w = clock.now() - cs.waitingSinceA;
-    const cls = cs.nudgedA != null ? 'danger' : w > Math.min(cfg().customer.warnAfterMs || 300000, cs.patienceMs * 0.8) ? 'warn' : '';
-    return `<span class="wait-chip ${cls}" title="Customer is waiting for your reply">${duration(w)}</span>`;
+  if (cs.waitingSince != null) {
+    const w = clock.now() - cs.waitingSince;
+    const ideal = chat.rush ? cfg().rush.idealReplyMs : cfg().world.idealReplyMs;
+    const cls = cs.nudged ? 'danger' : w > ideal ? 'warn' : '';
+    return `<span class="wait-chip ${cls}" title="Customer is waiting for your reply">${waitWords(w)}</span>`;
   }
   return '';
 }
@@ -92,14 +94,20 @@ export function renderSidebar() {
 
 export function renderStatusBar() {
   const p = S.profile;
-  const on = p.status === 'online';
+  const W = cfg().world;
   const d = clock.today();
-  const slots = maxSlots();
-  const used = slots - freeSlots();
-  const keyWarn = !S.settings.hasKey ? ' · <span style="color:var(--danger)">no API key</span>' : '';
+  const open = openCount();
+  const vac = world.vacation();
+  const rush = world.rushStatus();
+  const load = world.loadMult();
+  let extra = '';
+  if (vac) extra += `<span title="Time off: no new customers, open chats paused">🌴 off until ${new Date(vac.end).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>`;
+  if (rush.active) extra += `<span title="Rush shift: customers still to come" style="color:var(--warning)">⚡ rush · ${rush.left} to come</span>`;
+  if (load !== 1 && !vac) extra += `<span title="Set by your manager until midnight">${load < 1 ? '🌤 lighter day' : '📈 heavier day'}</span>`;
+  const keyWarn = !S.settings.hasKey ? '<span style="color:var(--danger)">no API key</span>' : '';
   document.getElementById('statusBar').innerHTML =
-    `<button class="status-toggle" id="statusToggle" title="Toggle whether new customers arrive"><span class="dot ${on ? 'on' : ''}"></span>${on ? 'Online' : 'Away'}</button>` +
-    `<span title="Time on shift today">⏱ ${duration(d.activeMs)}</span><span title="Active customer chats">💬 ${used}/${slots}</span>${keyWarn}` +
+    `<button class="status-toggle" id="queueBtn" title="Open chats (max ${W.openCap}) — click for the queue"><span class="dot ${open < W.openCap ? 'on' : ''}"></span>💬 ${open}/${W.openCap}</button>` +
+    `<span title="Customers who wrote in today (daily cap ${world.capToday()})">📨 ${d.arrivals || 0}/${world.capToday()}</span>${extra}${keyWarn}` +
     `<span class="bal" title="Balance">${money(p.balance)}</span>`;
 }
 
@@ -121,7 +129,7 @@ export function bindSidebar() {
   const search = document.getElementById('search');
   search.addEventListener('input', () => { S.search = search.value; renderSidebar(); });
   document.getElementById('statusBar').addEventListener('click', (e) => {
-    if (e.target.closest('#statusToggle')) ui.setStatus(S.profile.status === 'online' ? 'away' : 'online');
+    if (e.target.closest('#queueBtn')) ui.showQueue();
   });
 }
 

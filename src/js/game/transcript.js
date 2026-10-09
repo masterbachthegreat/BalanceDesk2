@@ -7,11 +7,13 @@ const REASONS = {
   left: 'the customer gave up and left',
   timeout: 'the customer left after waiting too long for a reply',
   closed: 'the agent closed the conversation before the customer was satisfied',
+  missed: 'the customer gave up before the agent ever replied',
+  transferred: 'the manager transferred the chat to a colleague',
 };
 export const reasonText = (r) => REASONS[r] || r || 'unknown';
 
 function ts(t) {
-  return new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return new Date(t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 export function messageLines(chat) {

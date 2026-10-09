@@ -135,6 +135,34 @@ def parse(block, vip):
     return out
 
 people = parse(ROWS, False) + parse(VIP, True)
+
+# Where each customer lives (UTC offset) and their daily rhythm. Used to decide when they're online.
+# schedule: early | regular | student | night | retired | executive
+import hashlib
+TZ_RULES = [('Nigeria', 1), ('Ghana', 0), ('Scottish', 0), ('London', 0), ('Irish', 0), ('pub', 0), ('village', 0), ('UK', 0),
+            ('German', 1), ('Italian', 1), ('Fashion', 1), ('Madame', 1), ('Swed', 1), ('Nilsson', 1), ('Johansson', 1), ('Lindqvist', 1),
+            ('Tanaka', 9), ('Watanabe', 9), ('Hiroshi', 9), ('Kim', 9), ('Patel', 5.5), ('Raman', 5.5), ('Mensah', 0),
+            ('Sheikh', 4), ('Haddad', 3), ('Khalil', 3), ('Demir', 3), ('Rahimi', 3.5), ('Volkov', 3), ('Petrov', 3), ('Sokolov', 3),
+            ('Senator', -5), ('Governor', -5), ('taco', -6), ('Rico', -6), ('Alvarez', -6), ('Delgado', -6), ('Marquez', -5),
+            ('Uber', -5), ('FIRE', -8), ('Crypto', -8), ('Startup', -8), ('Mia Johansson', 1), ('Tran', -8), ('Brooks', -5)]
+TZ_POOL = [-8, -6, -5, -5, -3, 0, 0, 0, 1, 1, 1, 2, 2, 3, 5.5, 8, 9, 10]
+def h(x): return int(hashlib.md5(x.encode()).hexdigest(), 16)
+def schedule_for(p):
+    t = (p['name'] + ' ' + p['bio']).lower()
+    if any(w in t for w in ['retired', 'grandmother', '82-year', 'treasurer of the village', 'allotment', 'nun', 'church']): return 'retired'
+    if any(w in t for w in ['student', 'teenager', 'gamer', 'bootcamp', 'philosophy']): return 'student'
+    if any(w in t for w in ['night', 'security guard', 'nurse', 'poker', 'pub landlord', 'day trader']): return 'night'
+    if p.get('vip') or any(w in t for w in ['cfo', 'founder', 'partner', 'lawyer', 'intern']): return 'executive'
+    if any(w in t for w in ['farmer', 'baker', 'fisherman', 'market stall', 'vet']): return 'early'
+    return 'regular'
+for p in people:
+    tz = None
+    for key, off in TZ_RULES:
+        if key.lower() in (p['name'] + ' ' + p['bio']).lower():
+            tz = off; break
+    if tz is None: tz = TZ_POOL[h(p['id']) % len(TZ_POOL)]
+    p['tz'] = tz
+    p['schedule'] = schedule_for(p)
 ids = [p['id'] for p in people]
 assert len(ids) == len(set(ids)), 'duplicate ids'
 json.dump(people, open('data/personalities.json', 'w'), indent=1, ensure_ascii=False)
