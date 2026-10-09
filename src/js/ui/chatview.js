@@ -1,5 +1,5 @@
 // Right column: the open chat (header, messages, composer, info panel).
-import { S } from '../core/state.js';
+import { S, cfg } from '../core/state.js';
 import { escapeHtml, clockTime, dayLabel, duration, durationWords, money, starsText, stars, num } from '../core/format.js';
 import { chatAvatar } from './avatar.js';
 import { renderMarkdown, splitCharts } from './markdown.js';
@@ -40,7 +40,7 @@ function timersHtml(chat) {
   let h = `<span class="timer-pill" title="Conversation time">⏱ ${duration(clock.now() - chat.startedA)}</span>`;
   if (cs.waitingSinceA != null) {
     const w = clock.now() - cs.waitingSinceA;
-    const cls = cs.nudgedA != null ? 'danger' : w > cs.patienceMs * 0.6 ? 'warn' : '';
+    const cls = cs.nudgedA != null ? 'danger' : w > Math.min(cfg().customer.warnAfterMs || 300000, cs.patienceMs * 0.8) ? 'warn' : '';
     h += `<span class="timer-pill ${cls}" title="The customer is waiting for your reply">⌛ waiting ${duration(w)}</span>`;
   } else if (cs.typing) {
     h += '<span class="timer-pill">✍ customer is typing</span>';
@@ -58,6 +58,7 @@ function headerHtml(chat) {
     <div class="ch-info" id="chInfo"><div class="ch-name">${escapeHtml(displayName(chat))}${vip}${chat.kind === 'customer' ? ` <span style="color:var(--muted);font-weight:400;font-size:12px">${handle(chat)}</span>` : ''}</div>
     <div class="ch-sub ${sub.cls}" id="chSub">${escapeHtml(sub.text)}</div></div>
     <div class="ch-timers" id="chTimers">${timersHtml(chat)}</div>
+    ${chat.kind === 'customer' ? '<button class="icon-btn" id="chConceptBtn" title="Concept: learn the idea behind this question">📖</button>' : ''}
     <button class="icon-btn" id="chInfoBtn" title="Info">ⓘ</button>
     <button class="icon-btn" id="chMenuBtn" title="More">⋮</button>
   </div>`;
@@ -82,6 +83,7 @@ function payoutCard(chat) {
       <div><div class="pc-big pc-pay">${money(r.payout.total)}</div><div class="pc-label">paid</div></div>
     </div>
     ${r.grade?.summary ? `<div style="font-size:13px;margin-top:6px">${escapeHtml(r.grade.summary)}</div>` : ''}
+    <div style="margin-top:8px"><button class="btn small" data-review="${chat.id}">🎓 Review with mentor</button></div>
     <div class="pc-hint">Type <span class="cmd" data-cmd="/payout">/payout</span> for the pay breakdown · <span class="cmd" data-cmd="/feedback">/feedback</span> for grader notes</div>
   </div>`;
 }
@@ -524,6 +526,9 @@ export function bindChatPane() {
       else if (kind === 'mentor') retryMentor();
       return;
     }
+    if (t.closest('#chConceptBtn')) { ui.openConcept?.(chat.id); return; }
+    const rv = t.closest('[data-review]');
+    if (rv) { ui.reviewWithMentor?.(rv.dataset.review); return; }
     if (t.closest('#chInfo') || t.closest('#chInfoBtn')) {
       S.infoOpen = !document.getElementById('infoPanel');
       if (S.infoOpen) openInfo(chat); else document.getElementById('infoPanel')?.remove();

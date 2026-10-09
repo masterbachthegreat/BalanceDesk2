@@ -7,6 +7,9 @@ import { SHOP_CATEGORIES } from '../game/bot.js';
 import { rankInfo, promotionStatus, maxRank } from '../game/progress.js';
 import { toast } from './toast.js';
 import { emit } from '../core/bus.js';
+import { renderMarkdown, splitCharts } from './markdown.js';
+import { renderChart, destroyChartsIn } from './charts.js';
+import { getConcept } from '../game/concept.js';
 
 const root = () => document.getElementById('modalRoot');
 
@@ -253,4 +256,28 @@ export function shopModal(cat) {
     }
   });
   render();
+}
+
+// ---------- concept explainer ----------
+export function conceptModal(chat) {
+  const m = openModal({
+    title: '📖 Concept · ' + escapeHtml(chat.question.topic),
+    body: '<div id="conceptBody" class="concept-body"><div class="note">Preparing a short lesson…</div></div>',
+    wide: false,
+    onClose: () => destroyChartsIn(m),
+  });
+  const box = m.querySelector('#conceptBody');
+  getConcept(chat).then((text) => {
+    if (!box.isConnected) return;
+    box.innerHTML = '';
+    for (const part of splitCharts(text)) {
+      if (part.type === 'text') {
+        const d = document.createElement('div');
+        d.innerHTML = renderMarkdown(part.text.trim(), { full: true });
+        box.appendChild(d);
+      } else renderChart(box, part.json);
+    }
+  }).catch((e) => {
+    if (box.isConnected) box.innerHTML = `<div class="note err">❌ ${escapeHtml(e.message)}</div>`;
+  });
 }

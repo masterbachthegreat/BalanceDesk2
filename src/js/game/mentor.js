@@ -1,5 +1,6 @@
 // The Mentor (Sonnet): answers questions, draws charts, and reads any chat you @mention.
 import { S, cfg, touchChat } from '../core/state.js';
+import { emit } from '../core/bus.js';
 import { addMessage, getChat, findChatByHandle, handle, sysMessage } from './chats.js';
 import { fullTranscript } from './transcript.js';
 import { llmCall } from './llm.js';
@@ -69,7 +70,12 @@ export async function runMentor(chat) {
       chat.typing = true;
       touchChat(chat);
 
-      const history = chat.messages.filter((m) => m.from !== 'sys').slice(-cfg().mentor.historyMessages);
+      // messages sent while the previous answer was being written go last, so the request always ends on them
+      const pendingIds = new Set(pending.map((m) => m.id));
+      const history = [
+        ...chat.messages.filter((m) => m.from !== 'sys' && !pendingIds.has(m.id)),
+        ...pending,
+      ].slice(-cfg().mentor.historyMessages);
       const { chats, missing } = resolveMentions(chat.messages);
       let system = SYSTEM + '\n\n' + playerSummary();
       if (chats.length) system += '\n\nATTACHED CHATS:\n\n' + chats.map(fullTranscript).join('\n\n');
@@ -111,4 +117,48 @@ export function retryMentor() {
   const lastMine = [...chat.messages].reverse().find((m) => m.from === 'me');
   if (lastMine) lastMine.read = false;
   runMentor(chat);
+}
+
+// ---------- unprompted hints when the agent is struggling in a live chat ----------
+const HINT_SYSTEM = `You are the Mentor at Whiterock. You are quietly watching a junior support agent's LIVE customer chat, and the customer has pushed back on their answer more than once. Send the agent a short, unprompted private nudge.
+
+Rules: 2-4 sentences, friendly and direct, in a chat-app tone. Name the concept they need and point at what to reconsider (the step or idea they are missing). Do NOT give the final answer or the key numbers — make them think. No headings. Plain text/Unicode maths only.`;
+
+const hinting = new Set();
+
+export async function maybeMentorHint(chat) {
+  const M = cfg().mentor;
+  const cs = chat.cs;
+  if (!M.autoHints || chat.status !== 'active' || hinting.has(chat.id)) return;
+  if ((cs.hintsGiven || 0) >= M.maxHintsPerChat) return;
+  if ((cs.pushbacks || 0) < M.hintAfterPushbacks * ((cs.hintsGiven || 0) + 1)) return;
+  hinting.add(chat.id);
+  cs.hintsGiven = (cs.hintsGiven || 0) + 1;
+  const mentorChat = getChat('mentor');
+  try {
+    mentorChat.typing = true;
+    touchChat(mentorChat);
+    const text = await llmCall({
+      role: 'smart',
+      category: 'mentor',
+      system: HINT_SYSTEM,
+      messages: [{ role: 'user', content: fullTranscript(chat) + '\n\nWrite your nudge to the agent now.' }],
+      maxTokens: 300,
+      temperature: 0.5,
+      chatId: chat.id,
+    });
+    if (chat.status !== 'active') return;
+    addMessage(mentorChat, { from: 'them', text: `👀 Saw you're stuck with ${chat.customer.name} (${handle(chat)}). ${text.trim()}`, hint: chat.id });
+    emit('mentorHint', chat);
+  } catch (e) {
+    console.warn('mentor hint failed', e);
+  } finally {
+    mentorChat.typing = false;
+    hinting.delete(chat.id);
+    touchChat(mentorChat);
+  }
+}
+
+export function reviewWithMentor(chat) {
+  return sendToMentor(`${handle(chat)} Can you walk me through the correct answer step by step, and show me where I went wrong?`);
 }

@@ -31,7 +31,9 @@ Saves are kept in `%APPDATA%\BalanceDesk\save` (☰ → *Open save folder*) and 
   - At first you handle 2 at a time; a *Second monitor* from the shop adds a line.
   - Each customer has a personality (over 100 of them, including VIPs 👑, who pay 2.5×).
   - They take 1–30 s to read your message, then type a reply. Ticks: ✓ sent, ✓✓ read.
-  - If you leave them waiting about 3–5 minutes they chase you, and a couple of minutes later they leave.
+  - The waiting timer turns yellow after 5 minutes. After about 8–12 minutes the customer chases you, and 3 minutes later they leave.
+  - Customers don't spell out what you got wrong: they just push back. The longer a chat drags on, the curter they get (short-tempered ones get rude). VIPs stay calm for one to three wrong answers, then get angry or leave.
+- **📖 Concept** (button in the chat header): a short beginner lesson on the idea behind the customer's question, with a worked example using different numbers.
 - **Ending a chat:** it ends when the customer is satisfied, when they give up, or when you close it.
   - The AI then grades your **answer (1–100)** and your **service (1–5★)**, and pays you.
   - Inside any finished chat, type `/payout` for the exact pay breakdown and `/feedback` for the grader's notes and the correct answer.
@@ -46,6 +48,8 @@ Saves are kept in `%APPDATA%\BalanceDesk\save` (☰ → *Open save folder*) and 
   - `/next`: calls a customer now
   - `/calc`, `/notes`, `/settings`
 - **Mentor:** ask about any concept and get graphs when they help.
+  - If a customer keeps pushing back on you, the mentor messages you a hint without giving away the answer.
+  - Every finished chat has a **🎓 Review with mentor** button that walks you through the correct answer.
   - Mention a chat with `@` (e.g. `@chat12`, or `@Margaret`) and the mentor reads that whole conversation.
 - **Whiterock Management** posts memos now and then. Some give pay bonuses.
 - **Ranks:** your last 8 chats at a rank must average at least 70/100 to be promoted. Each rank follows the

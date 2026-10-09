@@ -366,3 +366,10 @@ input, textarea, select { font: inherit; color: var(--text); }
 .toast.good { border-left-color: var(--success); }
 .toast.bad { border-left-color: var(--danger); }
 @keyframes slidein { from { transform: translateX(30px); opacity: 0; } }
+
+/* concept explainer */
+.concept-body { line-height: 1.5; }
+.concept-body p { margin: 0 0 8px; }
+.concept-body code { background: var(--code-bg); padding: 1px 4px; border-radius: 4px; }
+.concept-body table { border-collapse: collapse; }
+.concept-body th, .concept-body td { border: 1px solid var(--border); padding: 3px 7px; }

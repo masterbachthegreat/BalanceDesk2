@@ -1,5 +1,5 @@
 // Left column: chat list (Telegram-style), archive folder and the status bar.
-import { S } from '../core/state.js';
+import { S, cfg } from '../core/state.js';
 import { escapeHtml, listTime, duration, money, starsText } from '../core/format.js';
 import { chatAvatar } from './avatar.js';
 import { plainPreview } from './markdown.js';
@@ -45,7 +45,7 @@ function rightBottom(chat) {
   const cs = chat.cs;
   if (cs.waitingSinceA != null) {
     const w = clock.now() - cs.waitingSinceA;
-    const cls = cs.nudgedA != null ? 'danger' : w > cs.patienceMs * 0.6 ? 'warn' : '';
+    const cls = cs.nudgedA != null ? 'danger' : w > Math.min(cfg().customer.warnAfterMs || 300000, cs.patienceMs * 0.8) ? 'warn' : '';
     return `<span class="wait-chip ${cls}" title="Customer is waiting for your reply">${duration(w)}</span>`;
   }
   return '';

@@ -12,10 +12,11 @@ stats and maths questions; OpenRouter LLMs play the customers (Haiku), grade ans
 - `src/` is the renderer: plain ES modules, no bundler.
   - `js/core/`: `expr.js` (safe evaluator plus financial functions), `state.js` (global `S`, debounced saves), `bus.js`, `format.js`, `api-web.js` (browser shim for the dev server).
   - `js/game/`:
-    - `customers.js`: arrival, read delay, typing, impatience, Haiku prompt
+    - `customers.js`: arrival, read delay, typing, impatience, Haiku prompt. A hidden anger value (`cs.anger`, tuned by `config.customer.meter`) sets the customer's tone and VIP grace. The user doesn't want a visible meter.
+    - `concept.js`: the 📖 Concept lesson (Sonnet, cached per chat)
     - `results.js`, `grading.js` (Sonnet prompt), `payout.js`: ending a chat
     - `bot.js`: slash commands, `/payout`
-    - `mentor.js`: Sonnet, `@chatN` transcripts, chart blocks
+    - `mentor.js`: Sonnet, `@chatN` transcripts, chart blocks, unprompted hints after repeated pushbacks (`maybeMentorHint`), Review with mentor
     - `manager.js`, `progress.js`: ranks and promotion
     - `shop.js`, `questions.js` (pick by book order), `template.js` (randomised questions), `clock.js` (in-app clock; time only runs while the app is open)
   - `js/ui/`: sidebar, chatview (incremental message rendering), modals, contextmenu, drawer, floating (calculator, notepad), charts (Chart.js, vendored in `src/vendor`), markdown.
@@ -26,7 +27,7 @@ stats and maths questions; OpenRouter LLMs play the customers (Haiku), grade ans
   - `validate-data.mjs`: checks data, runs every template against the book's numbers, and samples 200 variants of each.
   - `build-personalities.py`: regenerates `data/personalities.json`.
   - `question-sources/`: Python sources that generate `data/questions/*.json`.
-- `tests/ui-test.mjs`: Playwright end-to-end test against the dev server with the mock LLM (36 checks).
+- `tests/ui-test.mjs`: Playwright end-to-end test against the dev server with the mock LLM (41 checks).
 
 ## Question pool
 

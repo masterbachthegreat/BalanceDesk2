@@ -12,7 +12,8 @@ import { ui } from './ui/registry.js';
 import { renderSidebar, renderStatusBar, bindSidebar } from './ui/sidebar.js';
 import { renderChatPane, updateChatPane, tickChatPane, bindChatPane, prefillInput } from './ui/chatview.js';
 import { chatContextMenu, bindContextMenu } from './ui/contextmenu.js';
-import { onboardingModal, settingsModal, profileModal, shopModal, closeModal } from './ui/modals.js';
+import { onboardingModal, settingsModal, profileModal, shopModal, closeModal, conceptModal } from './ui/modals.js';
+import { maybeMentorHint, reviewWithMentor } from './game/mentor.js';
 import { bindDrawer, closeDrawer } from './ui/drawer.js';
 import { openCalculator, openNotepad } from './ui/floating.js';
 import { toast, ping } from './ui/toast.js';
@@ -73,7 +74,7 @@ function welcome() {
   });
   addMessage(getChat('mentor'), {
     from: 'them',
-    text: `Hi ${p.name}, welcome aboard. I'm your mentor.\n\nAsk me anything: a concept you're unsure about, how to explain something to a customer, or a quick check of your maths. I'll draw graphs when they help.\n\nTo show me a conversation, mention it with **@** (for example **@chat1**) and I'll read the whole chat.`,
+    text: `Hi ${p.name}, welcome aboard. I'm your mentor.\n\nAsk me anything: a concept you're unsure about, how to explain something to a customer, or a quick check of your maths. I'll draw graphs when they help.\n\nTo show me a conversation, mention it with **@** (for example **@chat1**) and I'll read the whole chat. If I see a customer keep pushing back on you, I'll drop you a hint here.`,
   });
   triggerMemo('welcome');
 }
@@ -156,6 +157,9 @@ Object.assign(ui, {
   openCalculator: () => { if (!openCalculator()) shopModal('tools'); },
   openNotepad: () => { if (!openNotepad()) shopModal('tools'); },
   toast,
+  maybeMentorHint,
+  openConcept: (id) => { const c = getChat(id); if (c) conceptModal(c); },
+  reviewWithMentor: (id) => { const c = getChat(id); if (!c) return; openChat('mentor'); reviewWithMentor(c); },
 });
 
 // ---------- game loop ----------
@@ -231,6 +235,9 @@ async function boot() {
     if (S.settings.sound) ping('money');
     if (S.activeChatId !== chat.id) toast(`${money(chat.result.payout.total, { plus: true })} from ${chat.customer.name}`, `Score ${chat.result.aiScore}/100 · ${chat.result.stars}★`, 'good', () => openChat(chat.id));
     pending.status = true; schedule();
+  });
+  on('mentorHint', (chat) => {
+    if (S.activeChatId !== 'mentor') toast('🎓 Mentor has a hint', `About ${chat.customer.name} (${handle(chat)})`, 'good', () => openChat('mentor'));
   });
   on('purchase', () => { pending.status = true; schedule(); });
   on('modalClosed', () => { const c = getChat(S.activeChatId); if (c) markRead(c); });

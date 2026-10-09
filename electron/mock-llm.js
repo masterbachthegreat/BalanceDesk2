@@ -20,7 +20,7 @@ async function respond(req) {
     if (lastAgent.length > 90) {
       return JSON.stringify({ reply: 'Ahh that makes sense now, thank you so much!', status: 'satisfied', mood: 2 });
     }
-    return JSON.stringify({ reply: 'Hmm, could you explain that in a bit more detail?', status: 'continue', mood: 0 });
+    return JSON.stringify({ reply: "Hmm, I don't get it.", status: 'continue', mood: 0, pushback: true });
   }
 
   if (req.category === 'grading') {
@@ -33,6 +33,14 @@ async function respond(req) {
       issues: long ? [] : ['Explanation was thin'],
       correctAnswer: 'See the reference solution.',
     });
+  }
+
+  if (req.category === 'concept') {
+    return '**The idea** — mock concept explainer.\n\n**How to work it out** — step 1, step 2.\n\n**Mini example** — 2 × 3 = 6.\n\n**Watch out** — units.';
+  }
+
+  if (req.category === 'mentor' && /Write your nudge/.test(text)) {
+    return 'Think about what one unit of the task costs in terms of the other task. You are close!';
   }
 
   if (req.category === 'mentor') {

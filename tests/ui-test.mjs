@@ -171,6 +171,26 @@ try {
   const r4 = await bd((id) => window.__bd.S.chats.get(id), c4);
   check(r4.endReason === 'timeout' && r4.result.stars <= 2, 'customer leaves after waiting, stars capped');
 
+  console.log('Concept, hints and review');
+  const c6 = await newCustomer();
+  await page.click('#chConceptBtn');
+  await page.waitForSelector('#conceptBody p', { timeout: 10000 });
+  check((await page.textContent('#conceptBody')).includes('The idea'), 'concept explainer shown');
+  await page.click('.modal [data-close]');
+  for (let i = 0; i < 2; i++) {
+    await send('not sure, maybe 5?');
+    await forceRead(c6);
+    await waitFor(([id, n]) => window.__bd.S.chats.get(id).cs.turns === n, [c6, i + 1]);
+  }
+  await waitFor(() => window.__bd.S.chats.get('mentor').messages.some((m) => m.hint));
+  check(true, 'mentor sends an unprompted hint after repeated pushback');
+  check((await bd((id) => window.__bd.S.chats.get(id).cs.anger > 0, c6)), 'hidden impatience grows');
+  check((await page.locator('.meter, .anger').count()) === 0, 'no visible impatience meter');
+  await page.click(`.chat-row[data-id="${c1}"]`);
+  await page.click(`[data-review="${c1}"]`);
+  await waitFor(() => window.__bd.S.activeChatId === 'mentor' && window.__bd.S.chats.get('mentor').messages.some((m) => m.from === 'me' && /@chat1/.test(m.text)));
+  check(true, 'review with mentor sends the chat to the mentor');
+
   console.log('Mentor');
   await page.click('.chat-row[data-id="mentor"]');
   await page.fill('#input', '@chat');
@@ -178,8 +198,8 @@ try {
   check((await page.locator('#suggest .item').count()) >= 2, '@ suggestions list chats');
   await page.keyboard.press('Escape');
   await send('Please plot a demand curve and review @chat1 for me');
-  await waitFor(() => window.__bd.S.chats.get('mentor').messages.at(-1).from === 'them' && window.__bd.S.chats.get('mentor').messages.length > 2);
-  const mentorReply = await bd(() => window.__bd.S.chats.get('mentor').messages.at(-1));
+  await waitFor(() => window.__bd.S.chats.get('mentor').messages.some((m) => m.from === 'them' && /```chart/.test(m.text)));
+  const mentorReply = await bd(() => window.__bd.S.chats.get('mentor').messages.filter((m) => /```chart/.test(m.text)).at(-1));
   check(/transcript/.test(mentorReply.text), 'mentor received the mentioned chat transcript');
   await page.waitForTimeout(400);
   check((await page.locator('#messages .chart-box canvas').count()) >= 1, 'mentor chart rendered');
@@ -208,6 +228,7 @@ try {
   failed++;
   console.log('  ✗ test crashed: ' + e.message);
   console.log('    console errors: ' + errors.slice(0, 5).join(' | '));
+  try { console.log(JSON.stringify(await page.evaluate(() => window.__bd.S.chats.get('mentor').messages.map((m) => [m.from, m.read, m.text.slice(0, 60)])), null, 0)); } catch {}
 } finally {
   await browser.close();
   server.kill();

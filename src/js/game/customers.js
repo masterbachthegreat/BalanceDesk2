@@ -1,5 +1,6 @@
 // Customer behaviour: arrival, reading delay, typing, impatience and Haiku-written replies.
-import { S, cfg, rand, pick, clamp, touchChat, touchProfile } from '../core/state.js';
+import { S, cfg, rand, randInt, pick, clamp, touchChat, touchProfile } from '../core/state.js';
+import { ui } from '../ui/registry.js';
 import * as clock from './clock.js';
 import { newChat, addMessage, sysMessage, activeCustomerChats, removeChat } from './chats.js';
 import { pickQuestion } from './questions.js';
@@ -58,6 +59,10 @@ export function spawnCustomer(opts = {}) {
     cs: {
       turns: 0,
       followUps: 0,
+      pushbacks: 0,
+      anger: 0,
+      vipGrace: persona.vip ? randInt(C.meter.vipGrace[0], C.meter.vipGrace[1]) : null,
+      hintsGiven: 0,
       mood: 0,
       maxTurns: C.maxTurns[persona.patience] || C.maxTurns.normal,
       patienceMs,
@@ -170,12 +175,15 @@ async function doRead(chat) {
     cs.turns += 1;
     cs.mood = out.mood;
     if (out.followUp) cs.followUps += 1;
+    if (out.pushback) cs.pushbacks = (cs.pushbacks || 0) + 1;
+    raiseAnger(chat, out);
     addMessage(chat, { from: 'them', text: transform(personaOf(chat), out.reply) });
     cs.lastCustomerA = clock.now();
     cs.awaitingReply = true;
     if (out.status === 'satisfied') return void finishConversation(chat, 'satisfied');
     if (out.status === 'leaving') return void finishConversation(chat, 'left');
-    if (cs.turns >= cs.maxTurns) {
+    if (out.pushback) ui.maybeMentorHint?.(chat);
+    if (cs.turns >= cs.maxTurns || cs.anger >= 100) {
       const persona = personaOf(chat);
       addMessage(chat, { from: 'them', text: transform(persona, pick(persona.leaves?.length ? persona.leaves : ['I have to go. Bye.'])) });
       return void finishConversation(chat, 'left');
@@ -192,6 +200,41 @@ async function doRead(chat) {
     inflight.delete(chat.id);
     touchChat(chat);
   }
+}
+
+// Impatience meter: grows with every reply, faster when the customer has to push back.
+function raiseAnger(chat, out) {
+  const cs = chat.cs;
+  const M = cfg().customer.meter;
+  const temper = chat.customer.patience || 'normal';
+  let add = M.perReply[temper] ?? M.perReply.normal;
+  if (out.pushback) {
+    const vipOut = chat.customer.vip && cs.pushbacks > (cs.vipGrace ?? 99);
+    add += vipOut ? M.vipPushback : (M.pushback[temper] ?? M.pushback.normal);
+  }
+  if (out.mood < 0) add += M.negativeMood * -out.mood;
+  if (out.status === 'satisfied') add = 0;
+  cs.anger = clamp((cs.anger || 0) + add, 0, 100);
+}
+
+function toneGuide(chat) {
+  const cs = chat.cs;
+  const c = chat.customer;
+  const a = Math.round(cs.anger || 0);
+  const hotHead = c.patience === 'low';
+  let tone;
+  if (a < 30) tone = 'You are still calm and polite.';
+  else if (a < cfg().customer.meter.rudeAt) tone = 'You are getting impatient: shorter, curter messages; let your frustration show a little.';
+  else tone = hotHead
+    ? 'You are fed up: be openly irritated and a bit rude (snappy, sarcastic, maybe a mild insult — no slurs, no threats). You may leave if the next answer is not right.'
+    : 'You are fed up: very short, cold and clearly annoyed (stay civil). You may leave if the next answer is not right.';
+  let vip = '';
+  if (c.vip) {
+    vip = cs.pushbacks >= (cs.vipGrace ?? 99)
+      ? '\n- As a VIP you have NO patience left for wrong or vague answers: if the agent gets it wrong again, either reply angrily and demand competence, or simply drop it and leave ("leaving").'
+      : '\n- As a VIP you stay composed for now, but you notice every mistake.';
+  }
+  return `Your impatience level is ${a}/100. ${tone}${vip}`;
 }
 
 export function retryCustomer(chat) {
@@ -221,15 +264,16 @@ HIDDEN ANSWER KEY - you do NOT actually know this. Never quote it, never reveal 
 
 HOW TO BEHAVE
 - Write like a real person in a messaging app: usually 1-3 short sentences, plain text, no markdown, no headings. Stay in character.
-- React to what the agent actually wrote. If their answer is wrong, contradicts the key, skips part of your question, or you could not follow it, do not accept it: say what confuses you, push back, or ask them to double-check - without giving away the answer.
+- React to what the agent actually wrote, like a normal customer who does NOT know the answer. If their answer is wrong, incomplete or you could not follow it, don't accept it — but keep it vague and natural: "hmm, that doesn't sound right", "I don't get the Ben part", "that's not what I asked". Do NOT list which parts they got right, do NOT spell out exactly what is missing or what value you need, and do NOT tell them to "recheck" or "double-check" their work. Never give away or hint at the answer.
 - Small rounding differences or a different but valid method are fine.
 - If the agent asks you something, answer sensibly (you may invent harmless personal details, but do not change the numbers in your question).
 - Once everything is answered correctly and clearly you may ask up to ${c.curiosity} short related follow-up question(s) (a "why" or "what if") before being satisfied. Follow-ups asked so far: ${cs.followUps}. Judge the follow-up answers the same way.
 - If the agent is rude, spams, writes nonsense or ignores you, get annoyed; you may leave.
-- This is your reply number ${turn} of at most ${cs.maxTurns}.${last ? ' This is your LAST reply: you must now either be satisfied (only if the agent really got it right) or leave.' : ''}
+- ${toneGuide(chat)}
+- This is your reply number ${turn} of at most ${cs.maxTurns}.${last || (cs.anger || 0) >= 85 ? ' This is your LAST reply: you must now either be satisfied (only if the agent really got it right) or leave.' : ''}
 
 OUTPUT: reply with ONLY a JSON object, nothing else:
-{"reply": "<your chat message>", "status": "continue" | "satisfied" | "leaving", "mood": <integer -2..2>, "followUp": <true if this reply asks a new follow-up question>}
+{"reply": "<your chat message>", "status": "continue" | "satisfied" | "leaving", "mood": <integer -2..2>, "followUp": <true if this reply asks a new follow-up question>, "pushback": <true if you are NOT accepting the agent's latest answer because it is wrong, incomplete or unclear>}
 "satisfied" = your question is resolved and the reply is a short thanks/goodbye. "leaving" = you give up on this agent and the reply is your parting message. Mood: -2 furious ... 2 delighted.`;
 
   const lines = [];
@@ -256,7 +300,7 @@ async function customerReply(chat) {
   const reply = String(j.reply || '').trim();
   if (!reply) throw new Error('Customer reply was empty');
   const status = ['continue', 'satisfied', 'leaving'].includes(j.status) ? j.status : 'continue';
-  return { reply, status, mood: clamp(Math.round(Number(j.mood) || 0), -2, 2), followUp: !!j.followUp };
+  return { reply, status, mood: clamp(Math.round(Number(j.mood) || 0), -2, 2), followUp: !!j.followUp, pushback: !!j.pushback && status !== 'satisfied' };
 }
 
 // ---------- player actions from the context menu ----------

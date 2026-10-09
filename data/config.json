@@ -2,23 +2,75 @@
   "_readme": "Game tuning. Times are in milliseconds. Edit freely; restart the app to apply.",
   "startingBalance": 100,
   "maxConcurrentCustomers": 2,
-  "arrival": { "firstMs": 8000, "minMs": 45000, "maxMs": 150000 },
+  "arrival": {
+    "firstMs": 8000,
+    "minMs": 45000,
+    "maxMs": 150000
+  },
   "vipChance": 0.08,
   "reviewChance": 0.15,
   "orderWindow": 6,
   "customer": {
     "_readDelay": "How long a customer takes to read your message, by persona 'read' speed.",
-    "readDelayMs": { "fast": [1000, 8000], "normal": [3000, 18000], "slow": [10000, 30000] },
-    "_patience": "Waiting this long for your reply makes them chase you; leaveAfterNudgeMs later they leave.",
-    "patienceMs": [180000, 300000],
-    "patienceMult": { "low": 0.85, "normal": 1.0, "high": 1.2 },
-    "leaveAfterNudgeMs": 120000,
+    "readDelayMs": {
+      "fast": [
+        1000,
+        8000
+      ],
+      "normal": [
+        3000,
+        18000
+      ],
+      "slow": [
+        10000,
+        30000
+      ]
+    },
+    "_patience": "Waiting this long for your reply makes them chase you; leaveAfterNudgeMs later they leave. The waiting timer turns yellow at warnAfterMs.",
+    "patienceMs": [
+      480000,
+      720000
+    ],
+    "patienceMult": {
+      "low": 0.85,
+      "normal": 1.0,
+      "high": 1.2
+    },
+    "leaveAfterNudgeMs": 180000,
     "_maxTurns": "Customer replies after the question before they give up.",
-    "maxTurns": { "low": 5, "normal": 7, "high": 9 },
+    "maxTurns": {
+      "low": 7,
+      "normal": 9,
+      "high": 11
+    },
     "typingMsPerChar": 35,
     "typingMinMs": 1200,
     "typingMaxMs": 12000,
-    "secondMessageDelayMs": [1500, 4000]
+    "secondMessageDelayMs": [
+      1500,
+      4000
+    ],
+    "warnAfterMs": 300000,
+    "_meter": "Impatience meter (0-100, shown in the chat header). Each customer reply adds 'perReply' by persona patience; pushing back on a wrong/unclear answer adds 'pushback'. At 100 they leave. VIPs tolerate 1-3 pushbacks calmly (vipGrace), then each pushback adds vipPushback.",
+    "meter": {
+      "perReply": {
+        "low": 10,
+        "normal": 7,
+        "high": 5
+      },
+      "pushback": {
+        "low": 16,
+        "normal": 11,
+        "high": 8
+      },
+      "negativeMood": 5,
+      "vipGrace": [
+        1,
+        3
+      ],
+      "vipPushback": 40,
+      "rudeAt": 60
+    }
   },
   "pay": {
     "_formula": "Pay = Base(rank) x VIP x (score/100) x (serviceMultBase + serviceMultPerStar*stars) x length x time x bonuses + tip",
@@ -26,18 +78,66 @@
     "serviceMultBase": 0.3,
     "serviceMultPerStar": 0.18,
     "lengthFactors": [
-      { "maxExchanges": 2, "factor": 1.1 },
-      { "maxExchanges": 4, "factor": 1.0 },
-      { "maxExchanges": 6, "factor": 0.9 },
-      { "maxExchanges": 999, "factor": 0.8 }
+      {
+        "maxExchanges": 2,
+        "factor": 1.1
+      },
+      {
+        "maxExchanges": 4,
+        "factor": 1.0
+      },
+      {
+        "maxExchanges": 6,
+        "factor": 0.9
+      },
+      {
+        "maxExchanges": 999,
+        "factor": 0.8
+      }
     ],
-    "time": { "bestFactor": 1.2, "lossPerMinute": 0.1, "nudgePenalty": 0.1, "minFactor": 0.6 },
-    "tip": { "minStars": 4.5, "minScore": 85, "chance": 0.5, "vipChance": 0.9, "pct": [0.05, 0.25] },
+    "time": {
+      "bestFactor": 1.2,
+      "lossPerMinute": 0.05,
+      "nudgePenalty": 0.1,
+      "minFactor": 0.6
+    },
+    "tip": {
+      "minStars": 4.5,
+      "minScore": 85,
+      "chance": 0.5,
+      "vipChance": 0.9,
+      "pct": [
+        0.05,
+        0.25
+      ]
+    },
     "minPay": 1
   },
-  "stars": { "closePenalty": 1.5, "leftCap": 2, "emojiBonusCap": 0.5 },
-  "promotion": { "window": 8, "minAvgScore": 70 },
-  "memos": { "everyMs": [1200000, 2400000] },
-  "mentor": { "historyMessages": 24, "mentionLookback": 12, "maxTokens": 1800 },
-  "grading": { "maxTokens": 900 }
+  "stars": {
+    "closePenalty": 1.5,
+    "leftCap": 2,
+    "emojiBonusCap": 0.5
+  },
+  "promotion": {
+    "window": 8,
+    "minAvgScore": 70
+  },
+  "memos": {
+    "everyMs": [
+      1200000,
+      2400000
+    ]
+  },
+  "mentor": {
+    "historyMessages": 24,
+    "mentionLookback": 12,
+    "maxTokens": 1800,
+    "autoHints": true,
+    "_autoHints": "Mentor messages you a hint when a customer has pushed back hintAfterPushbacks times in one chat (at most maxHintsPerChat per chat).",
+    "hintAfterPushbacks": 2,
+    "maxHintsPerChat": 2
+  },
+  "grading": {
+    "maxTokens": 900
+  }
 }
