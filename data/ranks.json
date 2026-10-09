@@ -1,0 +1,13 @@
+[
+  { "rank": 1, "title": "Trainee", "chapters": [1, 2, 3, 4], "basePay": 60, "topics": "economic reasoning, percentages and index numbers, algebra, growth and logarithms" },
+  { "rank": 2, "title": "Junior Associate", "chapters": [5, 6, 7, 8], "basePay": 80, "topics": "derivatives and optimisation, constrained optimisation, integration, matrices" },
+  { "rank": 3, "title": "Associate", "chapters": [9, 10], "basePay": 100, "topics": "time value of money, loans, NPV and IRR, bonds, the accounting equation, GDP" },
+  { "rank": 4, "title": "Analyst I", "chapters": [11, 12, 13, 14, 15], "basePay": 120, "topics": "descriptive statistics, probability and Bayes, distributions, covariance, hypothesis tests" },
+  { "rank": 5, "title": "Analyst II", "chapters": [16, 17, 18, 19], "basePay": 140, "topics": "regression, causal inference, time series and forecasting, simulation" },
+  { "rank": 6, "title": "Economist", "chapters": [20, 21, 22, 23, 24, 25, 26], "basePay": 160, "topics": "consumer and producer theory, markets and welfare, game theory, market power, risk and information" },
+  { "rank": 7, "title": "Accountant", "chapters": [27, 28, 29, 30, 31], "basePay": 180, "topics": "double entry, revenue and inventory, long-lived assets and leases, debt, equity and tax, cash flow and ratios" },
+  { "rank": 8, "title": "Finance Associate", "chapters": [32, 33, 34, 35, 36, 37], "basePay": 200, "topics": "capital budgeting, fixed income, CAPM, cost of capital, financial modelling, valuation" },
+  { "rank": 9, "title": "Vice President", "chapters": [38, 39, 40, 41, 42], "basePay": 220, "topics": "M&A and LBOs, credit and distress, project finance and real assets, derivatives, FX" },
+  { "rank": 10, "title": "Director", "chapters": [43, 44, 45, 46, 47], "basePay": 240, "topics": "national accounts, growth, consumption and investment, fluctuations, modern macro" },
+  { "rank": 11, "title": "Managing Director", "chapters": [48, 49, 50, 51, 52], "basePay": 260, "topics": "banking and money creation, central banks, inflation and policy rules, financial stability, open-economy crises" }
+]

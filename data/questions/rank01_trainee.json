@@ -1,0 +1,14 @@
+{
+  "rank": 1,
+  "title": "Trainee",
+  "questions": [
+    {
+      "id": "c02-e03", "chapter": 2, "topic": "Successive percentage changes", "kind": "calc", "difficulty": 1,
+      "text": "My share price went up {a}% and then fell {b}%. I started at {p}. Where am I now, and why isn't it back where it began?",
+      "solution": "{p} × {=1+a/100:2} × {=1-b/100:2} = {final:2}. Successive changes multiply, so a rise of {a}% followed by a fall of {b}% gives a factor of {=(1+a/100)*(1-b/100):4}, not 1 + ({a} − {b})/100.",
+      "vars": { "a": { "min": 10, "max": 40, "step": 5 }, "b": { "min": 10, "max": 40, "step": 5 }, "p": { "min": 50, "max": 200, "step": 10 } },
+      "compute": { "final": "p*(1+a/100)*(1-b/100)" },
+      "check": { "vars": { "a": 25, "b": 20, "p": 80 }, "expect": { "final": 80 } }
+    }
+  ]
+}

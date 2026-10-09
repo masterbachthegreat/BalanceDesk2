@@ -1,0 +1,28 @@
+// Exposes a small, whitelisted API to the renderer as window.api.
+'use strict';
+const { contextBridge, ipcRenderer } = require('electron');
+
+const call = (method, ...args) => ipcRenderer.invoke('bd', method, args);
+
+contextBridge.exposeInMainWorld('api', {
+  gameData: () => call('gameData'),
+  store: {
+    read: (rel) => call('storeRead', rel),
+    write: (rel, obj) => call('storeWrite', rel, obj),
+    remove: (rel) => call('storeRemove', rel),
+    list: (dir) => call('storeList', dir),
+    readAll: (dir) => call('storeReadAll', dir),
+  },
+  settings: {
+    get: () => call('settingsGet'),
+    set: (patch) => call('settingsSet', patch),
+  },
+  usage: () => call('usage'),
+  llm: (req) => call('llm', req),
+  testConnection: () => call('testConnection'),
+  pickImage: () => call('pickImage'),
+  openDataFolder: () => call('openDataFolder'),
+  openExternal: (url) => call('openExternal', url),
+  flash: () => call('flash'),
+  isElectron: true,
+});

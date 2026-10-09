@@ -1,0 +1,90 @@
+/* Purchasable cosmetics: chat wallpapers (wp-*), avatar borders (border-*), name colours (nc-*).
+   Shop items in data/shop.json reference these class names. */
+
+/* ---------- wallpapers (applied to .chat-pane) ---------- */
+.chat-pane.wp-graph {
+  background:
+    linear-gradient(rgba(127,145,164,.10) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(90deg, rgba(127,145,164,.10) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(rgba(127,145,164,.16) 1px, transparent 1px) 0 0 / 110px 110px,
+    linear-gradient(90deg, rgba(127,145,164,.16) 1px, transparent 1px) 0 0 / 110px 110px,
+    var(--chat-bg);
+}
+.chat-pane.wp-ledger {
+  background:
+    linear-gradient(90deg, transparent 58px, rgba(229,83,75,.35) 58px, rgba(229,83,75,.35) 60px, transparent 60px),
+    repeating-linear-gradient(transparent 0 27px, rgba(82,136,193,.22) 27px 28px),
+    var(--chat-bg);
+}
+.chat-pane.wp-dots {
+  background: radial-gradient(rgba(127,145,164,.28) 1.4px, transparent 1.6px) 0 0 / 18px 18px, var(--chat-bg);
+}
+.chat-pane.wp-diagonal {
+  background: repeating-linear-gradient(45deg, rgba(127,145,164,.07) 0 12px, transparent 12px 24px), var(--chat-bg);
+}
+.chat-pane.wp-aurora {
+  background:
+    radial-gradient(ellipse at 15% 10%, rgba(0,230,180,.22), transparent 55%),
+    radial-gradient(ellipse at 85% 30%, rgba(140,80,255,.22), transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(0,140,255,.20), transparent 60%),
+    var(--chat-bg);
+}
+.chat-pane.wp-blueprint {
+  background:
+    linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(rgba(255,255,255,.12) 2px, transparent 2px) -1px -1px / 100px 100px,
+    linear-gradient(90deg, rgba(255,255,255,.12) 2px, transparent 2px) -1px -1px / 100px 100px,
+    #0d3b66;
+}
+.chat-pane.wp-candles {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='120' opacity='.22'%3E%3Cg stroke-width='2'%3E%3Cline x1='15' y1='30' x2='15' y2='90' stroke='%234caf50'/%3E%3Crect x='9' y='45' width='12' height='30' fill='%234caf50'/%3E%3Cline x1='45' y1='20' x2='45' y2='80' stroke='%23e5534b'/%3E%3Crect x='39' y='30' width='12' height='35' fill='%23e5534b'/%3E%3Cline x1='75' y1='40' x2='75' y2='105' stroke='%234caf50'/%3E%3Crect x='69' y='55' width='12' height='38' fill='%234caf50'/%3E%3Cline x1='105' y1='15' x2='105' y2='70' stroke='%234caf50'/%3E%3Crect x='99' y='22' width='12' height='30' fill='%234caf50'/%3E%3Cline x1='135' y1='35' x2='135' y2='95' stroke='%23e5534b'/%3E%3Crect x='129' y='42' width='12' height='40' fill='%23e5534b'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 160px 120px,
+    var(--chat-bg);
+}
+.chat-pane.wp-money {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' opacity='.13'%3E%3Ctext x='10' y='40' font-size='28' fill='%234caf50' font-family='Georgia'%3E$%3C/text%3E%3Ctext x='70' y='95' font-size='24' fill='%23d4af37' font-family='Georgia'%3E%E2%82%AC%3C/text%3E%3Ctext x='72' y='35' font-size='20' fill='%2364b5ef' font-family='Georgia'%3E%C2%A3%3C/text%3E%3Ctext x='15' y='100' font-size='22' fill='%23e5534b' font-family='Georgia'%3E%C2%A5%3C/text%3E%3C/svg%3E") 0 0 / 120px 120px,
+    var(--chat-bg);
+}
+.chat-pane.wp-sigma {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='140' opacity='.14' font-family='Georgia' fill='%237f91a4'%3E%3Ctext x='10' y='30' font-size='26'%3E%E2%88%91%3C/text%3E%3Ctext x='90' y='45' font-size='20'%3E%CF%83%C2%B2%3C/text%3E%3Ctext x='40' y='90' font-size='22'%3E%E2%88%AB%3C/text%3E%3Ctext x='120' y='110' font-size='20'%3E%CE%BC%3C/text%3E%3Ctext x='10' y='130' font-size='18'%3E%CE%B2%3C/text%3E%3Ctext x='140' y='20' font-size='16'%3Ee%CB%A3%3C/text%3E%3Ctext x='80' y='130' font-size='18'%3E%E2%88%82%3C/text%3E%3C/svg%3E") 0 0 / 180px 140px,
+    var(--chat-bg);
+}
+.chat-pane.wp-night-city {
+  background:
+    linear-gradient(transparent 70%, rgba(0,0,0,.35)),
+    radial-gradient(circle at 80% 15%, rgba(255,240,200,.35) 0 18px, transparent 20px),
+    linear-gradient(180deg, #0b1026 0%, #1b2459 60%, #3a2d6b 100%);
+}
+
+/* ---------- avatar borders (applied to .avatar-wrap) ---------- */
+.avatar-wrap[class*="border-"] { padding: 3px; }
+.avatar-wrap[class*="border-"] .avatar { border: 2px solid var(--sidebar-bg); }
+.border-silver { background: linear-gradient(135deg, #f5f5f5, #9e9e9e, #e0e0e0, #757575); }
+.border-gold { background: linear-gradient(135deg, #fff1a8, #d4af37, #fff1a8, #a67c00); }
+.border-emerald { background: linear-gradient(135deg, #a8ffcf, #00a86b, #50c878, #006b3c); }
+.border-ruby { background: linear-gradient(135deg, #ff9aa8, #e0115f, #ff4d6d, #9b111e); }
+.border-neon { background: #00e5ff; box-shadow: 0 0 8px #00e5ff, 0 0 16px #00e5ff; animation: neon 1.6s ease-in-out infinite alternate; }
+@keyframes neon { to { background: #ff2e97; box-shadow: 0 0 10px #ff2e97, 0 0 20px #ff2e97; } }
+.border-rainbow { background: conic-gradient(#ff5252, #ffb300, #ffee58, #66bb6a, #29b6f6, #7e57c2, #ff5252); animation: spin 3s linear infinite; }
+.border-rainbow .avatar { animation: spin 3s linear infinite reverse; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.border-diamond { background: linear-gradient(135deg, #e0f7ff, #b9f2ff, #ffffff, #8fd3fe, #e0f7ff); background-size: 300% 300%; animation: shimmer 2.5s ease infinite; box-shadow: 0 0 10px rgba(185,242,255,.8); }
+@keyframes shimmer { 0% { background-position: 0 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+.border-fire { background: linear-gradient(0deg, #ff3d00, #ff9100, #ffea00); box-shadow: 0 -2px 12px rgba(255,120,0,.8); animation: flicker .25s infinite alternate; }
+@keyframes flicker { to { box-shadow: 0 -4px 16px rgba(255,80,0,.95); } }
+.border-bull { background: linear-gradient(135deg, #00c853, #b9f6ca, #00c853); }
+.border-bear { background: linear-gradient(135deg, #d50000, #ff8a80, #d50000); }
+.border-galaxy { background: radial-gradient(circle at 30% 30%, #fff 0 1px, transparent 2px), radial-gradient(circle at 70% 60%, #fff 0 1px, transparent 2px), conic-gradient(#1a237e, #6a1b9a, #ad1457, #1a237e); animation: spin 8s linear infinite; }
+.border-galaxy .avatar { animation: spin 8s linear infinite reverse; }
+
+/* ---------- name colours ---------- */
+.nc-gold { color: #e8b923 !important; }
+.nc-crimson { color: #e53950 !important; }
+.nc-cyan { color: #26c6da !important; }
+.nc-lime { color: #8bc34a !important; }
+.nc-violet { color: #b388ff !important; }
+.nc-rainbow { background: linear-gradient(90deg, #ff5252, #ffb300, #66bb6a, #29b6f6, #b388ff); -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+.nc-fire { background: linear-gradient(90deg, #ff3d00, #ffb300); -webkit-background-clip: text; background-clip: text; color: transparent !important; }

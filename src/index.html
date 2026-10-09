@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" data-theme="night">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <title>BalanceDesk — Whiterock Support</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/cosmetics.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="sb-header">
+        <button id="menuBtn" class="icon-btn" title="Menu">☰</button>
+        <input id="search" type="search" placeholder="Search" autocomplete="off">
+      </div>
+      <div id="chatList" class="chat-list"></div>
+      <div id="statusBar" class="status-bar"></div>
+    </aside>
+    <main id="main">
+      <div id="chatPane" class="chat-pane empty"></div>
+    </main>
+  </div>
+
+  <div id="drawerBackdrop" class="backdrop hidden"></div>
+  <nav id="drawer" class="drawer"></nav>
+  <div id="modalRoot"></div>
+  <div id="ctxMenu" class="ctx-menu hidden"></div>
+  <div id="toasts" class="toasts"></div>
+  <div id="floatRoot"></div>
+
+  <script src="vendor/chart.umd.js"></script>
+  <script src="js/core/api-web.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

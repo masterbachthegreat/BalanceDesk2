@@ -1,0 +1,51 @@
+{
+  "name": "balancedesk",
+  "productName": "BalanceDesk",
+  "version": "0.1.0",
+  "description": "Whiterock customer-support simulator: answer finance, accounting, statistics and maths questions for pay.",
+  "main": "electron/main.js",
+  "author": "masterbachthegreat",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev:web": "node scripts/dev-server.js",
+    "validate": "node scripts/validate-data.mjs",
+    "test": "node scripts/validate-data.mjs && node tests/ui-test.mjs",
+    "dist": "electron-builder --win nsis portable --publish never"
+  },
+  "build": {
+    "appId": "com.whiterock.balancedesk",
+    "productName": "BalanceDesk",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "data/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "BalanceDesk-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "BalanceDesk-Portable-${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "38.8.6",
+    "electron-builder": "26.0.20"
+  }
+}

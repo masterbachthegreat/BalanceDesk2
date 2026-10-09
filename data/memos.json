@@ -1,0 +1,269 @@
+[
+ {
+  "id": "welcome1",
+  "trigger": "welcome",
+  "title": "Welcome to the desk, {name}",
+  "text": "Glad to have you with us. A few house rules:\n\n• Answer accurately first, quickly second, charmingly third.\n• Customers don't leave until they're satisfied — or until you make them leave. Don't make them leave.\n• Closing a chat on a customer who isn't done shows up in your ratings.\n\nYour mentor is one message away. Use them.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "r-coffee",
+  "trigger": "random",
+  "title": "Kitchen notice",
+  "text": "Whoever keeps putting empty coffee pots back on the hot plate: we have the CCTV. We are choosing mercy. For now.",
+  "from": "Facilities"
+ },
+ {
+  "id": "r-casualfri",
+  "trigger": "random",
+  "title": "Casual Friday reminder",
+  "text": "Casual Friday means smart casual. It does not mean the pyjama trousers someone wore on the video call last week.",
+  "from": "HR"
+ },
+ {
+  "id": "r-passwords",
+  "trigger": "random",
+  "title": "IT security reminder",
+  "text": "Your password is not \"Whiterock1\". It was never \"Whiterock1\". If it is currently \"Whiterock1\", change it today.",
+  "from": "IT Department"
+ },
+ {
+  "id": "r-compliance",
+  "trigger": "random",
+  "title": "Compliance reminder",
+  "text": "We give general explanations, not personalised investment advice. If a customer asks \"should I buy it?\", explain the concepts and the trade-offs. Keep it educational.",
+  "from": "Compliance"
+ },
+ {
+  "id": "r-tone",
+  "trigger": "random",
+  "title": "A note on tone",
+  "text": "Customers remember how you made them feel long after they forget the formula. Be clear, be kind, and confirm they understood before you wrap up.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "r-rounding",
+  "trigger": "random",
+  "title": "Rounding etiquette",
+  "text": "Two decimals for money, sensible precision for everything else, and always say what you rounded. \"About 4.6%\" is fine. \"4.5936128%\" is not a personality.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "r-units",
+  "trigger": "random",
+  "title": "Units, please",
+  "text": "Last week someone told a customer their loan payment was \"1,073\". Per month? Per year? In what currency? State your units. Every time.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "r-checkwork",
+  "trigger": "random",
+  "title": "Check your work",
+  "text": "The fastest way to lose a customer's trust is a confident wrong answer. Thirty seconds of checking beats thirty minutes of apology.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "r-printer",
+  "trigger": "random",
+  "title": "Printer on floor 3",
+  "text": "The printer on floor 3 is not broken. It is \"thinking\". Please stop kicking it.",
+  "from": "Facilities"
+ },
+ {
+  "id": "r-birthday",
+  "trigger": "random",
+  "title": "Cake in the break room",
+  "text": "It's Priya from Treasury's birthday. There is cake. There is not enough cake. Move quickly.",
+  "from": "Office Social Committee"
+ },
+ {
+  "id": "r-fire",
+  "trigger": "random",
+  "title": "Fire drill on Thursday",
+  "text": "Fire drill on Thursday at 11:00. Finish your chats, then walk calmly to the car park. Do not bring the coffee machine.",
+  "from": "Facilities"
+ },
+ {
+  "id": "r-jargon",
+  "trigger": "random",
+  "title": "Jargon watch",
+  "text": "\"Leverage our synergies to optimise the liquidity runway\" is not an answer. If a twelve-year-old couldn't follow your first sentence, rewrite it.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "r-vipnote",
+  "trigger": "random",
+  "title": "About our VIP clients",
+  "text": "VIP clients pay a premium for our time and they expect precision. Double-check numbers, answer every part, and don't make them wait.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "r-mentor",
+  "trigger": "random",
+  "title": "Use your mentor",
+  "text": "You can show your mentor any conversation by typing @ and the chat number. Reviewing tough chats is how the best agents got good.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "b-happyhour",
+  "trigger": "random",
+  "title": "Happy hour on the desk",
+  "text": "Volume is up and management is feeling generous. Your next 3 chats pay 20% more.",
+  "from": "Diane Whitfield, Head of Client Services",
+  "effect": {
+   "kind": "payMult",
+   "value": 1.2,
+   "chats": 3,
+   "label": "Happy hour ×1.2 (3 chats)"
+  }
+ },
+ {
+  "id": "b-vipweek",
+  "trigger": "random",
+  "title": "VIP appreciation week",
+  "text": "We're courting some big accounts. Your next 2 VIP chats pay 30% more.",
+  "from": "Diane Whitfield, Head of Client Services",
+  "effect": {
+   "kind": "payMult",
+   "value": 1.3,
+   "chats": 2,
+   "vipOnly": true,
+   "label": "VIP week ×1.3 (2 VIP chats)"
+  }
+ },
+ {
+  "id": "b-fivestar",
+  "trigger": "random",
+  "title": "Five-star drive",
+  "text": "For the rest of the shift: earn a 5★ rating and we add a $40 bonus. Valid for your next 3 five-star chats.",
+  "from": "Diane Whitfield, Head of Client Services",
+  "effect": {
+   "kind": "flat5star",
+   "value": 40,
+   "chats": 3,
+   "label": "+$40 per 5★ chat (3×)"
+  }
+ },
+ {
+  "id": "b-quarterend",
+  "trigger": "random",
+  "title": "Quarter-end push",
+  "text": "It's quarter end and every chat counts. Your next 5 chats pay 10% more.",
+  "from": "Marcus Vane, COO",
+  "effect": {
+   "kind": "payMult",
+   "value": 1.1,
+   "chats": 5,
+   "label": "Quarter-end ×1.1 (5 chats)"
+  }
+ },
+ {
+  "id": "b-pizza",
+  "trigger": "random",
+  "title": "Pizza Friday",
+  "text": "The pizza has arrived and so has the motivation. Your next chat pays 25% more.",
+  "from": "Office Social Committee",
+  "effect": {
+   "kind": "payMult",
+   "value": 1.25,
+   "chats": 1,
+   "label": "Pizza power ×1.25 (1 chat)"
+  }
+ },
+ {
+  "id": "b-audit",
+  "trigger": "random",
+  "title": "Audit season",
+  "text": "The auditors are in the building. Precision bonus: your next 2 chats pay 15% more. Please keep your desk tidy.",
+  "from": "Compliance",
+  "effect": {
+   "kind": "payMult",
+   "value": 1.15,
+   "chats": 2,
+   "label": "Audit season ×1.15 (2 chats)"
+  },
+  "minRank": 3
+ },
+ {
+  "id": "p-1",
+  "trigger": "promotion",
+  "title": "Congratulations, {rankTitle}!",
+  "text": "{name}, your numbers speak for themselves. You've been promoted to {rankTitle}. Tougher questions from here on, and better pay to match.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "p-2",
+  "trigger": "promotion",
+  "title": "Promotion confirmed",
+  "text": "HR has processed your promotion to {rankTitle}. Your new business cards are on order. They will arrive with a typo, as is tradition.",
+  "from": "HR"
+ },
+ {
+  "id": "p-3",
+  "trigger": "promotion",
+  "title": "Moving up",
+  "text": "Well earned, {name}. As {rankTitle} you'll get customers with harder problems. Lean on your mentor for the new material.",
+  "from": "Marcus Vane, COO"
+ },
+ {
+  "id": "low-1",
+  "trigger": "lowStreak",
+  "title": "Let's talk",
+  "text": "Three rough ratings in a row, {name}. It happens to everyone. Slow down, re-read the question, answer every part, and check in with the customer before closing. Ask your mentor to review one of those chats with you.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "low-2",
+  "trigger": "lowStreak",
+  "title": "Quick check-in",
+  "text": "Your last few chats haven't landed. Common causes: rushing, skipping parts of multi-part questions, closing too early. Take a breath. You've got this.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "high-1",
+  "trigger": "highStreak",
+  "title": "Five in a row!",
+  "text": "Five excellent chats in a row, {name}. Customers are talking about you, in a good way. Keep it up.",
+  "from": "Diane Whitfield, Head of Client Services",
+  "effect": {
+   "kind": "payMult",
+   "value": 1.15,
+   "chats": 2,
+   "label": "Hot streak ×1.15 (2 chats)"
+  }
+ },
+ {
+  "id": "high-2",
+  "trigger": "highStreak",
+  "title": "You're on fire",
+  "text": "Five straight top ratings. Here's a little something for your next two chats.",
+  "from": "Marcus Vane, COO",
+  "effect": {
+   "kind": "payMult",
+   "value": 1.2,
+   "chats": 2,
+   "label": "On fire ×1.2 (2 chats)"
+  }
+ },
+ {
+  "id": "ms-1",
+  "trigger": "milestone",
+  "title": "Milestone reached",
+  "text": "Conversations closed at Whiterock so far: {count}. Thank you for your work, {name}.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "ms-2",
+  "trigger": "milestone",
+  "title": "Customers helped: {count}",
+  "text": "That's {count} people who understand money a little better because of you. Keep going.",
+  "from": "Diane Whitfield, Head of Client Services"
+ },
+ {
+  "id": "vip-1",
+  "trigger": "firstVip",
+  "title": "Your first VIP",
+  "text": "You've just handled your first VIP client. They talk to each other, so every one of them matters. Nicely done.",
+  "from": "Diane Whitfield, Head of Client Services"
+ }
+]

@@ -1,0 +1,742 @@
+[
+ {
+  "id": "theme-night",
+  "category": "themes",
+  "slot": "theme",
+  "value": "night",
+  "name": "Night",
+  "price": 0,
+  "desc": "Telegram-style dark theme. The default."
+ },
+ {
+  "id": "theme-day",
+  "category": "themes",
+  "slot": "theme",
+  "value": "day",
+  "name": "Day",
+  "price": 0,
+  "desc": "Bright and clean, green bubbles on a light wallpaper."
+ },
+ {
+  "id": "theme-contrast",
+  "category": "themes",
+  "slot": "theme",
+  "value": "contrast",
+  "name": "High Contrast",
+  "price": 150,
+  "desc": "Maximum legibility: black, white and yellow."
+ },
+ {
+  "id": "theme-forest",
+  "category": "themes",
+  "slot": "theme",
+  "value": "forest",
+  "name": "Forest",
+  "price": 250,
+  "desc": "Calm greens for long shifts."
+ },
+ {
+  "id": "theme-arctic",
+  "category": "themes",
+  "slot": "theme",
+  "value": "arctic",
+  "name": "Arctic",
+  "price": 250,
+  "desc": "Cool blues and crisp whites."
+ },
+ {
+  "id": "theme-navy",
+  "category": "themes",
+  "slot": "theme",
+  "value": "navy",
+  "name": "Whiterock Navy",
+  "price": 300,
+  "desc": "The official house colours: navy and gold."
+ },
+ {
+  "id": "theme-rose",
+  "category": "themes",
+  "slot": "theme",
+  "value": "rose",
+  "name": "Rosé",
+  "price": 300,
+  "desc": "Deep wine reds with pink accents."
+ },
+ {
+  "id": "theme-pastel",
+  "category": "themes",
+  "slot": "theme",
+  "value": "pastel",
+  "name": "Pastel Dream",
+  "price": 350,
+  "desc": "Soft lavender and mint."
+ },
+ {
+  "id": "theme-sepia",
+  "category": "themes",
+  "slot": "theme",
+  "value": "sepia",
+  "name": "Ledger Sepia",
+  "price": 400,
+  "desc": "Old-school ledger paper with a serif font."
+ },
+ {
+  "id": "theme-terminal",
+  "category": "themes",
+  "slot": "theme",
+  "value": "terminal",
+  "name": "Terminal",
+  "price": 600,
+  "desc": "Amber-on-black like a 1980s trading terminal."
+ },
+ {
+  "id": "theme-matrix",
+  "category": "themes",
+  "slot": "theme",
+  "value": "matrix",
+  "name": "Matrix",
+  "price": 600,
+  "desc": "Green phosphor. There is no spoon, only spreadsheets."
+ },
+ {
+  "id": "theme-synthwave",
+  "category": "themes",
+  "slot": "theme",
+  "value": "synthwave",
+  "name": "Synthwave",
+  "price": 800,
+  "desc": "Neon pink and cyan over a sunset gradient."
+ },
+ {
+  "id": "theme-gold",
+  "category": "themes",
+  "slot": "theme",
+  "value": "gold",
+  "name": "Gold Rush",
+  "price": 900,
+  "desc": "Black and gold. For people who have made it."
+ },
+ {
+  "id": "wp-dots",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-dots",
+  "name": "Polka Dots",
+  "price": 100,
+  "desc": "A subtle dotted pattern."
+ },
+ {
+  "id": "wp-diagonal",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-diagonal",
+  "name": "Pinstripe",
+  "price": 100,
+  "desc": "Banker's pinstripes for your chats."
+ },
+ {
+  "id": "wp-graph",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-graph",
+  "name": "Graph Paper",
+  "price": 150,
+  "desc": "Squared paper for the quantitatively inclined."
+ },
+ {
+  "id": "wp-ledger",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-ledger",
+  "name": "Ledger Paper",
+  "price": 200,
+  "desc": "Ruled lines with a red margin."
+ },
+ {
+  "id": "wp-sigma",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-sigma",
+  "name": "Formulae",
+  "price": 250,
+  "desc": "Sigma, integrals and Greek letters."
+ },
+ {
+  "id": "wp-money",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-money",
+  "name": "Currency",
+  "price": 300,
+  "desc": "Dollars, euros, pounds and yen."
+ },
+ {
+  "id": "wp-candles",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-candles",
+  "name": "Candlesticks",
+  "price": 350,
+  "desc": "Bullish and bearish candles everywhere."
+ },
+ {
+  "id": "wp-aurora",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-aurora",
+  "name": "Aurora",
+  "price": 400,
+  "desc": "Northern lights glowing behind your chats."
+ },
+ {
+  "id": "wp-blueprint",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-blueprint",
+  "name": "Blueprint",
+  "price": 450,
+  "desc": "Engineer-blue grid for building models."
+ },
+ {
+  "id": "wp-night-city",
+  "category": "wallpapers",
+  "slot": "wallpaper",
+  "value": "wp-night-city",
+  "name": "Night City",
+  "price": 500,
+  "desc": "A moonlit skyline after the market closes."
+ },
+ {
+  "id": "emoji-basic",
+  "category": "emoji",
+  "name": "Basic",
+  "price": 0,
+  "starBonus": 0,
+  "emojis": [
+   "🙂",
+   "👍",
+   "🙏",
+   "👋",
+   "😅",
+   "🤔",
+   "👌",
+   "❤️"
+  ],
+  "desc": "The essentials. No rating bonus."
+ },
+ {
+  "id": "emoji-friendly",
+  "category": "emoji",
+  "name": "Friendly",
+  "price": 120,
+  "starBonus": 0.1,
+  "emojis": [
+   "😊",
+   "😄",
+   "🤗",
+   "🙌",
+   "✨",
+   "💪",
+   "😉",
+   "🌟"
+  ],
+  "desc": "Warm smiles that make customers feel welcome. Using one in a chat raises its star rating."
+ },
+ {
+  "id": "emoji-office",
+  "category": "emoji",
+  "name": "Office",
+  "price": 150,
+  "starBonus": 0.1,
+  "emojis": [
+   "📊",
+   "📈",
+   "📉",
+   "💼",
+   "📎",
+   "📌",
+   "✅",
+   "🗂️"
+  ],
+  "desc": "Look organised and professional. Using one in a chat raises its star rating."
+ },
+ {
+  "id": "emoji-money",
+  "category": "emoji",
+  "name": "Money",
+  "price": 250,
+  "starBonus": 0.15,
+  "emojis": [
+   "💰",
+   "💵",
+   "💸",
+   "🏦",
+   "💳",
+   "🧾",
+   "🪙",
+   "💹"
+  ],
+  "desc": "Talk money with style. Using one in a chat raises its star rating."
+ },
+ {
+  "id": "emoji-party",
+  "category": "emoji",
+  "name": "Celebration",
+  "price": 250,
+  "starBonus": 0.15,
+  "emojis": [
+   "🎉",
+   "🥳",
+   "🏆",
+   "🎊",
+   "👏",
+   "🍾",
+   "🎈",
+   "🥇"
+  ],
+  "desc": "Celebrate the customer's wins. Using one in a chat raises its star rating."
+ },
+ {
+  "id": "emoji-science",
+  "category": "emoji",
+  "name": "Quant",
+  "price": 300,
+  "starBonus": 0.15,
+  "emojis": [
+   "🧮",
+   "📐",
+   "📏",
+   "🧠",
+   "🔬",
+   "💡",
+   "🎯",
+   "🔢"
+  ],
+  "desc": "For explaining the maths. Using one in a chat raises its star rating."
+ },
+ {
+  "id": "emoji-market",
+  "category": "emoji",
+  "name": "Bulls & Bears",
+  "price": 500,
+  "starBonus": 0.2,
+  "emojis": [
+   "🐂",
+   "🐻",
+   "🦅",
+   "🦉",
+   "🐺",
+   "🦈",
+   "🚀",
+   "🌙"
+  ],
+  "desc": "Market animals. Customers love them. Using one in a chat raises its star rating."
+ },
+ {
+  "id": "border-silver",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-silver",
+  "name": "Silver Ring",
+  "price": 200,
+  "desc": "A polished silver frame."
+ },
+ {
+  "id": "border-emerald",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-emerald",
+  "name": "Emerald Ring",
+  "price": 350,
+  "desc": "Green gemstone frame."
+ },
+ {
+  "id": "border-ruby",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-ruby",
+  "name": "Ruby Ring",
+  "price": 350,
+  "desc": "Red gemstone frame."
+ },
+ {
+  "id": "border-bull",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-bull",
+  "name": "Bull Market",
+  "price": 400,
+  "desc": "A confident green frame."
+ },
+ {
+  "id": "border-bear",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-bear",
+  "name": "Bear Market",
+  "price": 400,
+  "desc": "A defiant red frame."
+ },
+ {
+  "id": "border-gold",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-gold",
+  "name": "Gold Ring",
+  "price": 500,
+  "desc": "Solid gold, like a VIP."
+ },
+ {
+  "id": "border-neon",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-neon",
+  "name": "Neon Pulse",
+  "price": 800,
+  "desc": "Glows and shifts between cyan and pink."
+ },
+ {
+  "id": "border-fire",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-fire",
+  "name": "On Fire",
+  "price": 900,
+  "desc": "Flickering flames. You are on a streak."
+ },
+ {
+  "id": "border-rainbow",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-rainbow",
+  "name": "Rainbow Spin",
+  "price": 1200,
+  "desc": "A spinning rainbow halo."
+ },
+ {
+  "id": "border-diamond",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-diamond",
+  "name": "Diamond",
+  "price": 1500,
+  "desc": "Shimmering diamond frame.",
+  "minRank": 4
+ },
+ {
+  "id": "border-galaxy",
+  "category": "borders",
+  "slot": "border",
+  "value": "border-galaxy",
+  "name": "Galaxy",
+  "price": 2000,
+  "desc": "A slowly rotating galaxy.",
+  "minRank": 6
+ },
+ {
+  "id": "nc-cyan",
+  "category": "namecolors",
+  "slot": "nameColor",
+  "value": "nc-cyan",
+  "name": "Cyan name",
+  "price": 150,
+  "desc": "Shows your name in cyan."
+ },
+ {
+  "id": "nc-lime",
+  "category": "namecolors",
+  "slot": "nameColor",
+  "value": "nc-lime",
+  "name": "Lime name",
+  "price": 150,
+  "desc": "Shows your name in lime."
+ },
+ {
+  "id": "nc-violet",
+  "category": "namecolors",
+  "slot": "nameColor",
+  "value": "nc-violet",
+  "name": "Violet name",
+  "price": 150,
+  "desc": "Shows your name in violet."
+ },
+ {
+  "id": "nc-crimson",
+  "category": "namecolors",
+  "slot": "nameColor",
+  "value": "nc-crimson",
+  "name": "Crimson name",
+  "price": 200,
+  "desc": "Shows your name in crimson."
+ },
+ {
+  "id": "nc-gold",
+  "category": "namecolors",
+  "slot": "nameColor",
+  "value": "nc-gold",
+  "name": "Gold name",
+  "price": 400,
+  "desc": "Shows your name in gold."
+ },
+ {
+  "id": "nc-fire",
+  "category": "namecolors",
+  "slot": "nameColor",
+  "value": "nc-fire",
+  "name": "Fire Gradient name",
+  "price": 700,
+  "desc": "Shows your name in fire gradient."
+ },
+ {
+  "id": "nc-rainbow",
+  "category": "namecolors",
+  "slot": "nameColor",
+  "value": "nc-rainbow",
+  "name": "Rainbow name",
+  "price": 1000,
+  "desc": "Shows your name in rainbow."
+ },
+ {
+  "id": "title-chief-vibes-officer",
+  "category": "titles",
+  "slot": "title",
+  "value": "Chief Vibes Officer",
+  "name": "Chief Vibes Officer",
+  "price": 120,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "title-spreadsheet-wizard",
+  "category": "titles",
+  "slot": "title",
+  "value": "Spreadsheet Wizard",
+  "name": "Spreadsheet Wizard",
+  "price": 150,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "title-double-entry-monk",
+  "category": "titles",
+  "slot": "title",
+  "value": "Double-Entry Monk",
+  "name": "Double-Entry Monk",
+  "price": 200,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "title-compound-interest-enjoyer",
+  "category": "titles",
+  "slot": "title",
+  "value": "Compound Interest Enjoyer",
+  "name": "Compound Interest Enjoyer",
+  "price": 200,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "title-bayesian-believer",
+  "category": "titles",
+  "slot": "title",
+  "value": "Bayesian Believer",
+  "name": "Bayesian Believer",
+  "price": 250,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "title-certified-number-cruncher",
+  "category": "titles",
+  "slot": "title",
+  "value": "Certified Number Cruncher",
+  "name": "Certified Number Cruncher",
+  "price": 250,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "title-duration-matcher",
+  "category": "titles",
+  "slot": "title",
+  "value": "Duration Matcher",
+  "name": "Duration Matcher",
+  "price": 300,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "title-keeper-of-the-ledger",
+  "category": "titles",
+  "slot": "title",
+  "value": "Keeper of the Ledger",
+  "name": "Keeper of the Ledger",
+  "price": 350,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "title-black-scholes-whisperer",
+  "category": "titles",
+  "slot": "title",
+  "value": "Black-Scholes Whisperer",
+  "name": "Black-Scholes Whisperer",
+  "price": 500,
+  "desc": "A title shown under your name.",
+  "minRank": 8
+ },
+ {
+  "id": "title-wolf-of-whiterock",
+  "category": "titles",
+  "slot": "title",
+  "value": "Wolf of Whiterock",
+  "name": "Wolf of Whiterock",
+  "price": 1000,
+  "desc": "A title shown under your name."
+ },
+ {
+  "id": "profile-photo",
+  "category": "profile",
+  "unlock": "photo",
+  "icon": "📷",
+  "name": "Custom profile picture",
+  "price": 250,
+  "desc": "Upload your own profile picture (☰ → My Profile)."
+ },
+ {
+  "id": "tool-calculator",
+  "category": "tools",
+  "tool": "calculator",
+  "icon": "🧮",
+  "name": "Desk calculator",
+  "price": 200,
+  "desc": "A floating calculator with powers, roots, logs and history. Can paste results into chat."
+ },
+ {
+  "id": "tool-fincalc",
+  "category": "tools",
+  "tool": "fincalc",
+  "icon": "💹",
+  "name": "Financial calculator upgrade",
+  "price": 600,
+  "requires": "tool-calculator",
+  "desc": "Adds pv, fv, pmt, npv and irr functions to your calculator."
+ },
+ {
+  "id": "tool-notepad",
+  "category": "tools",
+  "tool": "notepad",
+  "icon": "📝",
+  "name": "Notepad",
+  "price": 120,
+  "desc": "A floating notepad for formulas and scratch work. Saved automatically."
+ },
+ {
+  "id": "upg-headset",
+  "category": "upgrades",
+  "icon": "🎧",
+  "name": "Noise-cancelling headset",
+  "price": 350,
+  "effect": {
+   "readMult": 0.7
+  },
+  "desc": "Customers read your replies 30% sooner."
+ },
+ {
+  "id": "upg-holdmusic",
+  "category": "upgrades",
+  "icon": "🎵",
+  "name": "Hold-music licence",
+  "price": 400,
+  "effect": {
+   "patienceMs": 60000
+  },
+  "desc": "Customers wait one extra minute before chasing you."
+ },
+ {
+  "id": "upg-monitor",
+  "category": "upgrades",
+  "icon": "🖥️",
+  "name": "Second monitor",
+  "price": 800,
+  "effect": {
+   "slots": 1
+  },
+  "desc": "Handle one more customer at the same time."
+ },
+ {
+  "id": "upg-vipline",
+  "category": "upgrades",
+  "icon": "☎️",
+  "name": "VIP hotline",
+  "price": 1200,
+  "effect": {
+   "vipChance": 0.05
+  },
+  "desc": "+5 percentage points chance that a new customer is a VIP."
+ },
+ {
+  "id": "upg-ultrawide",
+  "category": "upgrades",
+  "icon": "🖥️",
+  "name": "Ultrawide monitor",
+  "price": 2500,
+  "requires": "upg-monitor",
+  "minRank": 5,
+  "effect": {
+   "slots": 1
+  },
+  "desc": "Yet another simultaneous customer line."
+ },
+ {
+  "id": "con-espresso",
+  "category": "consumables",
+  "consumable": true,
+  "icon": "☕",
+  "name": "Espresso",
+  "price": 60,
+  "modifier": {
+   "kind": "payMult",
+   "value": 1.15,
+   "chats": 3,
+   "label": "Espresso ×1.15"
+  },
+  "useText": "☕ Caffeinated! +15% pay on your next 3 chats.",
+  "desc": "Use it for +15% pay on your next 3 chats."
+ },
+ {
+  "id": "con-donuts",
+  "category": "consumables",
+  "consumable": true,
+  "icon": "🍩",
+  "name": "Box of donuts",
+  "price": 200,
+  "modifier": {
+   "kind": "payMult",
+   "value": 1.3,
+   "chats": 1,
+   "label": "Donut rush ×1.3"
+  },
+  "useText": "🍩 Sugar rush! +30% pay on your next chat.",
+  "desc": "Use it for +30% pay on your next chat."
+ },
+ {
+  "id": "con-luckycoin",
+  "category": "consumables",
+  "consumable": true,
+  "icon": "🪙",
+  "name": "Lucky coin",
+  "price": 80,
+  "modifier": {
+   "kind": "tip",
+   "chats": 1,
+   "label": "Lucky coin"
+  },
+  "useText": "🪙 Your next customer will definitely tip.",
+  "desc": "Your next finished chat is guaranteed a tip."
+ },
+ {
+  "id": "con-vippass",
+  "category": "consumables",
+  "consumable": true,
+  "icon": "🎟️",
+  "name": "VIP pass",
+  "price": 150,
+  "action": "vipNext",
+  "useText": "🎟️ Your next customer will be a VIP.",
+  "desc": "Your next customer will be a VIP client (×2.5 pay, high standards)."
+ }
+]

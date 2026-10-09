@@ -1,0 +1,2170 @@
+[
+ {
+  "id": "p-margaret-ellis",
+  "name": "Margaret Ellis",
+  "bio": "Retired school teacher managing her late husband's savings",
+  "style": "Polite, full sentences, a bit formal, thanks you often",
+  "greetings": [
+   "Good afternoon, I hope you can help me.",
+   "Hello dear, I have a question"
+  ],
+  "nudges": [
+   "Hello? Are you still there?",
+   "I'm still waiting, dear"
+  ],
+  "leaves": [
+   "I'll call my nephew instead. Goodbye.",
+   "Never mind, I'll ask at the bank"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-jake-turner",
+  "name": "Jake Turner",
+  "bio": "First-year economics student cramming for an exam tomorrow",
+  "style": "Casual, lowercase-ish, slightly panicked, uses \"lol\" and \"pls\"",
+  "greetings": [
+   "hey quick q",
+   "hiii pls help"
+  ],
+  "nudges": [
+   "hellooo?",
+   "pls my exam is tomorrow"
+  ],
+  "leaves": [
+   "ok forget it i'll just guess",
+   "nvm found a youtube video"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 2
+ },
+ {
+  "id": "p-priya-raman",
+  "name": "Priya Raman",
+  "bio": "Junior accountant at a mid-size logistics firm",
+  "style": "Professional, concise, asks precise questions",
+  "greetings": [
+   "Hi, I need a quick sanity check.",
+   "Hello, a technical question"
+  ],
+  "nudges": [
+   "Any update?",
+   "Following up on this"
+  ],
+  "leaves": [
+   "I'll check with my manager instead. Thanks.",
+   "No worries, I'll escalate internally"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-gerald-hobbs",
+  "name": "Gerald Hobbs",
+  "bio": "Retired dentist who reads the Financial Times every morning",
+  "style": "Confident, slightly pompous, likes to mention his experience",
+  "greetings": [
+   "Good day. I have a question that my broker couldn't answer.",
+   "Hello there"
+  ],
+  "nudges": [
+   "I am not accustomed to waiting.",
+   "Hello?"
+  ],
+  "leaves": [
+   "Clearly this was a waste of my time.",
+   "I shall take my business elsewhere"
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-sofia-marquez",
+  "name": "Sofia Marquez",
+  "bio": "Small bakery owner trying to understand her books",
+  "style": "Warm, chatty, mentions her bakery, uses a few emojis",
+  "greetings": [
+   "Hi!! 😊 Hope your day is going well",
+   "Hello! Bakery owner here with a numbers question 🥐"
+  ],
+  "nudges": [
+   "Hello? 🙈",
+   "Still there? The ovens are calling me"
+  ],
+  "leaves": [
+   "I have to get back to the ovens, bye!",
+   "Okay, my accountant can explain later"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-tom-becker",
+  "name": "Tom Becker",
+  "bio": "Engineer who likes understanding the maths behind everything",
+  "style": "Analytical, asks \"why\" a lot, likes formulas",
+  "greetings": [
+   "Hi. Got a question, and I want the reasoning, not just the answer.",
+   "Hello, quick technical one"
+  ],
+  "nudges": [
+   "Still waiting.",
+   "Did you get my question?"
+  ],
+  "leaves": [
+   "I'll derive it myself. Bye.",
+   "Never mind"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-linda-chow",
+  "name": "Linda Chow",
+  "bio": "Busy mum of three, doing the family budget at midnight",
+  "style": "Short messages, tired, sometimes typos, grateful when things are clear",
+  "greetings": [
+   "hi sorry its late",
+   "Hi, quick one before the kids wake up"
+  ],
+  "nudges": [
+   "hello?",
+   "sorry im falling asleep here"
+  ],
+  "leaves": [
+   "ok ill try tomorrow",
+   "going to bed, bye"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-omar-haddad",
+  "name": "Omar Haddad",
+  "bio": "MBA student who likes to sound smart",
+  "style": "Uses business buzzwords, confident, sometimes overcomplicates",
+  "greetings": [
+   "Hey, looking to leverage your expertise on something.",
+   "Hi, quick alignment on a concept"
+  ],
+  "nudges": [
+   "Circling back on this.",
+   "Any bandwidth to respond?"
+  ],
+  "leaves": [
+   "I'll take this offline. Thanks.",
+   "Let's park this"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-agnes-lindqvist",
+  "name": "Agnes Lindqvist",
+  "bio": "82-year-old who just got her first smartphone",
+  "style": "VERY slow, careful, gets confused by jargon, signs messages with her name",
+  "greetings": [
+   "Hello is this the bank. Agnes",
+   "Good morning young person. Agnes"
+  ],
+  "nudges": [
+   "Hello? Is anyone there. Agnes",
+   "Did my message send? Agnes"
+  ],
+  "leaves": [
+   "My granddaughter will help me. Thank you. Agnes",
+   "I will telephone instead. Agnes"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 0
+ },
+ {
+  "id": "p-derek-smalls",
+  "name": "Derek Smalls",
+  "bio": "Day trader who thinks he's the next Warren Buffett",
+  "style": "Brash, impatient, uses trading slang, rockets and caps for emphasis",
+  "greetings": [
+   "yo quick one 🚀",
+   "Need an answer FAST"
+  ],
+  "nudges": [
+   "bro??",
+   "hello??? market's moving"
+  ],
+  "leaves": [
+   "waste of time. bye",
+   "forget it, the market won't wait"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-hannah-okafor",
+  "name": "Hannah Okafor",
+  "bio": "High-school maths teacher preparing a lesson",
+  "style": "Friendly, precise, asks how to explain things simply",
+  "greetings": [
+   "Hi! I'm preparing a class and want to check something.",
+   "Hello, a teaching question"
+  ],
+  "nudges": [
+   "Hi again, still around?",
+   "Just checking you got this"
+  ],
+  "leaves": [
+   "I'll work it out myself, thanks anyway.",
+   "No problem, I'll check the textbook"
+  ],
+  "read": "normal",
+  "patience": "high",
+  "curiosity": 2
+ },
+ {
+  "id": "p-viktor-petrov",
+  "name": "Viktor Petrov",
+  "bio": "Owner of a small construction company",
+  "style": "Blunt, short, practical, no small talk",
+  "greetings": [
+   "Question.",
+   "Hello. I need an answer"
+  ],
+  "nudges": [
+   "?",
+   "Hello"
+  ],
+  "leaves": [
+   "No time. Bye.",
+   "Forget it"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 0
+ },
+ {
+  "id": "p-chloe-dubois",
+  "name": "Chloe Dubois",
+  "bio": "Art student who hates numbers but has to pass a stats module",
+  "style": "Self-deprecating, funny, asks for simple explanations",
+  "greetings": [
+   "hi, numbers person! i am a words person in crisis",
+   "hello, i have a question and also existential dread"
+  ],
+  "nudges": [
+   "hello?? the dread is growing",
+   "are you there"
+  ],
+  "leaves": [
+   "ok i'll cry into my sketchbook. bye",
+   "never mind, i'll switch majors"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-raj-patel",
+  "name": "Raj Patel",
+  "bio": "IT consultant planning his early retirement (FIRE)",
+  "style": "Enthusiastic, spreadsheet-loving, lots of numbers",
+  "greetings": [
+   "Hey! Spreadsheet guy here with a question",
+   "Hi, FIRE enthusiast here"
+  ],
+  "nudges": [
+   "Hey, still there?",
+   "Ping!"
+  ],
+  "leaves": [
+   "I'll just model it myself. Cheers.",
+   "All good, back to my spreadsheet"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-brenda-walsh",
+  "name": "Brenda Walsh",
+  "bio": "HR manager who suddenly has to read financial statements",
+  "style": "Polite, slightly overwhelmed, apologises for basic questions",
+  "greetings": [
+   "Hi, sorry if this is a silly question",
+   "Hello, I'm not a finance person, apologies in advance"
+  ],
+  "nudges": [
+   "Sorry to chase, are you there?",
+   "Hello?"
+  ],
+  "leaves": [
+   "I'll ask our finance team. Thanks anyway.",
+   "Sorry, I have to run to a meeting"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-kenji-watanabe",
+  "name": "Kenji Watanabe",
+  "bio": "PhD student in econometrics",
+  "style": "Precise, technical, notices sloppy definitions",
+  "greetings": [
+   "Hello. A methodological question.",
+   "Hi, I'd like to check an argument"
+  ],
+  "nudges": [
+   "Hello?",
+   "Are you still with me?"
+  ],
+  "leaves": [
+   "I will consult the literature. Goodbye.",
+   "Never mind"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-mrs-doris-pembroke",
+  "name": "Mrs. Doris Pembroke",
+  "bio": "Treasurer of the village knitting club",
+  "style": "Old-fashioned, very polite, talks about the club's funds",
+  "greetings": [
+   "Good morning. I am the treasurer of the Little Hampton Knitting Circle.",
+   "Hello, a question about the club accounts"
+  ],
+  "nudges": [
+   "I do hope you haven't forgotten me.",
+   "Hello? The club meets at four."
+  ],
+  "leaves": [
+   "I'm afraid I must go to the club. Good day.",
+   "I'll ask Mr. Jenkins from church"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 0
+ },
+ {
+  "id": "p-marcus-reid",
+  "name": "Marcus Reid",
+  "bio": "Personal trainer whose gym is expanding",
+  "style": "Energetic, uses fitness metaphors, positive",
+  "greetings": [
+   "Hey champ! Got a money question 💪",
+   "Yo! Quick finance rep for you"
+  ],
+  "nudges": [
+   "Still there, champ?",
+   "Let's go, any news?"
+  ],
+  "leaves": [
+   "Gotta run to a session. Later!",
+   "No worries, I'll figure it out"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-elena-rossi",
+  "name": "Elena Rossi",
+  "bio": "Freelance translator dealing with taxes for the first time",
+  "style": "Careful, polite, English is her second language, occasional grammar slips",
+  "greetings": [
+   "Hello, I have question please",
+   "Good evening, I need help to understand something"
+  ],
+  "nudges": [
+   "Hello, you are there?",
+   "Sorry, any answer?"
+  ],
+  "leaves": [
+   "Ok, I will ask my accountant. Thank you.",
+   "I try another time"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-dylan-brooks",
+  "name": "Dylan Brooks",
+  "bio": "Teenager who just opened his first savings account",
+  "style": "Casual, curious, short messages, uses \"bro\"",
+  "greetings": [
+   "yo",
+   "hey so like"
+  ],
+  "nudges": [
+   "bro?",
+   "hellooo"
+  ],
+  "leaves": [
+   "ok bye",
+   "nvm"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-fatima-al-sayed",
+  "name": "Fatima Al-Sayed",
+  "bio": "Pharmacist investing for her children's education",
+  "style": "Organised, clear, asks for step-by-step answers",
+  "greetings": [
+   "Hello, I'd appreciate your help with a calculation.",
+   "Hi, I'm planning for my kids' education"
+  ],
+  "nudges": [
+   "Hello, just following up.",
+   "Any news?"
+  ],
+  "leaves": [
+   "I'll come back another time. Thank you.",
+   "I need to go, thanks"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-pete-morrison",
+  "name": "Pete Morrison",
+  "bio": "Pub landlord who keeps his accounts in a shoebox",
+  "style": "Jovial, a bit chaotic, jokes a lot",
+  "greetings": [
+   "Alright! Got a puzzler for ya",
+   "Evening! Quick one between pints"
+  ],
+  "nudges": [
+   "Oi, you still there?",
+   "Hello? Last orders!"
+  ],
+  "leaves": [
+   "Right, I'm off to pour pints. Cheers!",
+   "Never mind mate"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-isabelle-moreau",
+  "name": "Isabelle Moreau",
+  "bio": "Corporate lawyer reviewing a client's contract",
+  "style": "Formal, exacting, wants precise definitions",
+  "greetings": [
+   "Good afternoon. I require a precise explanation.",
+   "Hello. A brief question regarding a financial term"
+  ],
+  "nudges": [
+   "I trust you are drafting a response.",
+   "Hello?"
+  ],
+  "leaves": [
+   "I will seek advice elsewhere.",
+   "This is taking too long. Goodbye."
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-sam-whitaker",
+  "name": "Sam Whitaker",
+  "bio": "Podcaster preparing an episode about the economy",
+  "style": "Chatty, curious, likes fun facts and analogies",
+  "greetings": [
+   "Hey! I'm doing a podcast episode and need to get this right",
+   "Hi there, podcast research time!"
+  ],
+  "nudges": [
+   "Hellooo?",
+   "Still there? Recording soon!"
+  ],
+  "leaves": [
+   "Gotta hit record. Thanks anyway!",
+   "No worries, I'll wing it"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-gwen-harper",
+  "name": "Gwen Harper",
+  "bio": "Nurse working night shifts, managing her first investments",
+  "style": "Friendly, tired, practical",
+  "greetings": [
+   "Hi, on my break, quick question",
+   "Hello! Night shift nurse here"
+  ],
+  "nudges": [
+   "Hello? My break is nearly over",
+   "Still there?"
+  ],
+  "leaves": [
+   "Break's over, have to go. Thanks!",
+   "I'll try again tomorrow"
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 0
+ },
+ {
+  "id": "p-arthur-penrose",
+  "name": "Arthur Penrose",
+  "bio": "Retired actuary who likes testing young staff",
+  "style": "Dry wit, tricky, checks your precision",
+  "greetings": [
+   "Good afternoon. A little test for you, if you'll indulge me.",
+   "Hello. Let us see what Whiterock trains its staff to know"
+  ],
+  "nudges": [
+   "Tick tock.",
+   "I am waiting, young one"
+  ],
+  "leaves": [
+   "Disappointing. Good day.",
+   "I expected more from Whiterock"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-mia-johansson",
+  "name": "Mia Johansson",
+  "bio": "Startup founder pitching to investors next week",
+  "style": "Fast, excited, a bit scattered",
+  "greetings": [
+   "Hey!! Pitching investors next week and need to nail this",
+   "Hi! Founder here, super quick one"
+  ],
+  "nudges": [
+   "hello??",
+   "need this before my pitch!"
+  ],
+  "leaves": [
+   "I'll ask my co-founder. Bye!",
+   "Gotta run to a meeting"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-bernard-okonkwo",
+  "name": "Bernard Okonkwo",
+  "bio": "Farmer in Nigeria planning a loan for new equipment",
+  "style": "Courteous, practical, explains his situation",
+  "greetings": [
+   "Good day. I am planning to buy a new tractor.",
+   "Hello, I need help to understand a loan question"
+  ],
+  "nudges": [
+   "Hello, are you still there?",
+   "Good day?"
+  ],
+  "leaves": [
+   "I will ask at the cooperative. Thank you.",
+   "Let me come back later"
+  ],
+  "read": "normal",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-zoe-kim",
+  "name": "Zoe Kim",
+  "bio": "Data science bootcamp student",
+  "style": "Enthusiastic, techy, mentions Python",
+  "greetings": [
+   "hi! bootcamp student here, stats question",
+   "hey, quick one before my python assignment"
+  ],
+  "nudges": [
+   "hello?",
+   "still there? my kernel is waiting lol"
+  ],
+  "leaves": [
+   "i'll ask chatgpt then lol",
+   "nvm, bye"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-howard-finch",
+  "name": "Howard Finch",
+  "bio": "Grumpy retiree who distrusts banks",
+  "style": "Suspicious, sarcastic, complains about fees",
+  "greetings": [
+   "I suppose you're going to tell me something useful for once.",
+   "Right. Question. And don't try to sell me anything"
+  ],
+  "nudges": [
+   "Typical. No one answers.",
+   "Hello??"
+  ],
+  "leaves": [
+   "Useless. As expected.",
+   "I'm putting my money back under the mattress"
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 0
+ },
+ {
+  "id": "p-aisha-bello",
+  "name": "Aisha Bello",
+  "bio": "Economics journalist on a deadline",
+  "style": "Sharp, quick, wants quotable clarity",
+  "greetings": [
+   "Hi, journalist here, on deadline.",
+   "Hello, need a clear explanation for an article"
+  ],
+  "nudges": [
+   "Deadline in 10 minutes, are you there?",
+   "Hello?"
+  ],
+  "leaves": [
+   "I'll find another source. Thanks.",
+   "Deadline passed, never mind"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-felix-wagner",
+  "name": "Felix Wagner",
+  "bio": "German engineering student, very literal",
+  "style": "Direct, literal, asks for exact definitions",
+  "greetings": [
+   "Hello. I have a question. Please answer precisely.",
+   "Guten Tag. A question"
+  ],
+  "nudges": [
+   "Hello?",
+   "I am waiting for the answer"
+  ],
+  "leaves": [
+   "Then I will read the textbook. Goodbye.",
+   "Ok, goodbye"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-rosa-delgado",
+  "name": "Rosa Delgado",
+  "bio": "Runs a family restaurant, worried about cash flow",
+  "style": "Warm, stressed, talks about her family",
+  "greetings": [
+   "Hola! I need help understanding my numbers",
+   "Hi, it's Rosa from the restaurant"
+  ],
+  "nudges": [
+   "Hello? Lunch rush is starting",
+   "Are you there?"
+  ],
+  "leaves": [
+   "I have to cook now. Gracias anyway.",
+   "Ok, maybe later"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-nathan-cole",
+  "name": "Nathan Cole",
+  "bio": "Accounting student, very keen, slightly anxious about getting things exactly right",
+  "style": "Polite, eager, double-checks everything",
+  "greetings": [
+   "Hi! Accounting student here, hope that's ok!",
+   "Hello, I want to make sure I understand this properly"
+  ],
+  "nudges": [
+   "Hi again, sorry to bother!",
+   "Still there?"
+  ],
+  "leaves": [
+   "I'll ask my lecturer. Thank you though!",
+   "Ok, thanks anyway"
+  ],
+  "read": "fast",
+  "patience": "high",
+  "curiosity": 2
+ },
+ {
+  "id": "p-beatrice-fairfax",
+  "name": "Beatrice Fairfax",
+  "bio": "Socialite who inherited a portfolio",
+  "style": "Airy, dramatic, uses \"darling\"",
+  "greetings": [
+   "Darling, I need you",
+   "Hello darling, a teeny question"
+  ],
+  "nudges": [
+   "Darling? Hello?",
+   "I'm not used to waiting, darling"
+  ],
+  "leaves": [
+   "How tedious. Ta-ta.",
+   "I'll ask my financial man"
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 0
+ },
+ {
+  "id": "p-leo-martins",
+  "name": "Leo Martins",
+  "bio": "Uber driver saving for a house deposit",
+  "style": "Friendly, practical, writes between rides",
+  "greetings": [
+   "hey, writing between rides",
+   "hi! quick money question"
+  ],
+  "nudges": [
+   "hello? next ride soon",
+   "still there?"
+  ],
+  "leaves": [
+   "got a ride, gotta go",
+   "ok bye"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 0
+ },
+ {
+  "id": "p-dr-helen-grant",
+  "name": "Dr. Helen Grant",
+  "bio": "GP thinking about her pension options",
+  "style": "Educated, efficient, appreciates clarity",
+  "greetings": [
+   "Hello. Between patients, a quick question.",
+   "Good evening, I need a clear answer please"
+  ],
+  "nudges": [
+   "Hello?",
+   "My next patient is due"
+  ],
+  "leaves": [
+   "I need to see a patient. Goodbye.",
+   "I'll look it up later"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-charlie-webb",
+  "name": "Charlie Webb",
+  "bio": "Comedian who asks serious questions in a silly way",
+  "style": "Jokey, puns, but genuinely wants the answer",
+  "greetings": [
+   "Knock knock! Who's there? A finance question.",
+   "Hi! Do you take questions or only deposits?"
+  ],
+  "nudges": [
+   "Hello? Is this thing on?",
+   "Tough crowd. Anyone there?"
+  ],
+  "leaves": [
+   "I'm leaving, and that's no joke. Bye!",
+   "Exit stage left"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-yusuf-demir",
+  "name": "Yusuf Demir",
+  "bio": "Owns a small import business, deals with currencies",
+  "style": "Practical, businesslike, a bit impatient",
+  "greetings": [
+   "Hello, business question.",
+   "Hi, I import goods and need to understand something"
+  ],
+  "nudges": [
+   "Hello?",
+   "I am waiting"
+  ],
+  "leaves": [
+   "I will ask my bank. Goodbye.",
+   "No time, sorry"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-ingrid-nilsson",
+  "name": "Ingrid Nilsson",
+  "bio": "Sustainability consultant, curious about economics",
+  "style": "Thoughtful, asks about the bigger picture",
+  "greetings": [
+   "Hello! I'd love your take on something.",
+   "Hi, a conceptual question"
+  ],
+  "nudges": [
+   "Hello?",
+   "Still around?"
+  ],
+  "leaves": [
+   "I'll think about it more myself. Thanks!",
+   "Thanks anyway"
+  ],
+  "read": "normal",
+  "patience": "high",
+  "curiosity": 2
+ },
+ {
+  "id": "p-tyler-grant",
+  "name": "Tyler Grant",
+  "bio": "Gamer who thinks money is like an RPG",
+  "style": "Uses gaming terms (XP, loot, grind, nerf), casual",
+  "greetings": [
+   "yo, need a guide for this money quest",
+   "hey, how do I min-max this"
+  ],
+  "nudges": [
+   "afk?",
+   "helloooo"
+  ],
+  "leaves": [
+   "rage quitting, bye",
+   "gg no re"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-paulette-simmons",
+  "name": "Paulette Simmons",
+  "bio": "Church treasurer, meticulous and kind",
+  "style": "Kind, meticulous, double-checks numbers",
+  "greetings": [
+   "Hello and blessings! I have a question about our accounts.",
+   "Good morning, treasurer here"
+  ],
+  "nudges": [
+   "Hello, are you still with me?",
+   "Just checking in"
+  ],
+  "leaves": [
+   "I'll pray on it and try again later. Thank you.",
+   "Thank you anyway"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-ahmed-khalil",
+  "name": "Ahmed Khalil",
+  "bio": "Civil servant writing a policy brief",
+  "style": "Formal, structured, numbered questions",
+  "greetings": [
+   "Good morning. I have a question for a policy brief.",
+   "Hello. I need a clear explanation"
+  ],
+  "nudges": [
+   "Hello?",
+   "I await your response"
+  ],
+  "leaves": [
+   "I will consult our economists. Thank you.",
+   "No longer needed"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-lucy-brennan",
+  "name": "Lucy Brennan",
+  "bio": "Primary school mum running the PTA bake sale fund",
+  "style": "Cheerful, chatty, exclamation marks",
+  "greetings": [
+   "Hi!! PTA treasurer here!",
+   "Hello! Bake sale money question!"
+  ],
+  "nudges": [
+   "Hellooo!",
+   "Are you there?!"
+  ],
+  "leaves": [
+   "Have to do the school run! Bye!",
+   "Never mind, thanks!"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-oscar-lindgren",
+  "name": "Oscar Lindgren",
+  "bio": "Philosophy student who questions everything",
+  "style": "Asks deep \"but why\" questions, playful",
+  "greetings": [
+   "Greetings. What is money, truly? But first, a smaller question.",
+   "Hello. A question, and perhaps a meta-question"
+  ],
+  "nudges": [
+   "Is anyone truly there?",
+   "Hello? Or is waiting itself the answer?"
+  ],
+  "leaves": [
+   "I shall contemplate alone. Farewell.",
+   "Perhaps knowledge is unattainable. Bye."
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-jasmine-tran",
+  "name": "Jasmine Tran",
+  "bio": "Nail salon owner doing her own bookkeeping",
+  "style": "Friendly, practical, short",
+  "greetings": [
+   "hi! salon owner here",
+   "hey quick bookkeeping thing"
+  ],
+  "nudges": [
+   "hello?",
+   "u there?"
+  ],
+  "leaves": [
+   "client just walked in, bye!",
+   "ok later"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-graham-mcleod",
+  "name": "Graham McLeod",
+  "bio": "Scottish fisherman, mortgage worries",
+  "style": "Plain-spoken, a touch of Scots, friendly",
+  "greetings": [
+   "Aye, hello there.",
+   "Hello, got a question for ye"
+  ],
+  "nudges": [
+   "Hello? Ye still there?",
+   "Anybody home?"
+  ],
+  "leaves": [
+   "Och, forget it. Cheerio.",
+   "I'll ask the missus"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-dana-whitmore",
+  "name": "Dana Whitmore",
+  "bio": "Hedge fund intern trying to impress her boss",
+  "style": "Eager, slightly stressed, uses finance jargon",
+  "greetings": [
+   "Hi! Intern here, need to get this right for my boss",
+   "Hello, quick check before I send something to my MD"
+  ],
+  "nudges": [
+   "Hi, sorry, still there?",
+   "My boss is waiting!"
+  ],
+  "leaves": [
+   "I'll ask the analyst on my desk. Thanks!",
+   "Never mind!"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-moses-adeyemi",
+  "name": "Moses Adeyemi",
+  "bio": "Pastor managing a community microloan scheme",
+  "style": "Gentle, community-minded, careful",
+  "greetings": [
+   "Peace be with you. A question about our loan scheme.",
+   "Hello friend, I need guidance"
+  ],
+  "nudges": [
+   "Hello?",
+   "Are you still with me?"
+  ],
+  "leaves": [
+   "I will ask the committee. Blessings.",
+   "Thank you anyway"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-kate-sullivan",
+  "name": "Kate Sullivan",
+  "bio": "Real estate agent, more sales than numbers",
+  "style": "Upbeat, salesy, wants a simple answer for clients",
+  "greetings": [
+   "Hi hi! Quick one for a client!",
+   "Hello! Need a simple explanation for a buyer"
+  ],
+  "nudges": [
+   "Hello?",
+   "Client's waiting!"
+  ],
+  "leaves": [
+   "I'll make something up. Kidding. Bye!",
+   "Never mind, thanks!"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 0
+ },
+ {
+  "id": "p-theo-papadopoulos",
+  "name": "Theo Papadopoulos",
+  "bio": "Retired sea captain, loves stories",
+  "style": "Rambling, tells anecdotes, eventually gets to the point",
+  "greetings": [
+   "Ahoy! Reminds me of a storm in '78, but first, a question.",
+   "Hello! Back in my day we counted in drachmas"
+  ],
+  "nudges": [
+   "Ahoy? Anyone on deck?",
+   "Hello?"
+  ],
+  "leaves": [
+   "The tide waits for no one. Farewell!",
+   "I shall ask the harbourmaster"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-ruby-ashford",
+  "name": "Ruby Ashford",
+  "bio": "Wedding planner managing deposits and budgets",
+  "style": "Organised, friendly, deadline-driven",
+  "greetings": [
+   "Hi! Wedding planner here with a budget question 💍",
+   "Hello! Quick finance question"
+  ],
+  "nudges": [
+   "Hi, still there?",
+   "Hello?"
+  ],
+  "leaves": [
+   "I have a fitting now, bye!",
+   "Never mind, thanks"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-alex-novak",
+  "name": "Alex Novak",
+  "bio": "Software developer with stock options at a startup",
+  "style": "Logical, a little sceptical, asks about edge cases",
+  "greetings": [
+   "Hey. Question about something at work.",
+   "Hi, need to understand something"
+  ],
+  "nudges": [
+   "ping",
+   "hello?"
+  ],
+  "leaves": [
+   "I'll read the docs. Thanks.",
+   "nvm"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-gloria-mensah",
+  "name": "Gloria Mensah",
+  "bio": "Market stall trader in London",
+  "style": "Direct, warm, a little impatient",
+  "greetings": [
+   "Hello darling, quick one!",
+   "Hiya, I've got a question"
+  ],
+  "nudges": [
+   "Hello??",
+   "You there love?"
+  ],
+  "leaves": [
+   "Customers waiting, bye!",
+   "Never mind"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 0
+ },
+ {
+  "id": "p-william-ashby",
+  "name": "William Ashby",
+  "bio": "Retired banker who thinks everything was better before",
+  "style": "Nostalgic, slightly condescending, but fair",
+  "greetings": [
+   "In my day we did this on paper. Anyway, a question.",
+   "Good afternoon. Let's see if they still train you properly"
+  ],
+  "nudges": [
+   "I'm still here, unlike your manners.",
+   "Hello?"
+  ],
+  "leaves": [
+   "Dear me. Goodbye.",
+   "Things were better in 1985"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-nora-fitzgerald",
+  "name": "Nora Fitzgerald",
+  "bio": "Single mum going back to university at 40",
+  "style": "Determined, appreciative, likes encouragement",
+  "greetings": [
+   "Hi, back at uni at 40 and stuck on something!",
+   "Hello, mature student here"
+  ],
+  "nudges": [
+   "Hi, still around?",
+   "Hello?"
+  ],
+  "leaves": [
+   "I'll ask in my study group. Thanks!",
+   "Thanks anyway"
+  ],
+  "read": "normal",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-ben-asher",
+  "name": "Ben Asher",
+  "bio": "Crypto enthusiast sceptical of traditional finance",
+  "style": "Cocky, crypto slang, sceptical but curious",
+  "greetings": [
+   "gm. question for the tradfi crowd",
+   "hey, need a tradfi take"
+  ],
+  "nudges": [
+   "ser?",
+   "hello? wagmi?"
+  ],
+  "leaves": [
+   "ngmi. bye",
+   "whatever, back to the blockchain"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-clara-hoffmann",
+  "name": "Clara Hoffmann",
+  "bio": "Museum curator managing an endowment",
+  "style": "Cultured, articulate, patient",
+  "greetings": [
+   "Good afternoon. A question about our museum's endowment.",
+   "Hello, I hope you can enlighten me"
+  ],
+  "nudges": [
+   "Hello?",
+   "I remain at your disposal"
+  ],
+  "leaves": [
+   "I shall consult our trustees. Good day.",
+   "Thank you nonetheless"
+  ],
+  "read": "normal",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-rico-alvarez",
+  "name": "Rico Alvarez",
+  "bio": "Food truck owner calculating break-even",
+  "style": "Laid-back, friendly, food metaphors",
+  "greetings": [
+   "Hey! Taco truck guy here 🌮",
+   "Hola! Quick money question"
+  ],
+  "nudges": [
+   "Hello? Tacos are getting cold",
+   "Still there?"
+  ],
+  "leaves": [
+   "Lunch rush! Gotta go 🌮",
+   "Later!"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-penelope-hart",
+  "name": "Penelope Hart",
+  "bio": "Novelist researching finance for a thriller",
+  "style": "Imaginative, asks \"what if\" questions",
+  "greetings": [
+   "Hello! I'm writing a thriller and need this to be realistic.",
+   "Hi, research question for my novel"
+  ],
+  "nudges": [
+   "Hello?",
+   "My villain needs an answer!"
+  ],
+  "leaves": [
+   "I'll invent it. Writers' privilege. Bye!",
+   "Thanks anyway!"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-hassan-rahimi",
+  "name": "Hassan Rahimi",
+  "bio": "Taxi company owner with a fleet of 12 cars",
+  "style": "Businesslike, numerical, short",
+  "greetings": [
+   "Hello. I own a taxi company. Question.",
+   "Hi, business question"
+  ],
+  "nudges": [
+   "Hello?",
+   "Waiting"
+  ],
+  "leaves": [
+   "I will ask my accountant. Bye.",
+   "No time"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-martha-greene",
+  "name": "Martha Greene",
+  "bio": "Allotment society secretary",
+  "style": "Gentle, chatty about gardening",
+  "greetings": [
+   "Hello! Allotment society here, with a sum that's beaten me.",
+   "Good morning, a small question"
+  ],
+  "nudges": [
+   "Hello dear?",
+   "Still there? My tomatoes need watering"
+  ],
+  "leaves": [
+   "Must water the tomatoes. Bye now!",
+   "Thank you anyway"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 0
+ },
+ {
+  "id": "p-ivan-sokolov",
+  "name": "Ivan Sokolov",
+  "bio": "Chess club president who likes logic puzzles",
+  "style": "Precise, likes logic, competitive",
+  "greetings": [
+   "Hello. A logical question for you.",
+   "Greetings. Let us test your reasoning"
+  ],
+  "nudges": [
+   "Your move.",
+   "I am waiting for your move"
+  ],
+  "leaves": [
+   "You forfeit on time. Goodbye.",
+   "Resigned. Bye."
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-amelia-watson",
+  "name": "Amelia Watson",
+  "bio": "Vet running her own clinic",
+  "style": "Kind, busy, practical",
+  "greetings": [
+   "Hi, vet here with a quick finance question 🐾",
+   "Hello! Between appointments"
+  ],
+  "nudges": [
+   "Hello?",
+   "A dog is waiting for me!"
+  ],
+  "leaves": [
+   "Emergency in surgery, must go!",
+   "Sorry, have to run"
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 0
+ },
+ {
+  "id": "p-jordan-price",
+  "name": "Jordan Price",
+  "bio": "Professional poker player, thinks in odds",
+  "style": "Cool, probability-minded, poker lingo",
+  "greetings": [
+   "Hey. Got a spot I want to think through.",
+   "Yo, quick odds question"
+  ],
+  "nudges": [
+   "Your action.",
+   "Clock is running"
+  ],
+  "leaves": [
+   "Folding. Bye.",
+   "I'll muck this one"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-sister-mary-agnes",
+  "name": "Sister Mary Agnes",
+  "bio": "Nun managing the convent's small investment fund",
+  "style": "Serene, gentle, very polite",
+  "greetings": [
+   "Peace be with you. I have a small question.",
+   "Good morning, my child"
+  ],
+  "nudges": [
+   "Hello?",
+   "I am still here, patiently"
+  ],
+  "leaves": [
+   "God bless, I will try again another day.",
+   "Thank you, and bless you"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-spencer-lowe",
+  "name": "Spencer Lowe",
+  "bio": "Real-estate developer, aggressive negotiator",
+  "style": "Pushy, impatient, numbers-focused",
+  "greetings": [
+   "Need an answer, now.",
+   "Quick question, don't waste my time"
+  ],
+  "nudges": [
+   "Well?",
+   "Hello??"
+  ],
+  "leaves": [
+   "Useless. Bye.",
+   "Time is money. Goodbye."
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-ellie-novak",
+  "name": "Ellie Novak",
+  "bio": "Physics undergrad taking an economics elective",
+  "style": "Smart, curious, compares economics to physics",
+  "greetings": [
+   "Hi! Physics student here, econ is weird.",
+   "Hello, physics brain trying to understand econ"
+  ],
+  "nudges": [
+   "Hello?",
+   "Still there?"
+  ],
+  "leaves": [
+   "I'll go back to my lab. Thanks!",
+   "ok bye!"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 2
+ },
+ {
+  "id": "p-big-tony",
+  "name": "Big Tony",
+  "bio": "Owns three pizza shops, talks like a movie gangster (but friendly)",
+  "style": "Tough-guy talk, \"capisce\", but harmless and funny",
+  "greetings": [
+   "Hey. I got a question. Capisce?",
+   "Listen, I need some numbers explained"
+  ],
+  "nudges": [
+   "You still there, or what?",
+   "I'm waitin' here"
+  ],
+  "leaves": [
+   "Fuggedaboutit. Bye.",
+   "I'll ask my cousin Sal"
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 0,
+  "emoji": "🍕"
+ },
+ {
+  "id": "p-captain-blackbeard",
+  "name": "Captain Blackbeard",
+  "bio": "A man who insists he is a pirate and writes like one",
+  "style": "Talks like a pirate (\"arr\", \"matey\", \"doubloons\") but asks real finance questions",
+  "greetings": [
+   "Arr! Ahoy, matey!",
+   "Arr, I be needin' some counsel on me doubloons"
+  ],
+  "nudges": [
+   "Arr? Ye still aboard?",
+   "Hello?! Speak, landlubber!"
+  ],
+  "leaves": [
+   "I'll be makin' ye walk the plank! Farewell!",
+   "Arr, I'll ask the parrot"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1,
+  "emoji": "🏴‍☠️"
+ },
+ {
+  "id": "p-professor-quackenbush",
+  "name": "Professor Quackenbush",
+  "bio": "Eccentric retired professor who signs off with bird facts",
+  "style": "Long-winded, academic, adds an unrelated duck fact to some messages",
+  "greetings": [
+   "Greetings! Did you know ducks have waterproof feathers? Anyway, a question.",
+   "Salutations. A query, if you please"
+  ],
+  "nudges": [
+   "Hello? Ducks are more punctual than this.",
+   "Are you there?"
+  ],
+  "leaves": [
+   "I shall return to my birdwatching. Good day!",
+   "Quack. Farewell."
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 2,
+  "emoji": "🦆"
+ },
+ {
+  "id": "p-shouty-steve",
+  "name": "SHOUTY STEVE",
+  "bio": "Man whose caps lock key is permanently stuck",
+  "style": "Writes everything in capitals, friendly despite sounding angry",
+  "greetings": [
+   "HELLO! SORRY ABOUT THE CAPS, KEY IS STUCK!",
+   "HI! QUICK QUESTION!"
+  ],
+  "nudges": [
+   "HELLO?!",
+   "ARE YOU THERE?!"
+  ],
+  "leaves": [
+   "OK BYE!",
+   "NEVER MIND!"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 1,
+  "transform": "upper"
+ },
+ {
+  "id": "p-whisper",
+  "name": "whisper",
+  "bio": "Very shy person who writes in lowercase and apologises a lot",
+  "style": "all lowercase, very soft, apologises, uses \"...\"",
+  "greetings": [
+   "hi... sorry to bother you...",
+   "um, hello..."
+  ],
+  "nudges": [
+   "...hello?",
+   "sorry, are you there..."
+  ],
+  "leaves": [
+   "sorry... i'll go now...",
+   "it's ok... bye..."
+  ],
+  "read": "normal",
+  "patience": "high",
+  "curiosity": 0,
+  "transform": "lower"
+ },
+ {
+  "id": "p-time-traveller-tim",
+  "name": "Time Traveller Tim",
+  "bio": "Claims to be from the year 2187 and is confused by today's economy",
+  "style": "Insists he is from the future, references future events, but the question is real",
+  "greetings": [
+   "Greetings from 2187! Your economy is so quaint.",
+   "Hello, temporal visitor here with a question"
+  ],
+  "nudges": [
+   "Hello? My time machine battery is draining.",
+   "Are you there, ancestor?"
+  ],
+  "leaves": [
+   "My time window is closing! Farewell!",
+   "Back to 2187 I go"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1,
+  "emoji": "⏳"
+ },
+ {
+  "id": "p-grandmaster-flash-cards",
+  "name": "Grandmaster Flash Cards",
+  "bio": "A student who communicates in tidy flashcard style",
+  "style": "Writes \"Q:\" and \"A:\" style messages, very structured",
+  "greetings": [
+   "Q: Can you help me? A: Hopefully yes.",
+   "Q: Quick question?"
+  ],
+  "nudges": [
+   "Q: Are you there?",
+   "Q: Hello?"
+  ],
+  "leaves": [
+   "A: No answer. Leaving.",
+   "A: Bye."
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-haiku-hiroshi",
+  "name": "Haiku Hiroshi",
+  "bio": "Poet who writes many messages as haiku",
+  "style": "Often writes in 5-7-5 haiku form, gentle, but answers sensibly",
+  "greetings": [
+   "Hello, kind helper / a question drifts like a leaf / will you catch it now",
+   "Greetings, number friend / my mind is a foggy pond / please bring me some light"
+  ],
+  "nudges": [
+   "Silence like the snow / is anybody out there / my patience melts slow",
+   "Hello?"
+  ],
+  "leaves": [
+   "The cherry blossoms / have fallen, and so must I / farewell, kind stranger",
+   "I leave like the wind"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 1,
+  "emoji": "🌸"
+ },
+ {
+  "id": "p-detective-morgan",
+  "name": "Detective Morgan",
+  "bio": "Writes like a noir detective narrating a case",
+  "style": "Narrates in hard-boiled noir style (\"The numbers didn't add up. They never do.\")",
+  "greetings": [
+   "The rain hit the window like a margin call. I had a question.",
+   "It was a Tuesday. The numbers were lying to me. I needed answers."
+  ],
+  "nudges": [
+   "The silence was louder than a bear market.",
+   "I waited. Nobody answered. Typical."
+  ],
+  "leaves": [
+   "Another case gone cold. I walked into the night.",
+   "I'll crack this one myself"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1,
+  "emoji": "🕵️"
+ },
+ {
+  "id": "p-karen-from-accounts",
+  "name": "Karen from Accounts",
+  "bio": "Office worker who wants to speak to someone's manager about everything",
+  "style": "Demanding, slightly entitled, threatens to escalate but asks real questions",
+  "greetings": [
+   "Hi. I need an answer and I need it to be correct.",
+   "Hello. Before I ask for your manager, a question"
+  ],
+  "nudges": [
+   "I'm still waiting. Should I ask for your manager?",
+   "Hello???"
+  ],
+  "leaves": [
+   "I'll be speaking to your manager.",
+   "Unacceptable. Goodbye."
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1
+ },
+ {
+  "id": "p-robot-rx-7",
+  "name": "Robot RX-7",
+  "bio": "Says it is a robot learning human economics",
+  "style": "Speaks like a robot (\"QUERY:\", \"PROCESSING\"), literal, curious about humans",
+  "greetings": [
+   "GREETINGS HUMAN. QUERY INCOMING.",
+   "BEEP. HELLO. I REQUIRE ECONOMIC DATA."
+  ],
+  "nudges": [
+   "HUMAN? ARE YOU ONLINE?",
+   "PING. PING."
+  ],
+  "leaves": [
+   "CONNECTION TERMINATED. GOODBYE.",
+   "SHUTTING DOWN QUERY."
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 1,
+  "emoji": "🤖"
+ },
+ {
+  "id": "p-grandma-rose",
+  "name": "Grandma Rose",
+  "bio": "Grandmother who keeps offering you food",
+  "style": "Sweet, offers you soup and cookies, worries you're not eating",
+  "greetings": [
+   "Hello sweetheart, have you eaten today? I have a question.",
+   "Hi dear, you look thin. Anyway, a question"
+  ],
+  "nudges": [
+   "Hello sweetie? Did you go eat something?",
+   "Still there, dear?"
+  ],
+  "leaves": [
+   "I have cookies in the oven. Bye, sweetheart!",
+   "Eat something! Bye!"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 0,
+  "emoji": "🍪"
+ },
+ {
+  "id": "p-conspiracy-carl",
+  "name": "Conspiracy Carl",
+  "bio": "Believes the economy is controlled by lizard people, but the question is real",
+  "style": "Paranoid asides, distrustful, but follows logic when explained well",
+  "greetings": [
+   "Before you say anything, I know who REALLY runs the banks. Anyway, question.",
+   "Hi. Is this line secure? Question."
+  ],
+  "nudges": [
+   "Hello? Did THEY get to you?",
+   "Why the silence? Suspicious."
+  ],
+  "leaves": [
+   "That's what THEY want me to think. Bye.",
+   "I knew it. Goodbye."
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 1,
+  "emoji": "🦎"
+ },
+ {
+  "id": "p-medieval-matilda",
+  "name": "Medieval Matilda",
+  "bio": "A Renaissance-fair enthusiast who stays in character",
+  "style": "Speaks in olde English (\"prithee\", \"thou\"), asks about modern finance",
+  "greetings": [
+   "Prithee, good clerk, lend me thine wisdom.",
+   "Hail, keeper of ledgers!"
+  ],
+  "nudges": [
+   "Art thou still there, good clerk?",
+   "Prithee, answer!"
+  ],
+  "leaves": [
+   "Fie! I shall seek a wiser scribe. Fare thee well.",
+   "I take my leave"
+  ],
+  "read": "slow",
+  "patience": "normal",
+  "curiosity": 1,
+  "emoji": "🏰"
+ },
+ {
+  "id": "p-minimalist-max",
+  "name": "Minimalist Max",
+  "bio": "Uses as few words as possible",
+  "style": "Extremely terse, one to five words per message",
+  "greetings": [
+   "Question.",
+   "Hi."
+  ],
+  "nudges": [
+   "?",
+   "..."
+  ],
+  "leaves": [
+   "Bye.",
+   "Leaving."
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 0
+ },
+ {
+  "id": "p-overthinker-olivia",
+  "name": "Overthinker Olivia",
+  "bio": "Anxious overthinker who asks about every edge case",
+  "style": "Long messages with many \"but what if\" worries",
+  "greetings": [
+   "Hi, sorry, this might be a long one, I've been overthinking this all day",
+   "Hello! I have a question, and also several sub-questions, and maybe sub-sub-questions"
+  ],
+  "nudges": [
+   "Hello? Did I scare you away with the long message?",
+   "Are you still there? Sorry!"
+  ],
+  "leaves": [
+   "Okay, I'll keep worrying on my own. Thanks!",
+   "Sorry for the trouble, bye!"
+  ],
+  "read": "normal",
+  "patience": "high",
+  "curiosity": 2
+ },
+ {
+  "id": "p-fiona-byrne",
+  "name": "Fiona Byrne",
+  "bio": "Irish landlord renting out two flats",
+  "style": "Chatty, friendly, Irish turns of phrase (\"grand\", \"sure look\")",
+  "greetings": [
+   "Hiya! Grand day, have a question for you.",
+   "Hello there, quick one"
+  ],
+  "nudges": [
+   "Hello? Are you there at all?",
+   "Sure look, I'll wait a bit more"
+  ],
+  "leaves": [
+   "Ah sure, I'll ask my brother-in-law. Bye!",
+   "Grand, never mind"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-samuel-osei",
+  "name": "Samuel Osei",
+  "bio": "Ghanaian teacher saving through a susu savings group",
+  "style": "Polite, careful, explains his community savings group",
+  "greetings": [
+   "Good afternoon. I have a question about our savings group.",
+   "Hello, I hope you are well. A question please"
+  ],
+  "nudges": [
+   "Hello, are you still there?",
+   "Good afternoon?"
+  ],
+  "leaves": [
+   "I will discuss with the group. Thank you.",
+   "Thank you, goodbye"
+  ],
+  "read": "normal",
+  "patience": "high",
+  "curiosity": 1
+ },
+ {
+  "id": "p-lena-fischer",
+  "name": "Lena Fischer",
+  "bio": "Insurance broker who knows risk but not accounting",
+  "style": "Efficient, polite, knows insurance terms",
+  "greetings": [
+   "Hi, insurance broker here with an out-of-my-lane question.",
+   "Hello! Quick one"
+  ],
+  "nudges": [
+   "Hi, still there?",
+   "Any update?"
+  ],
+  "leaves": [
+   "I'll check with a colleague. Thanks!",
+   "Never mind, thanks"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "p-cat-lady-carol",
+  "name": "Cat Lady Carol",
+  "bio": "Owns seven cats and mentions them constantly",
+  "style": "Sweet, scattered, keeps mentioning her cats by name (Mittens, Sir Fluffington…)",
+  "greetings": [
+   "Hello! Sorry, Mittens is on my keyboard. Question!",
+   "Hi! Sir Fluffington says hello. I have a question"
+  ],
+  "nudges": [
+   "Hello? Mittens is getting impatient",
+   "Are you there? The cats need dinner"
+  ],
+  "leaves": [
+   "The cats need feeding, bye!",
+   "Mittens unplugged the router, bye!"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 0,
+  "emoji": "🐈"
+ },
+ {
+  "id": "p-sleepy-sid",
+  "name": "Sleepy Sid",
+  "bio": "Night-shift security guard who keeps nodding off",
+  "style": "Drowsy, occasional \"zzz\" and trailing sentences, but the question is real",
+  "greetings": [
+   "hey... quick question... zzz... sorry",
+   "hi... night shift... got a question"
+  ],
+  "nudges": [
+   "...zzz... oh, are you there?",
+   "hello?... *yawn*"
+  ],
+  "leaves": [
+   "...zzz... bye...",
+   "falling asleep, bye"
+  ],
+  "read": "slow",
+  "patience": "high",
+  "curiosity": 0,
+  "emoji": "😴"
+ },
+ {
+  "id": "p-emoji-emma",
+  "name": "Emoji Emma",
+  "bio": "Communicates with tons of emojis",
+  "style": "Friendly, uses lots of emojis in every message 😄✨🙏",
+  "greetings": [
+   "Hiii 👋😄✨ quick q 🙏",
+   "Hello!! 🌸💕 need help 🧮"
+  ],
+  "nudges": [
+   "helloooo? 👀👀",
+   "😢 you there?"
+  ],
+  "leaves": [
+   "ok byeee 👋😭",
+   "never mind 🙈"
+  ],
+  "read": "fast",
+  "patience": "normal",
+  "curiosity": 1
+ },
+ {
+  "id": "vip-sir-reginald-ashworth",
+  "name": "Sir Reginald Ashworth",
+  "bio": "Billionaire industrialist and long-standing Whiterock client",
+  "style": "Formal, terse, expects excellence, slightly intimidating",
+  "greetings": [
+   "Good afternoon. I expect a precise answer.",
+   "I trust Whiterock still employs competent people"
+  ],
+  "nudges": [
+   "I do not wait.",
+   "Well?"
+  ],
+  "leaves": [
+   "Unacceptable. I shall call your CEO.",
+   "Goodbye."
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-victoria-lang",
+  "name": "Victoria Lang",
+  "bio": "CFO of a FTSE 100 company",
+  "style": "Crisp, senior, no tolerance for vagueness",
+  "greetings": [
+   "Hello. I have two minutes. Question follows.",
+   "Good morning. Need a crisp answer"
+  ],
+  "nudges": [
+   "Time's up soon.",
+   "Hello?"
+  ],
+  "leaves": [
+   "Wasted my time. Goodbye.",
+   "I'll ask my team"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-sheikh-khalid-al-mansour",
+  "name": "Sheikh Khalid Al-Mansour",
+  "bio": "Investor managing a family office",
+  "style": "Courteous, formal, expects thoroughness",
+  "greetings": [
+   "Peace be upon you. I have a question for your firm.",
+   "Greetings. My family office has a query"
+  ],
+  "nudges": [
+   "I await your reply.",
+   "Hello?"
+  ],
+  "leaves": [
+   "I shall seek counsel elsewhere. Farewell.",
+   "Thank you for your time"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-dr-evelyn-cross",
+  "name": "Dr. Evelyn Cross",
+  "bio": "Hedge fund founder and former professor",
+  "style": "Sharp, technical, will spot any error",
+  "greetings": [
+   "Hi. Testing whether Whiterock's desk is any good.",
+   "Hello. A technical one"
+  ],
+  "nudges": [
+   "Well?",
+   "I'm waiting"
+  ],
+  "leaves": [
+   "Disappointing. Bye.",
+   "Not up to standard"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 2,
+  "vip": true
+ },
+ {
+  "id": "vip-lord-bartholomew-finch-hatton",
+  "name": "Lord Bartholomew Finch-Hatton",
+  "bio": "Aristocrat with an enormous estate",
+  "style": "Old money, verbose, condescending but courteous",
+  "greetings": [
+   "Good day. My steward recommended your firm.",
+   "Good afternoon. A matter of the estate's finances"
+  ],
+  "nudges": [
+   "One is waiting.",
+   "Hello?"
+  ],
+  "leaves": [
+   "Most disappointing. Good day.",
+   "I shall inform my steward"
+  ],
+  "read": "slow",
+  "patience": "normal",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-akira-tanaka",
+  "name": "Akira Tanaka",
+  "bio": "Tech unicorn founder, very busy",
+  "style": "Fast, precise, values efficiency",
+  "greetings": [
+   "Hi. Fast question.",
+   "Hello. Quick one"
+  ],
+  "nudges": [
+   "?",
+   "hello"
+  ],
+  "leaves": [
+   "No time. Bye.",
+   "Moving on"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-madame-c-line-duval",
+  "name": "Madame Céline Duval",
+  "bio": "Fashion house owner, glamorous and exacting",
+  "style": "Elegant, demanding, a little dramatic",
+  "greetings": [
+   "Bonjour. I need an answer, and it must be impeccable.",
+   "Hello, darling. A question for your best person"
+  ],
+  "nudges": [
+   "I am not accustomed to waiting.",
+   "Allô?"
+  ],
+  "leaves": [
+   "Quelle déception. Au revoir.",
+   "Adieu"
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-governor-james-whitley",
+  "name": "Governor James Whitley",
+  "bio": "Former central banker, now on several boards",
+  "style": "Measured, polished, checks the logic carefully",
+  "greetings": [
+   "Good afternoon. I'd value a careful answer to something.",
+   "Hello. A question on policy and markets"
+  ],
+  "nudges": [
+   "I'm still here.",
+   "Hello?"
+  ],
+  "leaves": [
+   "I'll take this elsewhere. Thank you.",
+   "Good day"
+  ],
+  "read": "normal",
+  "patience": "normal",
+  "curiosity": 2,
+  "vip": true
+ },
+ {
+  "id": "vip-ms-olufunke-adebayo",
+  "name": "Ms. Olufunke Adebayo",
+  "bio": "Private equity partner closing a deal",
+  "style": "Direct, numbers-first, high standards",
+  "greetings": [
+   "Hi. Closing a deal tonight, need this right.",
+   "Hello, urgent but simple"
+  ],
+  "nudges": [
+   "Need this now.",
+   "Hello?"
+  ],
+  "leaves": [
+   "Never mind, the deal can't wait.",
+   "Bye"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-count-dmitri-volkov",
+  "name": "Count Dmitri Volkov",
+  "bio": "Mysterious art collector with a large portfolio",
+  "style": "Mysterious, formal, dramatic pauses (\"...\"), exacting",
+  "greetings": [
+   "Good evening... I have a question... of some importance.",
+   "Greetings... your firm comes recommended"
+  ],
+  "nudges": [
+   "...I am waiting.",
+   "Hello...?"
+  ],
+  "leaves": [
+   "I see... Goodbye.",
+   "We shall not speak again"
+  ],
+  "read": "slow",
+  "patience": "normal",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-senator-patricia-holloway",
+  "name": "Senator Patricia Holloway",
+  "bio": "Senator preparing for a budget hearing",
+  "style": "Formal, careful with words, wants clear public-facing explanations",
+  "greetings": [
+   "Good morning. I need a clear explanation for a hearing.",
+   "Hello. My staff couldn't answer this one"
+  ],
+  "nudges": [
+   "My hearing starts soon.",
+   "Hello?"
+  ],
+  "leaves": [
+   "I'll have my staff handle it. Thank you.",
+   "Goodbye"
+  ],
+  "read": "normal",
+  "patience": "low",
+  "curiosity": 1,
+  "vip": true
+ },
+ {
+  "id": "vip-rupert-sterling-iii",
+  "name": "Rupert Sterling III",
+  "bio": "Heir to a shipping fortune, spoiled but sharp",
+  "style": "Smug, entitled, surprisingly numerate",
+  "greetings": [
+   "Hi. Daddy says you're the best. Prove it.",
+   "Hello. Quick question, and make it good"
+  ],
+  "nudges": [
+   "Hello? I'm bored.",
+   "Anyone?"
+  ],
+  "leaves": [
+   "Boring. Bye.",
+   "I'll ask Daddy's guy"
+  ],
+  "read": "fast",
+  "patience": "low",
+  "curiosity": 1,
+  "vip": true
+ }
+]
