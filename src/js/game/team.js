@@ -17,11 +17,18 @@ import * as boss from './boss.js';
 
 const MIN = 60000;
 const HOUR = 3600000;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export const members = () => S.data.team || [];
 export const member = (id) => (id === 'diane' ? { id: 'diane', name: 'Diane Whitfield', role: 'Head of Client Services', color: '#c0794a', emoji: '💼' } : members().find((m) => m.id === id));
 function chat() { return getChat('team'); }
+
+// Models don't always write the id exactly ("Ken", "Ken Watanabe", "ken"): match any of them.
+function memberIn(pool, who) {
+  const w = String(who || '').trim().toLowerCase().replace(/^@/, '');
+  if (!w) return null;
+  return pool.find((m) => m.id === w || m.name.toLowerCase() === w || m.name.split(' ')[0].toLowerCase() === w || w.startsWith(m.name.split(' ')[0].toLowerCase() + ' ')) || null;
+}
+const textOf = (r) => String(r?.text ?? r?.message ?? r?.reply ?? r?.content ?? '').trim();
 
 export function teamState() {
   const p = S.profile;
@@ -164,13 +171,12 @@ Keep each message short and natural (work banter, a customer story, a quick ques
     temperature: 0.9,
   }), 2, 2000);
   const j = parseJSON(raw);
-  const ids = new Set(onDuty.map((m) => m.id));
   for (const m of Array.isArray(j.messages) ? j.messages : []) {
-    if (!ids.has(m.who) || !String(m.text || '').trim()) continue;
+    const mem = memberIn(onDuty, m?.who);
+    if (!mem || !textOf(m)) continue;
     let at = start + Math.max(0, Math.min(719, Number(m.minute) || 0)) * MIN + rand(0, 50000);
-    const mem = member(m.who);
     for (let i = 0; i < 48 && !onShift(mem, at) && at < end; i++) at += 15 * MIN; // nudge into their shift
-    T.queue.push({ who: m.who, at, text: String(m.text).trim() });
+    T.queue.push({ who: mem.id, at, text: textOf(m) });
   }
   if (Math.random() < C.dianePostChance) T.queue.push({ who: 'diane', at: start + rand(1, 11) * HOUR, diane: true });
   T.queue.sort((a, b) => a.at - b.at);
@@ -182,7 +188,7 @@ Keep each message short and natural (work banter, a customer story, a quick ques
 export function onPlayerMessage(text) {
   const c = chat();
   const t = clock.now();
-  addMessage(c, { from: 'me', text, read: true, t });
+  addMessage(c, { from: 'me', text, read: true, t, handled: false });
   const T = teamState();
   if (!T.replyAt) {
     const [a, b] = cfg().team.replyDelayMs;
@@ -202,16 +208,16 @@ async function respond() {
   const onDuty = members().filter((m) => onShift(m, now));
   const dianeOn = boss.isOnline(now);
   if (!onDuty.length && !dianeOn) { T.replyAt = nextAnyoneOnShift(now); return; }
+  // each message you write is answered (or deliberately left) once; answeredUpTo is from older saves
+  const legacy = T.answeredUpTo || 0;
+  const fresh = c.messages.filter((m) => m.from === 'me' && !m.handled && !(m.handled === undefined && m.t <= legacy));
+  if (!fresh.length) return;
   replying = true;
-  try {
-    const lastAnswered = T.answeredUpTo || 0;
-    const fresh = c.messages.filter((m) => m.from === 'me' && m.t > lastAnswered);
-    if (!fresh.length) return;
-    T.answeredUpTo = fresh.at(-1).t;
-    const raw = await withRetry(() => llmCall({
-      role: 'team',
-      category: 'team',
-      system: `You play the coworkers in a remote customer-support team's group chat (#support-team at Whiterock, a financial-services firm). Everyone works from home and never meets in person (no coffee or lunch meet-ups). The human player is ${S.profile.name}, a fellow support agent; never write as them, and never as Diane (the manager).
+  const said = fresh.map((m) => m.text).join('\n');
+  const ask = () => withRetry(() => llmCall({
+    role: 'team',
+    category: 'team',
+    system: `You play the coworkers in a remote customer-support team's group chat (#support-team at Whiterock, a financial-services firm). Everyone works from home and never meets in person (no coffee or lunch meet-ups). The human player is ${S.profile.name}, a fellow support agent; never write as them, and never as Diane (the manager).
 
 COWORKERS ON SHIFT NOW (only they may reply):
 ${onDuty.map(teamCard).join('\n') || '(none)'}
@@ -219,39 +225,43 @@ ${onDuty.map(teamCard).join('\n') || '(none)'}
 Reply like real colleagues: short, in each person's voice. Usually only one or two people reply; nobody replies if nothing invites it. If the agent asks a finance/accounting/stats question, answer helpfully in character (correctly). If the agent warns the team about a difficult customer, react and note it.
 Diane is ${dianeOn ? 'online' : 'offline'}; set "diane": true only if the message is addressed to her or really needs the manager.
 
-OUTPUT only JSON: {"replies": [{"who": "<coworker id>", "delaySec": <5-240>, "text": "<message>"}], "diane": <true|false>, "warnedAbout": [{"customer": "<@chatN or the customer's name, exactly as the agent wrote it>", "why": "<few words>"}]}`,
-      messages: [{ role: 'user', content: `Recent chat (oldest first):\n${recentLines(60)}\n\nNew from ${S.profile.name}:\n${fresh.map((m) => m.text).join('\n')}` }],
-      maxTokens: 600,
-      temperature: 0.8,
-    }), 2, 1500);
-    const j = parseJSON(raw);
+OUTPUT only JSON: {"replies": [{"who": "<coworker id>", "delaySec": <5-180>, "text": "<message>"}], "diane": <true|false>, "warnedAbout": [{"customer": "<@chatN or the customer's name, exactly as the agent wrote it>", "why": "<few words>"}]}`,
+    messages: [{ role: 'user', content: `Recent chat (oldest first):\n${recentLines(60)}\n\nNew from ${S.profile.name}:\n${said}` }],
+    maxTokens: 900,
+    temperature: 0.8,
+  }), 2, 1500).then(parseJSON);
+  try {
+    const j = await ask();
+    const raw = Array.isArray(j.replies) ? j.replies : j.who ? [j] : [];
+    const replies = raw.map((r) => ({ m: memberIn(onDuty, r?.who), text: textOf(r), delaySec: r?.delaySec })).filter((r) => r.m && r.text);
+    if (raw.length && !replies.length) console.warn('team: reply did not match anyone on shift', raw);
     for (const w of Array.isArray(j.warnedAbout) ? j.warnedAbout : []) {
       const cust = w && resolveCustomer(w.customer);
       if (cust) T.flags[cust.personaId] = { at: now, name: cust.name, why: String(w.why || '').slice(0, 80), hit: false };
     }
-    const ids = new Set(onDuty.map((m) => m.id));
-    const replies = (Array.isArray(j.replies) ? j.replies : []).filter((r) => ids.has(r.who) && String(r.text || '').trim()).slice(0, cfg().team.maxReplies);
-    for (const r of replies) {
-      await sleep(Math.min(240, Math.max(3, Number(r.delaySec) || 20)) * 1000 / (S.fastTeam ? 50 : 1));
-      const m = member(r.who);
-      c.typing = m.name.split(' ')[0];
-      touchChat(c);
-      await sleep(Math.min(6000, 600 + r.text.length * 30) / (S.fastTeam ? 50 : 1));
-      c.typing = null;
-      addMessage(c, { from: 'them', who: r.who, text: String(r.text).trim() });
+    // queue the replies (saved, so they survive the app closing) and let tick() post them with "typing…"
+    const speed = S.fastTeam ? 50 : 1;
+    let at = now;
+    for (const r of replies.slice(0, cfg().team.maxReplies)) {
+      at = Math.max(at, now + Math.min(180, Math.max(5, Number(r.delaySec) || 20)) * 1000 / speed) + rand(1000, 4000) / speed;
+      T.queue.push({ who: r.m.id, at, text: r.text, reply: true });
     }
+    T.queue.sort((a, b) => a.at - b.at);
+    for (const m of fresh) m.handled = true;
+    T.replyTries = 0;
+    touchProfile();
     if (j.diane && dianeOn) {
-      c.typing = 'Diane';
-      touchChat(c);
       const text = await boss.teamReply(recentLines(60));
-      c.typing = null;
-      if (text) addMessage(c, { from: 'them', who: 'diane', text });
+      if (text) { T.queue.push({ who: 'diane', at: at + rand(20000, 60000) / speed, text, reply: true }); T.queue.sort((a, b) => a.at - b.at); }
     }
   } catch (e) {
+    // try again in a couple of minutes rather than leaving you on read
     console.warn('team reply failed', e);
+    T.replyTries = (T.replyTries || 0) + 1;
+    if (T.replyTries <= 3) T.replyAt = now + 2 * MIN;
+    else { for (const m of fresh) m.handled = true; T.replyTries = 0; sysMessage(c, '⚠ Your coworkers couldn\'t be reached just now (connection problem).', { kind: 'error' }); }
   } finally {
     replying = false;
-    c.typing = null;
     touchChat(c);
     touchProfile();
   }
@@ -277,9 +287,14 @@ export function tick(now = clock.now()) {
       touchProfile();
       return;
     }
+    c.typing = null;
     addMessage(c, { from: 'them', who: q.who, text: q.text, t: q.at, silent: now - q.at > 10 * MIN }); // old chatter from while you were away: no ping
     touchProfile();
   }
+  // "Ken is typing…" just before a queued message goes out
+  const next = T.queue[0];
+  const typing = next && !next.diane && next.text && next.at - now < Math.min(6000, 600 + next.text.length * 30) / (S.fastTeam ? 50 : 1) ? member(next.who)?.name.split(' ')[0] : null;
+  if ((c.typing || null) !== typing) { c.typing = typing; touchChat(c); }
   if (T.replyAt && now >= T.replyAt) { respond(); return; }
   if (!S.settings?.hasKey) return;
   if (T.nextSimAt == null) T.nextSimAt = now + rand(10, 40) * MIN;

@@ -66,6 +66,7 @@ async function respond(req) {
     }
     const said = text.split('\nNew from ').pop() || '';
     const warned = /difficult|careful|watch out|heads up/i.test(said) ? [...said.matchAll(/@chat\d+/g)].map((m) => ({ customer: m[0], why: 'difficult' })) : [];
+    if (/anyone around/i.test(said)) return JSON.stringify({ replies: [{ who: 'Priya Nair', delaySec: 5, message: 'yep, here 🙂' }], diane: false, warnedAbout: [] }); // name + "message" key, like real models sometimes do
     return JSON.stringify({ replies: ids.length ? [{ who: ids[0], delaySec: 5, text: warned.length ? 'noted, thanks for the warning!' : 'ha, fair enough' }] : [], diane: /diane/i.test(said), warnedAbout: warned });
   }
 

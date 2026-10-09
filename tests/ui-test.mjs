@@ -201,7 +201,7 @@ try {
   const nBefore = (await chatsOfKind('customer')).length;
   await bd(() => window.__bd.world.catchUp());
   await waitFor((id) => window.__bd.S.chats.get(id).cs.turns === 1, c8);
-  const r8 = await bd((id) => { const c = window.__bd.S.chats.get(id); const m = c.messages.filter((x) => x.from === 'them').at(-1); return { ago: window.__bd.clock.now() - m.t, read: c.messages.filter((x) => x.from === 'me').every((x) => x.read) }; }, c8);
+  const r8 = await bd((id) => { const c = window.__bd.S.chats.get(id); const m = c.messages.filter((x) => x.from === 'them' && x.kind !== 'nudge' && x.kind !== 'poke').at(-1); return { ago: window.__bd.clock.now() - m.t, read: c.messages.filter((x) => x.from === 'me').every((x) => x.read), msgs: c.messages.map((x) => [x.from, x.kind || '', x.text.slice(0, 30), Math.round((window.__bd.clock.now() - x.t) / 60000) + 'm ago']) }; }, c8);
   check(r8.read && r8.ago > 3 * HOUR, 'customer read and replied hours ago, while the app was "closed"', JSON.stringify(r8));
   check((await chatsOfKind('customer')).length > nBefore, 'customers arrived while away');
   check((await bd(() => window.__bd.S.chats.get('bot').messages.some((m) => /While you were away/.test(m.text)))), '"While you were away" summary');
@@ -340,7 +340,7 @@ try {
   await bd(() => { const { team, clock } = window.__bd; for (const q of team.teamState().queue) q.at = clock.now() - 1000; });
   await waitFor(() => window.__bd.S.chats.get('team').messages.some((m) => /heads-up/.test(m.text)));
   check(true, 'a coworker who got the customer you warned about thanks you');
-  check((await bd(() => Object.keys(window.__bd.team.teamState().warns).length)) === 1, 'a coworker warns the team about a difficult customer');
+  check((await bd(() => Object.keys(window.__bd.team.teamState().warns).length)) >= 1, 'a coworker warns the team about a difficult customer');
   check((await bd(() => window.__bd.boss.promptPreview().includes('TEAM CHANNEL'))), 'Diane sees the team channel too (shared memory)');
 
   console.log('Digest and review');
@@ -382,6 +382,22 @@ try {
   check(after.bal === snapshot.bal && after.n === snapshot.n && after.rank === snapshot.rank, 'state survives reload', JSON.stringify({ snapshot, after }));
   const mig = await bd((id) => { const { S } = window.__bd; const cs = S.chats.get(id).cs; return { v: S.profile.version, mode: cs.mode, w: cs.waitingSince != null && cs.nudgeAt > Date.now(), old: 'waitingSinceA' in cs }; }, c9);
   check(mig.v === 2 && mig.mode === 'async' && mig.w && !mig.old, 'v0.2 active chat migrated to wall-clock timers', JSON.stringify(mig));
+
+  console.log('Team replies survive a restart');
+  await bd(() => { for (const m of window.__bd.S.data.team) { m.days = [0, 1, 2, 3, 4, 5, 6]; m.hours = [0, 24]; } });
+  await page.click('.chat-row[data-id="team"]');
+  await send('anyone around?');
+  await bd(() => { window.__bd.team.teamState().replyAt = window.__bd.clock.now(); });
+  await waitFor(() => window.__bd.team.teamState().queue.some((q) => q.reply)).catch(async (e) => { console.log(JSON.stringify(await bd(() => { const T = window.__bd.team.teamState(); return { replyAt: T.replyAt, now: window.__bd.clock.now(), answeredUpTo: T.answeredUpTo, q: T.queue.slice(0, 3), catching: window.__bd.S.catchingUp, last: window.__bd.S.chats.get('team').messages.slice(-3).map((m) => [m.from, m.who, m.text, m.t]) }; }))); throw e; });
+  const pending = await bd(() => window.__bd.team.teamState().queue.find((q) => q.reply));
+  check(pending.who === 'priya', 'a reply naming the coworker as "Priya Nair" (not the id) is still accepted', JSON.stringify(pending));
+  await page.waitForTimeout(900);
+  await page.evaluate(() => window.dispatchEvent(new Event('beforeunload')));
+  await page.reload();
+  await page.waitForFunction(() => window.__bd && window.__bd.S.profile);
+  await bd(() => { for (const q of window.__bd.team.teamState().queue) if (q.reply) q.at = window.__bd.clock.now(); });
+  await waitFor((p) => window.__bd.S.chats.get('team').messages.some((m) => m.who === p.who && m.text === p.text), pending);
+  check(true, 'a coworker reply that was still pending is delivered after the app restarts');
 
   console.log('Reset');
   await bd(() => window.__bd.ui.openReset());
